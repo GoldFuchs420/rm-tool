@@ -60,7 +60,9 @@
        Server erreichbar → nur das Serverpanel zeigen (Dateilisten können
        ohne Server ohnehin nicht geladen werden). */
     if (document.body) document.body.classList.add("rmx-nosrv");
-    window.RMXServers.mount(panel, { onChange: onServersChanged });
+    var srv = window.RMXServers.mount(panel, { onChange: onServersChanged });
+    /* Sprachwechsel im Dateimanager: Serverleiste ebenfalls neu uebersetzen. */
+    if (srv && srv.redraw) R.serversRedraw = srv.redraw;
   }
 
   if (document.readyState === "loading") {

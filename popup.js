@@ -40,6 +40,23 @@ function applyI18n() {
   });
 }
 applyI18n();
+/* Dynamische Statuszeilen (Artikel- und Bilderbereich) merken sich ihren
+   letzten Text; beim Sprachwechsel werden sie neu uebersetzt, statt vom
+   naechsten Ladevorgang ueberschrieben zu werden. */
+let lastArtStatus = null, lastImgStatus = null;
+function setArtStatus(key, vars, fall) {
+  lastArtStatus = { key, vars, fall };
+  $("articleStatus").textContent = t(key, vars, fall);
+}
+function setImgStatus(key, vars, fall) {
+  lastImgStatus = { key, vars, fall };
+  $("imageStatus").textContent = t(key, vars, fall);
+}
+function redrawStatuses() {
+  const a = lastArtStatus, i = lastImgStatus;
+  if (a) $("articleStatus").textContent = t(a.key, a.vars, a.fall);
+  if (i) $("imageStatus").textContent = t(i.key, i.vars, i.fall);
+}
 
 /* ---------------------------------------------------------------------
  * Server (gemeinsame Komponente, siehe shared/servers.js) + Einstellungen
@@ -54,6 +71,7 @@ function buildLangSelect() {
   sel.addEventListener("change", (e) => {
     RMX.setLang(e.target.value);
     applyI18n();
+    redrawStatuses();
     if (serverComponent) serverComponent.redraw();
     updateSendButton();
   });
@@ -167,14 +185,14 @@ async function extractArticleFromTab(tabId) {
 }
 
 async function prepareArticleSection() {
-  $("articleStatus").textContent = t("stLoadingPage", null, "Lade Seite…");
+  setArtStatus("stLoadingPage", null, "Lade Seite…");
   articleReady = false;
   articleData = null;
   isPdfSource = false;
   pdfSourceBlob = null;
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
-    $("articleStatus").textContent = t("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
+    setArtStatus("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
     return;
   }
 
@@ -182,33 +200,33 @@ async function prepareArticleSection() {
   $("fontSlider").disabled = isPdfSource;
 
   if (isPdfSource) {
-    $("articleStatus").textContent = t("stLoadingPdf", null, "Lade PDF…");
+    setArtStatus("stLoadingPdf", null, "Lade PDF…");
     try {
       pdfSourceBlob = await fetchPdfBlob(currentTabInfo.url);
       articleReady = true;
-      $("articleStatus").textContent = t("stPdfSource", null, "Diese Seite ist bereits ein PDF – wird unverändert gesendet.");
+      setArtStatus("stPdfSource", null, "Diese Seite ist bereits ein PDF – wird unverändert gesendet.");
     } catch {
-      $("articleStatus").textContent = t("stPdfFailed", null, "PDF konnte nicht geladen werden.");
+      setArtStatus("stPdfFailed", null, "PDF konnte nicht geladen werden.");
     }
     updateSendButton();
     return;
   }
 
-  $("articleStatus").textContent = t("stExtracting", null, "Extrahiere Lesemodus…");
+  setArtStatus("stExtracting", null, "Extrahiere Lesemodus…");
   try {
     articleData = await extractArticleFromTab(currentTabInfo.id);
   } catch {
-    $("articleStatus").textContent = t("stReadFail", null, "Seite konnte nicht gelesen werden (z. B. interne Chrome-Seite).");
+    setArtStatus("stReadFail", null, "Seite konnte nicht gelesen werden (z. B. interne Chrome-Seite).");
     updateSendButton();
     return;
   }
   if (!articleData) {
-    $("articleStatus").textContent = t("stNoContent", null, "Kein Inhalt gefunden.");
+    setArtStatus("stNoContent", null, "Kein Inhalt gefunden.");
     updateSendButton();
     return;
   }
   articleReady = true;
-  $("articleStatus").textContent = t("stFoundTitle", { name: (articleData.title || "Artikel").slice(0, 70) }, `„${(articleData.title || "Artikel").slice(0, 70)}“`);
+  setArtStatus("stFoundTitle", { name: (articleData.title || "Artikel").slice(0, 70) }, `„${(articleData.title || "Artikel").slice(0, 70)}“`);
   updateSendButton();
 }
 
@@ -665,7 +683,7 @@ function scanImagesInPage() {
 }
 
 async function scanCurrentTab() {
-  $("imageStatus").textContent = t("stScanning", null, "Durchsuche Seite nach Bildern…");
+  setImgStatus("stScanning", null, "Durchsuche Seite nach Bildern…");
   $("imageStrip").innerHTML = "";
   selectedSrcs.clear();
   minEdgeMax = 0;
@@ -674,7 +692,7 @@ async function scanCurrentTab() {
   refreshMinEdgeRow();
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
-    $("imageStatus").textContent = t("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
+    setImgStatus("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
     return;
   }
 
@@ -686,7 +704,7 @@ async function scanCurrentTab() {
     foundImages = result?.images || [];
     currentTabInfo.pageTitle = result?.pageTitle || currentTabInfo.title || "Bilder";
   } catch {
-    $("imageStatus").textContent = t("stScanFail", null, "Seite konnte nicht durchsucht werden (z. B. interne Chrome-Seite).");
+    setImgStatus("stScanFail", null, "Seite konnte nicht durchsucht werden (z. B. interne Chrome-Seite).");
     return;
   }
 
@@ -722,7 +740,7 @@ function renderImageStrip() {
   const visible = foundImages.filter(imgIncluded);
   if (foundImages.length === 0) {
     status.hidden = false;
-    status.textContent = t("stNoImages", null, "Keine passenden Bilder auf dieser Seite gefunden.");
+    setImgStatus("stNoImages", null, "Keine passenden Bilder auf dieser Seite gefunden.");
     strip.innerHTML = "";
     return;
   }

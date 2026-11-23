@@ -700,6 +700,22 @@ Weitere UX-Runde nach Feedback:
   jetzt **in** den Datumseingaben statt als Hinweis darunter und
   verschwindet, sobald ein Datum gesetzt ist.
 
+## Runde 10a: Follow-up-Fixes
+
+- **Popup-Abstände:** Mehr Luft oberhalb des Breiten-Dual-Sliders und
+  zwischen der Auswahlleiste und der Bildliste; der Abstand zwischen den
+  beiden Auswahl-Buttons ist halbiert.
+- **Sprachwechsel: Titel bleibt stehen:** Die dynamischen Statuszeilen im
+  Popup (Seiten-/PDF-Status, Bildstatus)
+  merken sich Schlüssel und Variablen ihres letzten Textes und werden
+  beim Sprachwechsel neu übersetzt — der Seitentitel bleibt stehen
+  statt zurück auf „Lade …“ zu fallen. Das `data-i18n="loading"`-
+  Attribut am Status-Element entfällt (es überschrieb bei jedem
+  Wechsel mit dem statischen Lade-Text).
+- **Dateimanager:** Beim Umschalten der Sprache wird jetzt auch die
+  Serverleiste neu übersetzt (Redraw-Hook der gemeinsamen
+  Server-Komponente, `RMX.serversRedraw`).
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.

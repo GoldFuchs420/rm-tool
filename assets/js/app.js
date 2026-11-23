@@ -811,6 +811,7 @@
       try { rtf = new Intl.RelativeTimeFormat(R.lang, { numeric: 'auto' }); } catch (err) { /* old browser */ }
       var q = state.filter.q;
       renderFrame(); buildFilterbar(); $('#f-q').value = q; syncFilterFields(); filterFolderSig = ''; render();
+      if (R.serversRedraw) R.serversRedraw();
     }
     else if (e.target.id === 'thumb-toggle') { state.thumbs = e.target.checked; store('rmx.thumbs', state.thumbs ? '1' : '0'); render(); }
     else if (e.target.id === 'import-input') {
