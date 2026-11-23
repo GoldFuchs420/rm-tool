@@ -28,6 +28,60 @@
       if (R.textpdf.kindOf(file)) return 'text';
       return null;
     }
+
+    /* ---------- Vorschauleiste links vom Titel (Auge ueber Canvas) ---------- */
+    function leadHtml(it) {
+      var previewable = it.kind !== 'native' || extOf(it.file.name) === 'pdf';
+      var ico = it.kind === 'native' ? (extOf(it.file.name) === 'pdf' ? 'pdf' : 'notebook') : (it.kind === 'image' ? 'notebook' : 'pdf');
+      return '<span class="ilead' + (previewable ? '" data-im-pv="' + it.id + '" role="button" tabindex="0" aria-label="' + esc(t('preview')) + '" title="' + esc(t('preview')) + '"' : '"') + '>' +
+        '<span class="ihost" hidden></span><span class="ifallback">' + icon(ico, 24) + '</span>' +
+        (previewable ? '<span class="obadge">' + icon('eye', 13) + '</span>' : '') + '</span>';
+    }
+    function imageCanvas(file, height) {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+          var w = Math.max(1, Math.round(height * (img.naturalWidth / (img.naturalHeight || 1))));
+          var c = document.createElement('canvas');
+          c.width = w; c.height = height;
+          c.getContext('2d').drawImage(img, 0, 0, w, height);
+          URL.revokeObjectURL(url); resolve(c);
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('preview')); };
+        img.src = url;
+      });
+    }
+    function showLeadCanvas(id, canvas) {
+      var host = dlg.querySelector('li[data-id="' + id + '"] .ilead');
+      if (!host) return;
+      host.querySelector('.ihost').hidden = false;
+      host.querySelector('.ihost').innerHTML = '';
+      host.querySelector('.ihost').appendChild(canvas);
+      host.classList.add('is-ready');
+    }
+    function paintLeads() {
+      items.forEach(function (it) {
+        if (it.kind === 'native') {
+          R.pdfview.firstPageCanvas(it.file, 72).then(function (canvas) {
+            showLeadCanvas(it.id, canvas);
+          }).catch(function () { /* keine Vorschau */ });
+        } else if (it.kind === 'image') {
+          imageCanvas(it.file, 72).then(function (canvas) {
+            showLeadCanvas(it.id, canvas);
+          }).catch(function () { /* keine Vorschau */ });
+        }
+      });
+    }
+    async function openItemPreview(it) {
+      try {
+        var blob;
+        if (it.kind === 'native') blob = it.file;
+        else if (it.kind === 'image') blob = await R.convert.imageToPdf(it.file, { pageMode: vals.page });
+        else blob = await R.textpdf.convert(it.file, app.outputs.readTextOptions(dlg, vals));
+        app.previewBlob(blob, it.file.name);
+      } catch (e) { app.toast(t('importFailed', { msg: e.message }), true); }
+    }
     var NOISE = /(^|\/)_(export-fehler|export-errors|errori-esportazione|errores-exportacion|erreurs-exportation)\.txt$/i;
     /** Already in the list (same name and size)? Repeated file selection then
      *  only refreshes the existing entries instead of piling up duplicates. */
@@ -127,8 +181,7 @@
 
       var list = '<ul class="rmx-files" id="im-files">' + items.map(function (it, idx) {
         var label = it.kind === 'native' ? '' : t('toPdf');
-        var ico = it.kind === 'native' ? (extOf(it.file.name) === 'pdf' ? 'pdf' : 'notebook') : (it.kind === 'image' ? 'notebook' : 'pdf');
-        return '<li data-id="' + it.id + '" data-state="idle">' + icon(ico, 24) + '<span class="fname responsive-body-sm">' + (it.folderPath && it.folderPath.length ? '<span class="rmx-muted">' + esc(it.folderPath.join(' / ')) + ' / </span>' : '') + esc(it.file.name) + '</span>' +
+        return '<li data-id="' + it.id + '" data-state="idle">' + leadHtml(it) + '<span class="fname responsive-body-sm">' + (it.folderPath && it.folderPath.length ? '<span class="rmx-muted">' + esc(it.folderPath.join(' / ')) + ' / </span>' : '') + esc(it.file.name) + '</span>' +
           '<span class="state responsive-body-sm">' + esc(label) + '</span>' +
           (it.kind === 'image' && mergeable && vals.merge
             ? '<button type="button" class="rmx-iconbtn" data-im-up="' + it.id + '" aria-label="' + esc(t('moveUp')) + '" title="' + esc(t('moveUp')) + '"' + (idx === 0 ? ' disabled' : '') + '>' + icon('up', 20) + '</button>' +
@@ -156,6 +209,7 @@
         opts += app.outputs.textOptionsHtml(vals);
       }
       main.innerHTML = list + add + opts;
+      paintLeads();
       /* Flatten option (missing folders are created or not) only makes sense with
          several files that bring folder structures with them */
       var cr = $('#im-createrow');
@@ -267,6 +321,12 @@
     }
 
     dlg.addEventListener('click', function (e) {
+      var pv = e.target.closest('[data-im-pv]');
+      if (pv) {
+        var cur = items.filter(function (x) { return String(x.id) === pv.getAttribute('data-im-pv'); })[0];
+        if (cur) openItemPreview(cur);
+        return;
+      }
       var rm = e.target.closest('[data-im-rm]');
       if (rm) { items = items.filter(function (i) { return String(i.id) !== rm.getAttribute('data-im-rm'); }); renderMain(); return; }
       var mv = e.target.closest('[data-im-up],[data-im-down]');
@@ -286,6 +346,14 @@
         case 'add': $('#import-input').click(); break;
         case 'uploadall': uploadAll(); break;
       }
+    });
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var pv = e.target.closest ? e.target.closest('[data-im-pv]') : null;
+      if (!pv) return;
+      e.preventDefault();
+      var cur = items.filter(function (x) { return String(x.id) === pv.getAttribute('data-im-pv'); })[0];
+      if (cur) openItemPreview(cur);
     });
     dlg.addEventListener('change', function (e) {
       if (e.target.id === 'im-date' || e.target.id === 'im-ascii') {

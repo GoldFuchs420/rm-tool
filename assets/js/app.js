@@ -557,7 +557,7 @@
       '<div class="rmx-search">' +
       '<div class="rmx-search__field">' + icon('search', 22) + '<input id="f-q" type="search" class="ark-input" autocomplete="off" spellcheck="false" placeholder="' + esc(t('searchPlaceholder')) + '" aria-label="' + esc(t('searchPlaceholder')) + '"></div>' +
       '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-medium" data-act="filter-toggle" id="f-toggle" aria-expanded="false" aria-controls="f-panel">' + icon('sliders', 20) + '<p class="responsive-body-md">' + esc(t('filters')) + '</p><span class="rmx-count" id="f-badge" hidden></span></button>' +
-      '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-medium" data-act="filter-reset" id="f-reset" hidden><p class="responsive-body-md">' + esc(t('filtersReset')) + '</p></button></div>' +
+      '<button type="button" class="rmx-iconbtn" data-act="filter-reset" id="f-reset" hidden aria-label="' + esc(t('filtersReset')) + '" title="' + esc(t('filtersReset')) + '">' + icon('close', 18) + '</button></div>' +
       '<div class="rmx-filters" id="f-panel" hidden>' +
       '<div class="ark-field">' + sel('f-type', t('fType'), '<option value="">' + esc(t('fTypeAll')) + '</option>') + chk('f-fav', t('fFav')) + '</div>' +
       '<div class="ark-field">' + sel('f-folder', t('fFolder'), '') + chk('f-sub', t('fSub')) + '</div>' +

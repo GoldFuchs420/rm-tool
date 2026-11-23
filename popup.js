@@ -74,8 +74,7 @@ async function uploadOne(blob, filenameBase, server) {
   try {
     const form = new FormData();
     form.append("file", blob, filenameBase + ".pdf");
-    const headers = {};
-    if (server.hasCreds) headers["Authorization"] = "Basic " + btoa(`${server.user}:${server.pass}`);
+    const headers = { Authorization: RMXServers.authHeaderFor(server) };
     const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form });
     if (res.ok) return { ok: true };
     return { ok: false, code: res.status };
@@ -805,10 +804,17 @@ function updateSendButton() {
      der restlichen Bereiche ist dann ohne Zweck). */
   document.body.classList.toggle("rmx-nosrv", readyServers().length === 0);
   if (!sending) btn.textContent = files > 0 ? t("sendPdfCount", { n: files }) : t("sendBtnLabel", null, "Senden");
-  /* Zaehlbadges im Expander-Kopf (Platz ist fix reserviert). */
-  $("pageBadge").hidden = !hasArticle;
-  $("imgBadge").textContent = String(n);
-  $("imgBadge").hidden = n === 0;
+  /* Zaehlbadge im Expander-Kopf (Platz fix reserviert). Grau ausgeblendeter
+     leerer Kreis solange nichts gesendet wird (z. B. Bilder ausgewaehlt,
+     Expander aber zu – der Schalter ist inaktiv). */
+  setBadge($("pageBadge"), hasArticle ? 1 : 0);
+  setBadge($("imgBadge"), imgIncl ? n : 0);
+}
+
+function setBadge(el, n) {
+  el.hidden = false;
+  el.textContent = n > 0 ? String(n) : "";
+  el.classList.toggle("rmx-count--empty", n === 0);
 }
 
 /* Status-Expander: eine Zeile pro DATEI (Webseite, zusammengefasstes

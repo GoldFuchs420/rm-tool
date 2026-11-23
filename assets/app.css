@@ -16,6 +16,27 @@
   --rmx-rmdoc-hover: #000;
   --rmx-archive: #c4c1b9;
   --rmx-archive-hover: #b3b0a7;
+  /* reMarkable brown: switches, counters, checkboxes, selections and the
+     blue-toned interaction buttons are recolored through the ark tokens below */
+  --rmx-brown: #6b4f3a;
+  --rmx-brown-strong: #57402e;
+  --rmx-brown-deep: #453426;
+  --rmx-brown-subtle: #f3ece1;
+  --rmx-brown-subtle-hover: #e9ddcb;
+  --rmx-brown-focus: #6b4f3a59;
+}
+body, body[data-theme] {
+  --ark-interaction-primary-default: var(--rmx-brown);
+  --ark-interaction-primary-default-subtle: var(--rmx-brown-subtle);
+  --ark-interaction-primary-default-subtle-hover: var(--rmx-brown-subtle-hover);
+  --ark-interaction-primary-hover: var(--rmx-brown-strong);
+  --ark-interaction-primary-active: var(--rmx-brown-deep);
+  --ark-interaction-secondary-foreground-hover: var(--rmx-brown-strong);
+  --ark-interaction-secondary-border-hover: var(--rmx-brown-strong);
+  --ark-interaction-secondary-foreground-active: var(--rmx-brown-deep);
+  --ark-interaction-secondary-border-active: var(--rmx-brown-deep);
+  --ark-interaction-link-hover: var(--rmx-brown-strong);
+  --ark-interaction-focus-default: var(--rmx-brown-focus);
 }
 html { background: var(--rmx-page); }
 html:has(dialog[open]) { overflow: hidden; } /* only the modal dialog is operable */
@@ -45,6 +66,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-actions .ark-button { padding-left: .75rem; padding-right: .75rem; gap: .5rem; cursor: pointer; }
 .rmx-short { display: none; }
 .rmx-count { display: inline-block; min-width: 1.5rem; padding: 0 .4rem; border-radius: 99px; background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); font-size: .75rem; line-height: 1.5rem; text-align: center; }
+.rmx-count--empty { min-width: 0; width: .75rem; height: .75rem; padding: 0; background: none; box-shadow: inset 0 0 0 1.5px var(--ark-border-muted); line-height: normal; }
 
 .rmx-banner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
 .rmx-banner:empty { display: none; }
@@ -59,6 +81,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-search__field { position: relative; flex: 1 1 auto; min-width: 0; }
 .rmx-search__field svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .7; }
 .rmx-search__field .ark-input { width: 100%; padding-left: 44px; box-sizing: border-box; }
+#f-reset { flex: none; width: 2rem; height: 2rem; margin-left: 2px; }
 .rmx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; padding: 20px; margin-top: 8px; border-radius: 4px; background: var(--rmx-surface); }
 /* Bezeichnung links, Element rechts: zweispaltiges Layout je Feld */
 .rmx-filters .ark-field { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; align-items: center; }
@@ -99,7 +122,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-menu button { display: block; width: 100%; padding: 12px 16px; text-align: left; background: none; border: 0; }
 .rmx-menu button:hover { background: var(--rmx-hover); }
 .rmx-menu button[aria-checked="true"] { font-weight: 600; }
-.rmx-menu button:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-menu button:focus-visible { outline: none; background: var(--rmx-brown-focus); color: inherit; }
 
 /* ---------- folders, favourites, list ---------- */
 .rmx-tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
@@ -107,7 +130,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-tile:hover { background: var(--rmx-surface-2); }
 .rmx-tile[data-selected="true"] { box-shadow: inset 0 0 0 1px var(--ark-interaction-primary-default); }
 .rmx-tile__link { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px; text-decoration: none; border-radius: 4px; }
-.rmx-tile__link:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-tile__link:focus-visible { outline: none; background: var(--rmx-brown-focus); color: inherit; }
 .rmx-tile__link > svg { flex: none; width: 32px; height: 32px; }
 .rmx-tile__link p { margin: 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rmx-tile__link .rmx-star svg { width: 16px; height: 16px; }
@@ -143,12 +166,13 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-empty { padding: 56px 0; text-align: center; }
 .rmx-more { display: flex; justify-content: center; padding: 24px 0; }
 
+.ark-input-checkbox:checked:after { box-shadow: inset 0 0 0 1px var(--ark-interaction-primary-default); background-image:url(data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22192%22%20height%3D%22192%22%20fill%3D%22%23000000%22%20viewBox%3D%220%200%20256%20256%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22none%22%3E%3C%2Frect%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cpolyline%20points%3D%22216%2072%20104%20184%2048%20128%22%20fill%3D%22none%22%20stroke%3D%22%236b4f3a%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%2248%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3C%2Fpolyline%3E%0A%20%20%20%20%20%20%20%20%3C%2Fsvg%3E); background-size: 18px 18px; background-repeat: no-repeat; background-position: center center; }
 .ark-input-checkbox:indeterminate:after { box-shadow: inset 0 0 0 1px var(--ark-interaction-primary-default); background-image: linear-gradient(var(--ark-interaction-primary-hover), var(--ark-interaction-primary-hover)); background-repeat: no-repeat; background-position: center; background-size: 50% 2px; }
 .ark-input-checkbox:disabled { cursor: not-allowed; opacity: .3; }
 
 .rmx-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 4999px; background: none; color: inherit; cursor: pointer; transition: background-color .3s; }
 .rmx-iconbtn:hover:not(:disabled) { background: var(--ark-interaction-tertiary-neutral-hover); }
-.rmx-iconbtn:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-iconbtn:focus-visible { outline: none; background: var(--rmx-brown-focus); color: inherit; }
 .rmx-iconbtn:disabled { opacity: .3; cursor: not-allowed; }
 
 /* labelled download buttons: PDF red, RMDoc black (the format is always spelled out) */
@@ -161,7 +185,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid currentColor; border-radius: 99px; background: none; font: inherit; font-size: .8125rem; line-height: 1; white-space: nowrap; cursor: pointer; color: var(--ark-text-default); transition: background-color .2s; }
 .rmx-pill svg { width: 16px; height: 16px; flex: none; }
 .rmx-pill:hover:not(:disabled) { background: var(--rmx-surface); }
-.rmx-pill:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-pill:focus-visible { outline: none; background: var(--rmx-brown-focus); color: inherit; }
 .rmx-pill:disabled { opacity: .45; cursor: progress; }
 .rmx-pill--pdf { color: var(--rmx-pdf); }
 .rmx-pill--rmdoc { color: var(--rmx-rmdoc); }
@@ -239,6 +263,14 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-files .fname { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .rmx-files .state { flex: none; font-size: .875rem; color: var(--ark-text-muted); display: flex; align-items: center; gap: 6px; }
 .rmx-files li[data-state="error"] .state { color: var(--rmx-pdf); }
+/* Vorschaukachel in Import-Zeilen: Canvas mit darueberliegendem Auge,
+   Klick oeffnet die Vorschau wie in den Details */
+.ilead { position: relative; flex: none; width: 48px; height: 58px; display: flex; align-items: center; justify-content: center; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px var(--rmx-line); overflow: hidden; }
+.ilead[data-im-pv] { cursor: pointer; }
+.ilead canvas { max-width: 100%; max-height: 100%; }
+.ilead .ifallback { display: flex; color: var(--ark-text-muted); }
+.ilead.is-ready .ifallback { display: none; }
+.ilead .obadge { right: 2px; bottom: 2px; width: 18px; height: 18px; color: var(--ark-text-default); }
 .rmx-outs li { display: block; }
 /* Ergebnis-Zeilen: Import-Ergebniszeilen (.rmx-outs) sind zwei Panels:
    oben Typ-Icon + Name, darunter die kleine Vorschau (wie in der

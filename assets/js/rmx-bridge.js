@@ -8,10 +8,11 @@
   "use strict";
   var R = (window.RMX = window.RMX || {});
 
-  function authHeaderFor(s) {
-    if (!s || !s.hasCreds) return null;
-    return "Basic " + btoa(s.user + ":" + s.pass);
-  }
+  /* RMXServers.authHeaderFor liefert immer einen Basic-Header (ggf. leerer),
+     damit die API-Aufrufe hier denselben tragen wie der Erreichbarkeits-
+     Probe – ueberall gleich, und nirgends oeffnet Chrome den nativen
+     Login-Dialog (siehe shared/servers.js). */
+  var authHeaderFor = function (s) { return window.RMXServers.authHeaderFor(s); };
 
   var configured = false;
   var lastActiveId = null;
