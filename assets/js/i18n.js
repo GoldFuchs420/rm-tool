@@ -135,6 +135,7 @@
     moveUp: ["Nach oben", "Move up", "Sposta su", "Subir", "Monter"],
     moveDown: ["Nach unten", "Move down", "Sposta giù", "Bajar", "Descendre"],
     remove: ["Entfernen", "Remove", "Rimuovi", "Quitar", "Retirer"],
+    rmdocUnavailable: ["RMDoc ist für dieses Dokument nicht verfügbar.", "RMDoc is not available for this document.", "RMDoc non disponibile per questo documento.", "RMDoc no disponible para este documento.", "RMDoc non disponible pour ce document."],
     textFormat: ["Seitenformat für Text und HTML", "Page size for text and HTML", "Formato pagina per testo e HTML", "Tamaño de página para texto y HTML", "Format de page pour texte et HTML"],
     pageRmShort: ["reMarkable", "reMarkable", "reMarkable", "reMarkable", "reMarkable"],
     pageA4: ["A4", "A4", "A4", "A4", "A4"],

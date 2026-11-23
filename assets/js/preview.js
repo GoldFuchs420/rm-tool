@@ -1,7 +1,9 @@
 /*
  * Preview (PDF in an embedded viewer) and details dialog.
- *  - documents on the device: the device renders /download/{id}/pdf
+ *  - documents on the device: the device renders /download/{id}/pdf;
+ *    the preview offer PDF and (if available) RMDoc downloads
  *  - generated files: the blob is shown before upload
+ *  - details: pure info; downloads and selection live elsewhere
  */
 (function () {
   'use strict';
@@ -40,22 +42,29 @@
       var a = b.getAttribute('data-pv');
       if (a === 'close') dlgP.close();
       else if (a === 'dl' && cur.blob) app.saveBlob(cur.blob, cur.name);
+      else if (a === 'rmdl' && cur.rmdocId) {
+        b.disabled = true;
+        R.api.download(cur.rmdocId, 'rmdoc').then(function (blob) {
+          app.saveBlob(blob, R.archive.sanitizeSegment(String(cur.name).replace(/\.pdf$/i, '')) + '.rmdoc');
+        }).catch(function () { app.toast(t('rmdocUnavailable'), true); }).then(function () { b.disabled = false; });
+      }
       else if (a === 'up' && cur.onUpload) {
         b.disabled = true;
         Promise.resolve(cur.onUpload()).then(function (ok) { if (ok) { var m = $('#pv-msg'); if (m) m.textContent = ''; } else b.disabled = false; });
       }
     });
 
-    /** o: {title, name, loader(signal) -> Promise<Blob>, onUpload?} */
+    /** o: {title, name, loader(signal) -> Promise<Blob>, rmdocId?, onUpload?} */
     app.openPreview = async function (o) {
       cleanup();
       var ctrl = new AbortController();
-      cur = { ctrl: ctrl, viewer: null, blob: null, name: o.name || 'preview.pdf', onUpload: o.onUpload };
+      cur = { ctrl: ctrl, viewer: null, blob: null, name: o.name || 'preview.pdf', rmdocId: o.rmdocId, onUpload: o.onUpload };
       var mine = cur;
       dlgP.innerHTML = app.dlgHead('dlg-preview-title', o.title || t('preview'), 'data-pv="close"') +
         '<div class="rmx-dialog__body rmx-pv-body"><div class="rmx-pv-status responsive-body-sm" id="pv-msg" role="status"><span class="rmx-spinner"></span><span>' + esc(t('previewLoading')) + '</span></div>' +
         '<div class="rmx-pv-pages" id="pv-pages" hidden></div></div>' +
         '<div class="rmx-dialog__foot">' + app.btn(t('downloadPdf'), 'data-pv="dl" disabled', 'pdf') +
+        (o.rmdocId ? app.btn(t('downloadRmdoc'), 'data-pv="rmdl" disabled', 'rmdoc') : '') +
         (o.onUpload ? app.btn(t('uploadNow'), 'data-pv="up" disabled', 'primary') : '') + '</div>';
       dlgP.setAttribute('aria-labelledby', 'dlg-preview-title');
       if (!dlgP.open) dlgP.showModal();
@@ -82,7 +91,8 @@
       app.openPreview({
         title: it.VissibleName,
         name: R.archive.sanitizeSegment(it.VissibleName) + '.pdf',
-        loader: function (signal) { return app.getPdf(id, signal); }
+        loader: function (signal) { return app.getPdf(id, signal); },
+        rmdocId: id
       });
     };
     app.downloadDocument = async function (id, btn, fmt) {
@@ -108,17 +118,8 @@
       var b = e.target.closest('[data-dt]');
       if (!b) return;
       var a = b.getAttribute('data-dt');
-      var id = dlgD.getAttribute('data-id');
-      var it = state.items.get(id);
       if (a === 'close') dlgD.close();
-      else if (a === 'prev') app.previewDocument(id);
-      else if (a === 'sel' && it) { app.toggleSelect(id); app.openDetails(id); }
-      else if (a === 'pdf' || a === 'rmdoc') {
-        b.disabled = true;
-        R.api.download(id, a).then(function (blob) {
-          app.saveBlob(blob, R.archive.sanitizeSegment(it.VissibleName) + '.' + a);
-        }).catch(function (err) { app.toast(err.message, true); }).then(function () { b.disabled = false; });
-      }
+      else if (a === 'prev') app.previewDocument(dlgD.getAttribute('data-id'));
     });
 
     var detailTok = 0;
@@ -144,7 +145,6 @@
         rows.push([t('dContains'), t('dDocs', { n: lv }) + ', ' + t('dFolders', { n: sub })]);
       }
       rows.push([t('dId'), it.ID]);
-      var sel = doc ? state.selected.has(id) : false;
       dlgD.setAttribute('data-id', id);
       dlgD.innerHTML = app.dlgHead('dlg-detail-title', t('detailTitle'), 'data-dt="close"') +
         '<div class="rmx-dialog__body">' +
@@ -153,8 +153,7 @@
           return '<div><dt class="responsive-body-sm rmx-muted">' + esc(r[0]) + '</dt><dd class="responsive-body-md">' + esc(r[1]) + (r[0] === t('dFav') && it.Bookmarked ? ' ' + icon('starFill', 16, 'class="rmx-starinl"') : '') + '</dd></div>';
         }).join('') + '</dl></div>' +
         (doc ? '<div class="rmx-dialog__foot rmx-foot--list">' : '<div hidden>') + (doc
-          ? app.btn(t('downloadPdf'), 'data-dt="pdf"', 'pdf') + app.btn(t('downloadRmdoc'), 'data-dt="rmdoc"', 'rmdoc') +
-            app.btn(sel ? t('deselect') : t('select'), 'data-dt="sel"') + app.btn(t('preview'), 'data-dt="prev"', 'primary')
+          ? app.btn(t('preview'), 'data-dt="prev"', 'preview')
           : '') + '</div>';
       dlgD.setAttribute('aria-labelledby', 'dlg-detail-title');
       if (!dlgD.open) dlgD.showModal();

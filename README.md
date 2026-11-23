@@ -75,13 +75,18 @@ eingebettet als vollwertige Extension-Seite:
 - Ordner-Navigation, Favoriten, Suche/Filter (unverändert aus dem
   Original übernommen).
 - **Import** (lokale Dateien: PDF, EPUB, RMDoc, Bilder, Markdown, Text,
-  HTML, ZIP/TAR-Archive) — Klick auf "Import" öffnet jetzt sofort den
-  leeren Dialog, Dateien werden erst *danach* im Dialog hinzugefügt
-  (vorher öffnete der native Dateiauswahl-Dialog direkt).
+  HTML, ZIP/TAR-Archive) — sobald eine Datei hinzugefügt wird, entsteht
+  die Vorschau-Umwandlung automatisch; Einträge lassen sich aus der
+  Liste wieder entfernen oder umbenennen (ohne Dateiendung) und die
+  gesamte Liste wird mit einem einzigen "Alle hochladen" hochgeladen.
+  Die Buttons "Vorschau" und "Zurück" sowie der direkte Einzel-Upload
+  im Import-Dialog sind entfallen.
 - **Export** als PDF oder RMDoc (unverändert).
-- Server-Auswahl **unter dem Header, über "Meine Dateien"** — zeigt nur
-  erreichbare Server (gleiche gemeinsame Komponente wie im Popup,
-  inklusive Hinzufügen/Entfernen und Login).
+- Server-Auswahl **unter dem Header, über "Meine Dateien"** — exakt die
+  gemeinsame Komponente aus dem Popup, inklusive Login-Karte bei
+  Basic-Auth und integriertem Anmeldedialog; jede Adresse hat einen
+  Kopieren-Button (Zwischenablage) und einen Button zum Öffnen in
+  einem neuen Browser-Tab.
 - **Entfernt**: der ursprüngliche "URL importieren"-Button (externer
   Lesedienst) sowie der zwischenzeitlich hinzugefügte "Von Webseite
   importieren"-Button (Tab-Auswahl-Dialog) — auf deinen Wunsch entfernt,
@@ -144,18 +149,23 @@ in `filemanager.html` und i18n-Einträgen.
 
 ---
 
-## Import-Dialog: Vorschau-Button, Layout, Dateinamen
+## Import-Dialog: automatische Vorschau, Liste, Dateinamen
 
-In der Ergebnis-Liste nach einer Umwandlung (`assets/js/outputs.js`):
+Neuer Ablauf beim Import (`assets/js/import.js`, `assets/js/outputs.js`):
 
-- **Vorschau ist jetzt eine eigene Pille** wie der PDF-Download-Button:
-  Augen-Symbol links, Beschriftung in allen 5 Sprachen des Projekts
-  (nutzt den bereits vorhandenen Schlüssel `preview`), **schwarze
-  Schrift auf hellem Hintergrund** (`.rmx-pill--preview`), statt wie
-  vorher ein unbeschrifteter, reiner Icon-Button.
-- **Dateigröße (KB) steht ganz links**, alle Buttons (Vorschau,
-  Download, Hochladen) rechts gruppiert (`.obtns`, per
-  `margin-left:auto` an den rechten Rand gedrückt).
+- **Vorschau entsteht automatisch**: Sobald Dateien hinzugefügt werden,
+  startet die Umwandlung ohne weiteren Klick — die Buttons
+  "Vorschau erstellen" und "Zurück" sind entfallen, ebenso der direkte
+  Einzel-Upload. Nur noch "Alle hochladen" (ein Klick für die ganze
+  Liste) und während der Umwandlung "Abbrechen" bleiben übrig.
+- **Einträge sind entfernbar**: Jede Ergebnis-Zeile hat einen ✕-Button
+  (nach dem Entfernen werden die restlichen Zeilen neu nummeriert);
+  umbenennen bleibt möglich, die Dateiendung wird nicht mehr angezeigt
+  (der Typ ist am Icon erkennbar).
+- **Dateigröße (KB) steht ganz links**, Download-Pille (farblich wie die
+  PDF/RMDoc-Buttons in der Dateiliste) und Entfernen-Button rechts
+  gruppiert (`.obtns`, per `margin-left:auto` an den rechten Rand
+  gedrückt).
 - **Kein Überlappen auf schmalen/mobilen Breiten**: Die vorherige
   Lösung positionierte Elemente über starre `nth-child`-Grid-Zellen —
   fragil, weil sie bei jeder Strukturänderung der Zeile neu hätte
@@ -316,6 +326,33 @@ Lizenzbedingungen (Copyright- und Lizenzhinweis beilegen) einzuhalten
 und die Dateien unter `assets/vendor/licenses/` zu ergänzen.
 
 ---
+
+## UI-Überarbeitung (Dateimanager): Liste, Buttons, Dialoge
+
+- **Dateiliste** (`assets/js/app.js`, `assets/app.css`): Jede Zeile hat
+  zwei Spalten — links Checkbox, Dateitypen-Icon und darunter das
+  Vorschaubild in unveränderter Größe (darunter flexibler freier
+  Raum), rechts der Titel in variabler Höhe mit einer Meta-Zeile
+  darunter (Seite, Datum, Freiraum, PDF/RMDoc/Details-Buttons). Die
+  Dateiendung (z. B. `.pdf`) wird im Titel nicht mehr angezeigt, der
+  Typ ist am Icon erkennbar.
+- **Buttons außerhalb der Dateiliste** (Export-, Import- und
+  Vorschau-Dialoge): rechteckig, mit Icon vor dem Text und Outline in
+  derselben Farbe wie die Schrift — farblich passend zu den
+  Dateityp-Buttons (PDF = rot, RMDoc = schwarz, Upload = Interaktions-
+  blau, Archiv = neutral). In der Dateiliste bleiben die Pillen
+  rund (`.rmx-pill`).
+- **Eingabefelder**: aktiv (Fokus) dezent über den blauen Fokusring
+  hervorgehoben, gesperrte Felder gedämpft hinterlegt,
+  schreibgeschützte ohne Füllung — alles in gedeckten Farben.
+- **Details-Dialog**: nur noch Vorschau-Button; die Dateitypen-Downloads
+  und das An-/Abwählen sind hier entfallen.
+- **Vorschau-Dialog**: hier lässt sich das PDF und — soweit verfügbar
+  — das RMDoc herunterladen; ist das RMDoc nicht verfügbar, erscheint
+  ein dezenter Hinweis-Toast.
+- **Server-Panel** (`shared/servers.js`/`servers.css`, gemeinsam mit dem
+  Popup): Login-Karte nutzt die vorhandenen Ark-Eingabefelder (inkl.
+  Fokusring), jede Serverzeile erhält Kopieren- und Tab-Öffnen-Button.
 
 ## UI-Kompaktheits-Durchgang (Dateimanager)
 
