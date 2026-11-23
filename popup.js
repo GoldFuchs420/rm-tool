@@ -22,6 +22,14 @@ let sending = false;         // verhindert parallele Sende-Vorgänge
 
 const $ = (id) => document.getElementById(id);
 
+/* Mehrsprachigkeit: dieselbe Tabelle wie der Dateimanager (assets/js/i18n.js).
+   Statische Texte stehen mit data-i18n im HTML und werden unten uebersetzt. */
+const t = (key, vars) => (window.RMX && RMX.t ? RMX.t(key, vars) : key);
+document.querySelectorAll("[data-i18n]").forEach((el) => {
+  const txt = t(el.getAttribute("data-i18n"));
+  if (txt && txt !== el.getAttribute("data-i18n")) el.textContent = txt;
+});
+
 /* ---------------------------------------------------------------------
  * Server (gemeinsame Komponente, siehe shared/servers.js) + Einstellungen
  * pro Seite (Hostname) für die Schriftgröße
@@ -211,6 +219,16 @@ $("fontSlider").addEventListener("input", () => {
 });
 $("fontSlider").addEventListener("change", () => saveSettingsForHost(currentTabInfo?.hostname));
 $("includeArticle").addEventListener("change", updateSendButton);
+
+/* Schalter: alle gewaehlten Bilder in EINEM zusammenhaengenden PDF (Standard)
+   oder ein eigenes PDF je Bild. Die Wahl bleibt gespeichert. */
+let onePerPdf = false;
+try { onePerPdf = localStorage.getItem("rmx.oneimg") === "1"; } catch (e) { /* private mode */ }
+$("onePerPdf").checked = onePerPdf;
+$("onePerPdf").addEventListener("change", () => {
+  onePerPdf = $("onePerPdf").checked;
+  try { localStorage.setItem("rmx.oneimg", onePerPdf ? "1" : "0"); } catch (e) { /* private mode */ }
+});
 
 /* ---- PDF-Erzeugung aus dem extrahierten Artikel (Kapitel-Umbruch,
    Bild-Umfluss/Orphan-Schutz) ---- */
@@ -713,7 +731,8 @@ function renderImageStrip() {
     const sendOneBtn = document.createElement("button");
     sendOneBtn.type = "button";
     sendOneBtn.className = "send-one-btn";
-    sendOneBtn.title = "Nur dieses Bild sofort senden";
+    sendOneBtn.title = t("sendOneTitle");
+    sendOneBtn.setAttribute("aria-label", sendOneBtn.title);
     sendOneBtn.textContent = "↑";
     sendOneBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -823,7 +842,7 @@ async function sendNow({ article, images } = {}) {
   resultsEl.innerHTML = "";
 
   if (wantArticle) {
-    resultsEl.appendChild(sectionHeading("Artikel"));
+    resultsEl.appendChild(sectionHeading(t("pageAsPdfHead")));
     try {
       let blob, filenameBase;
       if (isPdfSource) {
@@ -843,30 +862,55 @@ async function sendNow({ article, images } = {}) {
   }
 
   if (wantImages) {
-    resultsEl.appendChild(sectionHeading(images.length === 1 ? "Bild" : "Bilder"));
-    try {
-      const { blob, loadedCount, totalCount } = await buildImagesPdf(images);
-      if (!blob || loadedCount === 0) {
+    resultsEl.appendChild(sectionHeading(images.length === 1 ? t("imageHead") : t("imagesHead")));
+    /* Standard: alle Bilder in einem zusammenhaengenden PDF. Mit dem Schalter
+       "Ein Bild pro PDF" bekommt jedes Bild sein eigenes PDF. */
+    if (onePerPdf) {
+      let ok = 0;
+      for (const img of images) {
+        try {
+          const { blob } = await buildImagesPdf([img]);
+          if (!blob) continue;
+          await uploadToAllServers(blob, sanitizeFilename(img.alt || filenameFromUrl(img.src)), resultsEl, targets);
+          ok++;
+        } catch (e) {
+          const li = document.createElement("li");
+          li.className = "fail";
+          li.textContent = `✗ ${sanitizeFilename(img.alt || filenameFromUrl(img.src))}: ${e.message || e}`;
+          resultsEl.appendChild(li);
+        }
+      }
+      if (!ok) {
         const li = document.createElement("li");
         li.className = "fail";
-        li.textContent = "✗ Keines der Bilder konnte geladen werden.";
+        li.textContent = `✗ ${t("imgNoneLoaded")}`;
         resultsEl.appendChild(li);
-      } else {
-        if (loadedCount < totalCount) {
-          const warn = document.createElement("li");
-          warn.textContent = `⚠ ${totalCount - loadedCount} von ${totalCount} Bildern konnten nicht geladen werden.`;
-          resultsEl.appendChild(warn);
-        }
-        const filenameBase = images.length === 1
-          ? sanitizeFilename(images[0].alt || filenameFromUrl(images[0].src))
-          : sanitizeFilename(currentTabInfo?.pageTitle || currentTabInfo?.title || "Bilder");
-        await uploadToAllServers(blob, filenameBase, resultsEl, targets);
       }
-    } catch (e) {
-      const li = document.createElement("li");
-      li.className = "fail";
-      li.textContent = `✗ Fehlgeschlagen: ${e.message || e}`;
-      resultsEl.appendChild(li);
+    } else {
+      try {
+        const { blob, loadedCount, totalCount } = await buildImagesPdf(images);
+        if (!blob || loadedCount === 0) {
+          const li = document.createElement("li");
+          li.className = "fail";
+          li.textContent = `✗ ${t("imgNoneLoaded")}`;
+          resultsEl.appendChild(li);
+        } else {
+          if (loadedCount < totalCount) {
+            const warn = document.createElement("li");
+            warn.textContent = `⚠ ${totalCount - loadedCount} / ${totalCount}`;
+            resultsEl.appendChild(warn);
+          }
+          const filenameBase = images.length === 1
+            ? sanitizeFilename(images[0].alt || filenameFromUrl(images[0].src))
+            : sanitizeFilename(currentTabInfo?.pageTitle || currentTabInfo?.title || "Bilder");
+          await uploadToAllServers(blob, filenameBase, resultsEl, targets);
+        }
+      } catch (e) {
+        const li = document.createElement("li");
+        li.className = "fail";
+        li.textContent = `✗ Fehlgeschlagen: ${e.message || e}`;
+        resultsEl.appendChild(li);
+      }
     }
   }
 

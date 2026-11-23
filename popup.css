@@ -27,6 +27,16 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
 
 .rmx-select-row { display: flex; gap: 14px; margin-top: 8px; }
 
+/* Zwei getrennte, kompakte Gruppierungen: "Seite als PDF" und "Bilder" */
+.rmx-popup-group {
+  margin: 8px 10px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+  border: 1px solid var(--ark-divider-muted); border-radius: 6px; border-bottom: 1px solid var(--ark-divider-muted);
+}
+.rmx-popup-group:last-of-type { margin-bottom: 8px; }
+.rmx-popup-group .rmx-field-row { margin-top: 0; }
+.rmx-popup-group .image-strip { margin-top: 0; }
+.rmx-dialog .ark-switch--input, .rmx-popup-group .ark-switch--input { cursor: pointer; }
+
 /* Bilder: kompakter horizontaler Filmstreifen statt Raster */
 .image-strip {
   display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden;

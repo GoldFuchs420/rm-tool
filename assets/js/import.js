@@ -65,6 +65,7 @@
         vals.ascii = app.store('rmx.ascii') === '1';
         buildShell();
         dlg.showModal();
+        renderMain();   /* also with an empty dialog: this creates the "Add files" button */
       } else if (mode === 'working') {
         return; /* while converting, queued files are completed first */
       }
