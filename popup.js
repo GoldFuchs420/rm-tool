@@ -75,7 +75,7 @@ async function uploadOne(blob, filenameBase, server) {
     const form = new FormData();
     form.append("file", blob, filenameBase + ".pdf");
     const headers = { Authorization: RMXServers.authHeaderFor(server) };
-    const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form });
+    const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form, credentials: "omit" });
     if (res.ok) return { ok: true };
     return { ok: false, code: res.status };
   } catch (e) {

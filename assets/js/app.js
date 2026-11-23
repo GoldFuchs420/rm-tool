@@ -52,7 +52,10 @@
     checks: 'M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM72,168a8,8,0,0,1-5.66-2.34l-24-24a8,8,0,0,1,11.32-11.32L72,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32l-64,64A8,8,0,0,1,72,168Zm141.66-66.34-64,64a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,11.32-11.32L144,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z',
     calendarBlank: 'M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,48H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z'
   };
+  /* Trichter mit X (Filter zuruecksetzen); Linien-Icon, deshalb eigenes SVG. */
+  var FUNNEL_CLEAR = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="62" y1="130" x2="178" y2="130"/><line x1="32" y1="84" x2="178" y2="84"/><line x1="98" y1="176" x2="144" y2="176"/><line x1="160" y1="164" x2="204" y2="208"/><line x1="204" y1="164" x2="160" y2="208"/></svg>';
   function icon(name, size, extra) {
+    if (name === 'funnelClear') return FUNNEL_CLEAR;
     var s = size || 24;
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"' +
       (extra ? ' ' + extra : '') + '><path d="' + PATH[name] + '"/></svg>';
@@ -557,7 +560,7 @@
       '<div class="rmx-search">' +
       '<div class="rmx-search__field">' + icon('search', 22) + '<input id="f-q" type="search" class="ark-input" autocomplete="off" spellcheck="false" placeholder="' + esc(t('searchPlaceholder')) + '" aria-label="' + esc(t('searchPlaceholder')) + '"></div>' +
       '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-medium" data-act="filter-toggle" id="f-toggle" aria-expanded="false" aria-controls="f-panel">' + icon('sliders', 20) + '<p class="responsive-body-md">' + esc(t('filters')) + '</p><span class="rmx-count" id="f-badge" hidden></span></button>' +
-      '<button type="button" class="rmx-iconbtn" data-act="filter-reset" id="f-reset" hidden aria-label="' + esc(t('filtersReset')) + '" title="' + esc(t('filtersReset')) + '">' + icon('close', 18) + '</button></div>' +
+      '<button type="button" class="rmx-iconbtn" data-act="filter-reset" id="f-reset" hidden aria-label="' + esc(t('filtersReset')) + '" title="' + esc(t('filtersReset')) + '">' + icon('funnelClear', 18) + '</button></div>' +
       '<div class="rmx-filters" id="f-panel" hidden>' +
       '<div class="ark-field">' + sel('f-type', t('fType'), '<option value="">' + esc(t('fTypeAll')) + '</option>') + chk('f-fav', t('fFav')) + '</div>' +
       '<div class="ark-field">' + sel('f-folder', t('fFolder'), '') + chk('f-sub', t('fSub')) + '</div>' +
@@ -571,7 +574,7 @@
           '<svg class="rmx-ccw" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L60.63,81.29l17,17A8,8,0,0,1,72,112H24a8,8,0,0,1-8-8V56A8,8,0,0,1,29.66,50.3L49.31,70,60.25,60A96,96,0,0,1,224,128Z"/></svg></span>' +
           '<span class="responsive-body-sm">' + p + '</span></button>';
       }).join('') +
-      '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset-reset title="' + esc(t('fDateReset')) + '" aria-label="' + esc(t('fDateReset')) + '">' + icon('close', 18) + '</button></div>' +
+      '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset-reset title="' + esc(t('fDateReset')) + '" aria-label="' + esc(t('fDateReset')) + '">' + icon('funnelClear', 18) + '</button></div>' +
       '</div></div>';
   }
   function syncFilterFields() {
