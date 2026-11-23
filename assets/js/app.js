@@ -401,11 +401,11 @@
     var sortLabels = { lastModified: t('sortLastUpdated'), visibleName: t('sortAlpha'), fileType: t('sortType') };
     var pool = curResults ? curResults.filter(function (x) { return !isFolder(x); }).map(function (x) { return x.ID; }) : leaves(state.folder);
     var allSelected = !pool.length || pool.every(function (x) { return state.selected.has(x); });
-    var btn = function (act, label, disabled, ico) {
-      return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="' + act + '" data-key="act:' + act + '"' + (disabled ? ' disabled' : '') + ' title="' + esc(label) + '" aria-label="' + esc(label) + '">' + icon(ico, 16) + '<p class="responsive-body-sm">' + esc(label) + '</p></button>';
+    var btn = function (act, label, disabled, ico, ghost) {
+      return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="' + act + '" data-key="act:' + act + '"' + (disabled ? ' disabled' : '') + ' title="' + esc(label) + '" aria-label="' + esc(label) + '">' + icon(ico, 16, ghost ? 'class="rmx-ico--ghost"' : '') + '<p class="responsive-body-sm">' + esc(label) + '</p></button>';
     };
     var html = curResults ? '<span class="rmx-resultcount responsive-body-md" aria-live="polite">' + esc(t('resultsCount', { n: curResults.length })) + '</span>' : '';
-    html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected, 'checks') + btn('clear', t('clearSelection'), !n, 'close') + btn('copy', t('copyBtn'), !nDocs, 'copySimple') + '</div>' +
+    html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected, 'checks') + btn('clear', t('clearSelection'), !n, 'checks', true) + btn('copy', t('copyBtn'), !nDocs, 'copySimple') + '</div>' +
       '<span class="spacer"></span><div class="rmx-viewbar">' +
       '<label class="rmx-choice rmx-thumbtoggle"><input type="checkbox" class="ark-input-checkbox" id="thumb-toggle" data-key="thumb:toggle"' + (state.thumbs ? ' checked' : '') + '><span class="txt"><span class="responsive-body-sm">' + esc(t('thumbnails')) + '</span></span></label>';
 
@@ -464,6 +464,7 @@
       return '<button type="button" class="rmx-iconbtn" ' + attr + '="' + id + '" data-key="' + key + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon(ico, 22) + '</button>';
     };
     return (doc ? pill('pdf', 'PDF', t('downloadPdf')) + pill('rmdoc', 'RMDoc', t('downloadRmdoc')) : '') +
+      (doc ? ib('data-pv', 'pv', 'eye', t('preview')) : '') +
       ib('data-info', 'info', 'infoIcon', t('info'));
   }
   function docRow(it, showPath) {
@@ -564,7 +565,13 @@
       '<div class="rmx-daterow">' +
       '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
       '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
-      '<div class="rmx-presets">' + ['7', '30', 'year'].map(function (p) { return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-preset="' + p + '">' + icon('calendarBlank', 16) + '<p class="responsive-body-sm">' + esc(t(p === '7' ? 'fPreset7' : p === '30' ? 'fPreset30' : 'fPresetYear')) + '</p></button>'; }).join('') + '</div>' +
+      '<div class="rmx-presets">' + ['7', '30', 'year'].map(function (p) {
+        var labl = t(p === '7' ? 'fPreset7' : p === '30' ? 'fPreset30' : 'fPresetYear');
+        return '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset="' + p + '" title="' + esc(labl) + '" aria-label="' + esc(labl) + '">' +
+          '<span class="rmx-calpreset">' + icon('calendarBlank', 18) +
+          '<svg class="rmx-ccw" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L60.63,81.29l17,17A8,8,0,0,1,72,112H24a8,8,0,0,1-8-8V56A8,8,0,0,1,29.66,50.3L49.31,70,60.25,60A96,96,0,0,1,224,128Z"/></svg></span>' +
+          '</button>';
+      }).join('') + '</div>' +
       '</div></div>';
   }
   function syncFilterFields() {
@@ -717,6 +724,8 @@
     var target = e.target;
     var chk = target.closest('[data-chk]');
     if (chk) { e.stopPropagation(); toggleSelect(chk.getAttribute('data-chk')); return; }
+    var pvBtn = target.closest('[data-pv]');
+    if (pvBtn) { e.stopPropagation(); if (app.previewDocument) app.previewDocument(pvBtn.getAttribute('data-pv')); return; }
     var infoBtn = target.closest('[data-info]');
     if (infoBtn) { e.stopPropagation(); if (app.openDetails) app.openDetails(infoBtn.getAttribute('data-info')); return; }
     var dlBtn = target.closest('[data-dl]');

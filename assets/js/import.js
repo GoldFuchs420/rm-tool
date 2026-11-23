@@ -29,9 +29,18 @@
       return null;
     }
     var NOISE = /(^|\/)_(export-fehler|export-errors|errori-esportazione|errores-exportacion|erreurs-exportation)\.txt$/i;
+    /** Already in the list (same name and size)? Repeated file selection then
+     *  only refreshes the existing entries instead of piling up duplicates. */
+    function indexOfExisting(file) {
+      return items.findIndex(function (x) {
+        return x.file && x.file.name === file.name && x.file.size === file.size;
+      });
+    }
+
     /** Adds files; zip / tar.gz archives are opened and their entries keep the folder path. */
     async function addFiles(files) {
       var skippedEntries = 0;
+      var duplicates = 0;
       for (var n = 0; n < files.length; n++) {
         var f = files[n];
         if (R.archive.isArchive(f)) {
@@ -44,6 +53,7 @@
               var file = new File([e.blob], parts.pop());
               var k = NOISE.test(e.path) ? null : kindOf(file);
               if (!k) { skippedEntries++; return; }
+              if (indexOfExisting(file) >= 0) { duplicates++; return; }
               items.push({ id: ++uid, file: file, kind: k, folderPath: parts, fromArchive: true });
             });
           } catch (e) { console.error(e); app.toast(t('archiveFailed', { name: f.name, msg: e.message }), true); }
@@ -52,9 +62,12 @@
         }
         var kind = kindOf(f);
         if (!kind) { app.toast(t('unsupported', { name: f.name }), true); continue; }
+        var at = indexOfExisting(f);
+        if (at >= 0) { items[at].file = f; items[at].kind = kind; duplicates++; continue; }
         items.push({ id: ++uid, file: f, kind: kind });
       }
       if (skippedEntries) app.toast(t('archiveSkipped', { n: skippedEntries }));
+      if (duplicates) app.toast(t('alreadyList', { n: duplicates }));
     }
 
     app.openImport = async function (files) {

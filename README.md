@@ -479,6 +479,41 @@ Durchgängiger Aufräum-Durchgang über den gesamten Code:
 
 ---
 
+## Popup-Expander, Statusliste und Feinschliff (Dateimanager)
+
+Aktuelle Runde UX-Verbesserungen:
+
+- **Popup: Gruppen als Expander** — „Seite als PDF“ ist eine offene
+  Gruppe mit Häkchen in der Überschrift (statt des alten Schalters);
+  „Bilder“ ist eine zuklappbare Gruppe. Die Bild-Anzahl-Texte sind
+  entfallen, der Einzel-Upload-Button pro Bild ebenso. Der Schalter
+  heißt jetzt „Einzelmodus“ (jedes Bild als eigenes PDF).
+- **Senden-Button zeigt, was gesendet wird** — z. B. „Webseite und
+  4 Bilder senden“, „Webseite senden“, „4 Bilder senden“, je
+  nach Auswahl, in fünf Sprachen.
+- **Status-Expander vor dem Senden-Button** — erscheint beim Senden
+  und ist auffaltbar; zugeklappt zeigt er „x von n Dateien“. Eine
+  Zeile pro Datei (Webseite, zusammengefasstes Bilder-PDF bzw. je
+  Bild im Einzelmodus) mit Spinner, dann Grün/Rot/Gelb-Status und
+  den Server-Ergebnissen im Tooltip.
+- **Dateimanager mobil und ikonografisch** — Toolbar/Schaltleisten
+  umbrechen auf schmalen Displays sauber, Dateizeilen haben hori-
+  zontale Polster (Auswahlrahmen überlappt keinen Inhalt mehr), die
+  Datums-Presets sind reine Icons (Kalender mit Gegen-Uhrzeigersinn-
+  Pfeil), „Auswahl aufheben“ nutzt die Negativversion des
+  Alles-auswählen-Icons, Vorschaubilder ~20 % größer.
+- **Import-Ergebniszeilen** — Vorschau und Dateityp-Badge links vor
+  dem mehrzeiligen Titel; wiederholte Auswahl bereits gelisteter
+  Dateien aktualisiert sie, statt Duplikate anzulegen.
+- **Details-Dialog** — der Vorschau-Knopf in der Fußeile ist ent-
+  fernt; das Vorschaubild (Seitenformate abseits von A4 bleiben erhalten)
+  trägt ein Augen-Badge als Klick-Hinweis. In der Dateiliste zeigt
+  ein Augen-Icon direkt neben „Details“ die Vorschau an.
+- Eingabefelder haben dezente Standard-Outlines, der Fokusring bleibt
+  klar; bei der Suche/Filterung bleibt alles zweispaltig kompatibel.
+
+---
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.

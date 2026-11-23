@@ -66,51 +66,34 @@ function sanitizeFilename(s) {
   return RMXShared.sanitizeFilename(s);
 }
 
-// Lädt einen Blob als PDF an die übergebenen Server hoch, parallel, mit
-// Einzelergebnis pro Server (angehängt an resultsEl, nicht geleert –
-// der Aufrufer steuert, wann die Liste zurückgesetzt wird, damit Artikel-
-// und Bilder-Ergebnisse in einem kombinierten Senden nebeneinander
-// stehen können).
-async function uploadToAllServers(blob, filenameBase, resultsEl, targets) {
-  if (!targets.length) return;
-  const frag = document.createDocumentFragment();
-  const rows = new Map();
-  for (const s of targets) {
-    const li = document.createElement("li");
-    li.textContent = t("upPending", { url: s.url }, `⏳ ${s.url} …`);
-    frag.appendChild(li);
-    rows.set(s.id, li);
+// Lädt einen Blob als PDF an alle übergebenen Server (parallel) und liefert
+// das je-Server-Ergebnis zurück: { ok, fail, total, detail }. Eine Zeile pro
+// DATEI im Status-Expander fasst die Server-Ergebnisse zusammen; im
+// title-Attribut steht die Server-Liste für die Details.
+async function uploadOne(blob, filenameBase, server) {
+  try {
+    const form = new FormData();
+    form.append("file", blob, filenameBase + ".pdf");
+    const headers = {};
+    if (server.hasCreds) headers["Authorization"] = "Basic " + btoa(`${server.user}:${server.pass}`);
+    const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form });
+    if (res.ok) return { ok: true };
+    return { ok: false, code: res.status };
+  } catch (e) {
+    return { ok: false, msg: (e && e.message) || String(e) };
   }
-  resultsEl.appendChild(frag);
-
-  await Promise.allSettled(targets.map(async (server) => {
-    const li = rows.get(server.id);
-    try {
-      const form = new FormData();
-      form.append("file", blob, filenameBase + ".pdf");
-      const headers = {};
-      if (server.hasCreds) headers["Authorization"] = "Basic " + btoa(`${server.user}:${server.pass}`);
-      const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form });
-      if (res.ok) {
-        li.textContent = t("upOk", { url: server.url }, `✓ ${server.url}`);
-        li.className = "ok";
-      } else {
-        li.textContent = t("upFailHttp", { url: server.url, code: res.status }, `✗ ${server.url} (HTTP ${res.status})`);
-        li.className = "fail";
-      }
-    } catch (e) {
-      li.textContent = t("upFail", { msg: `${server.url} ${e.message || e}`.trim(), }, `✗ ${server.url} (${e.message || e})`);
-      li.className = "fail";
-    }
-  }));
 }
 
-function sectionHeading(text) {
-  const li = document.createElement("li");
-  li.className = "rmx-result-heading";
-  li.style.cssText = "font-weight:600;margin-top:6px";
-  li.textContent = text;
-  return li;
+async function uploadToAllServers(blob, filenameBase, targets) {
+  const results = await Promise.all(targets.map((server) => uploadOne(blob, filenameBase, server)));
+  let ok = 0;
+  const detail = results.map((r, i) => {
+    const url = targets[i].url;
+    if (r.ok) { ok++; return t("upOk", { url }, `✓ ${url}`); }
+    if (r.code != null) return t("upFailHttp", { url, code: r.code }, `✗ ${url} (HTTP ${r.code})`);
+    return t("upFail", { msg: `${url} ${r.msg || ""}`.trim() }, `✗ ${url} (${r.msg || ""})`);
+  });
+  return { ok, fail: results.length - ok, total: results.length, detail: detail.join("\n") };
 }
 
 /* ---------------------------------------------------------------------
@@ -710,13 +693,15 @@ function filenameFromUrl(url) {
 
 function renderImageStrip() {
   const strip = $("imageStrip");
+  const status = $("imageStatus");
 
   if (foundImages.length === 0) {
-    $("imageStatus").textContent = t("stNoImages", null, "Keine passenden Bilder auf dieser Seite gefunden.");
+    status.hidden = false;
+    status.textContent = t("stNoImages", null, "Keine passenden Bilder auf dieser Seite gefunden.");
     strip.innerHTML = "";
     return;
   }
-  $("imageStatus").textContent = foundImages.length === 1 ? t("stImgCount", { n: 1 }, "1 Bild") : t("stImgsCount", { n: foundImages.length }, `${foundImages.length} Bilder`);
+  status.hidden = true;
 
   const frag = document.createDocumentFragment();
   for (const img of foundImages) {
@@ -734,25 +719,13 @@ function renderImageStrip() {
 
     const badge = document.createElement("div");
     badge.className = "select-badge";
-    badge.textContent = selectedSrcs.has(img.src) ? "✓" : "";
-
-    const sendOneBtn = document.createElement("button");
-    sendOneBtn.type = "button";
-    sendOneBtn.className = "send-one-btn";
-    sendOneBtn.title = t("sendOneTitle");
-    sendOneBtn.setAttribute("aria-label", sendOneBtn.title);
-    sendOneBtn.textContent = "↑";
-    sendOneBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (sending) return;
-      await sendNow({ images: [img] });
-    });
+    badge.textContent = selectedSrcs.has(img.src) ? "\u2713" : "";
 
     box.addEventListener("click", () => {
       if (selectedSrcs.has(img.src)) selectedSrcs.delete(img.src);
       else selectedSrcs.add(img.src);
       tile.classList.toggle("selected");
-      badge.textContent = selectedSrcs.has(img.src) ? "✓" : "";
+      badge.textContent = selectedSrcs.has(img.src) ? "\u2713" : "";
       updateSendButton();
     });
 
@@ -761,7 +734,7 @@ function renderImageStrip() {
     label.textContent = img.alt || filenameFromUrl(img.src);
     label.title = img.alt || img.src;
 
-    box.append(badge, sendOneBtn);
+    box.append(badge);
     tile.append(box, label);
     frag.appendChild(tile);
   }
@@ -779,7 +752,11 @@ $("selectNoneBtn").addEventListener("click", () => {
   renderImageStrip();
   updateSendButton();
 });
-$("rescanBtn").addEventListener("click", () => scanCurrentTab());
+$("rescanBtn").addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  scanCurrentTab();
+});
 
 /* ---- PDF-Erzeugung: jedes Bild bekommt eine eigene Seite im exakten
    Bild-Seitenverhältnis (randlos, kein Letterboxing). ---- */
@@ -827,13 +804,61 @@ async function buildImagesPdf(images) {
  * Senden: Artikel und/oder Bilder, gemeinsam oder einzeln, an alle
  * aktuell erreichbaren Server.
  * ------------------------------------------------------------------- */
+function sendLabel(hasArticle, n) {
+  if (hasArticle && n > 0) return t(n === 1 ? "sendBothImage" : "sendBothImages", { n });
+  if (hasArticle) return t("sendPage");
+  if (n > 0) return t(n === 1 ? "sendImage" : "sendImages", { n });
+  return t("sendBtnLabel", null, "Senden");
+}
+
 function updateSendButton() {
   const hasArticle = $("includeArticle").checked && articleReady;
-  const hasImages = selectedSrcs.size > 0;
-  $("sendBtn").disabled = (!hasArticle && !hasImages) || readyServers().length === 0 || sending;
+  const n = selectedSrcs.size;
+  const btn = $("sendBtn");
+  btn.disabled = (!hasArticle && n === 0) || readyServers().length === 0 || sending;
   /* Kein Server erreichbar: nur das Serverpanel zeigen (Senden/Konfiguration
      der restlichen Bereiche ist dann ohne Zweck). */
   document.body.classList.toggle("rmx-nosrv", readyServers().length === 0);
+  if (!sending) btn.textContent = sendLabel(hasArticle, n);
+}
+
+/* Status-Expander: eine Zeile pro DATEI (Webseite, zusammengefasstes
+   Bilder-PDF oder je Bild im Einzelmodus). Darunter fasst jede Zeile die
+   Server-Ergebnisse zusammen (title-Attribut = Detailliste). */
+const RES_GLYPHS = {
+  ok: '<svg class="rmx-ico" width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>',
+  fail: '<svg class="rmx-ico" width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32Z"/></svg>',
+  partial: '<svg class="rmx-ico" width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM124,96a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,132,184Z"/></svg>'
+};
+
+function statusRow(label) {
+  const li = document.createElement("li");
+  li.className = "pending";
+  const spin = document.createElement("span");
+  spin.className = "rmx-spinner rmx-row-spin";
+  const lbl = document.createElement("span");
+  lbl.className = "rrow-label";
+  lbl.textContent = label;
+  li.append(spin, lbl);
+  return li;
+}
+
+function settleRow(li, cls, res) {
+  li.className = cls;
+  li.title = (res && res.detail) || "";
+  if (res && res.label) {
+    const lbl = li.querySelector(".rrow-label");
+    if (lbl) lbl.textContent = res.label;
+  }
+  const g = document.createElement("span");
+  g.className = "rrow-glyph";
+  g.innerHTML = RES_GLYPHS[cls] || RES_GLYPHS.partial;
+  li.replaceChild(g, li.firstChild);
+}
+
+function resultClass(res) {
+  if (res.ok === res.total) return "ok";
+  return res.ok > 0 ? "partial" : "fail";
 }
 
 async function sendNow({ article, images } = {}) {
@@ -846,82 +871,85 @@ async function sendNow({ article, images } = {}) {
 
   sending = true;
   updateSendButton();
+
+  /* Bildplan: zusammengefasst = max. 2 Dateien (Webseite + Bilder-PDF),
+     Einzelmodus = eine Datei pro Bild. */
+  const files = [];
+  if (wantArticle) files.push({ kind: "article" });
+  if (wantImages && onePerPdf) {
+    for (const img of images) files.push({ kind: "image", img });
+  } else if (wantImages) {
+    files.push({ kind: "images", list: images });
+  }
+
+  const box = $("statusBox");
+  box.hidden = false;
+  box.open = true;
   const resultsEl = $("results");
   resultsEl.innerHTML = "";
+  const spin = $("statusSpin");
+  spin.hidden = false;
 
-  if (wantArticle) {
-    resultsEl.appendChild(sectionHeading(t("pageAsPdfHead")));
+  const rows = files.map((f) => {
+    const li = statusRow(
+      f.kind === "article" ? (currentTabInfo?.title || t("pageAsPdfHead"))
+        : f.kind === "images" ? t("imagesHead")
+        : sanitizeFilename(f.img.alt || filenameFromUrl(f.img.src))
+    );
+    resultsEl.appendChild(li);
+    return li;
+  });
+
+  const total = files.length;
+  let done = 0;
+  const refreshSummary = () => {
+    $("statusSummaryText").textContent = t("statusSummary", { done, n: total }, `${done} von ${total} Dateien`);
+  };
+  refreshSummary();
+
+  const settle = (i, cls, res) => {
+    done++;
+    settleRow(rows[i], cls, res);
+    refreshSummary();
+  };
+
+  await Promise.all(files.map(async (f, i) => {
     try {
-      let blob, filenameBase;
-      if (isPdfSource) {
-        blob = pdfSourceBlob;
-        filenameBase = sanitizeFilename(currentTabInfo?.title || "Dokument");
-      } else {
-        blob = await buildPdfFromArticle(articleData.title || "Artikel", articleData.content, fontSize, currentTabInfo?.url);
-        filenameBase = sanitizeFilename(articleData.title || "Artikel");
-      }
-      await uploadToAllServers(blob, filenameBase, resultsEl, targets);
-    } catch (e) {
-      const li = document.createElement("li");
-      li.className = "fail";
-      li.textContent = t("upFail", { msg: e.message || e }, `✗ Fehlgeschlagen: ${e.message || e}`);
-      resultsEl.appendChild(li);
-    }
-  }
-
-  if (wantImages) {
-    resultsEl.appendChild(sectionHeading(images.length === 1 ? t("imageHead") : t("imagesHead")));
-    /* Standard: alle Bilder in einem zusammenhaengenden PDF. Mit dem Schalter
-       "Ein Bild pro PDF" bekommt jedes Bild sein eigenes PDF. */
-    if (onePerPdf) {
-      let ok = 0;
-      for (const img of images) {
-        try {
-          const { blob } = await buildImagesPdf([img]);
-          if (!blob) continue;
-          await uploadToAllServers(blob, sanitizeFilename(img.alt || filenameFromUrl(img.src)), resultsEl, targets);
-          ok++;
-        } catch (e) {
-          const li = document.createElement("li");
-          li.className = "fail";
-          li.textContent = `✗ ${sanitizeFilename(img.alt || filenameFromUrl(img.src))}: ${e.message || e}`;
-          resultsEl.appendChild(li);
-        }
-      }
-      if (!ok) {
-        const li = document.createElement("li");
-        li.className = "fail";
-        li.textContent = `✗ ${t("imgNoneLoaded")}`;
-        resultsEl.appendChild(li);
-      }
-    } else {
-      try {
-        const { blob, loadedCount, totalCount } = await buildImagesPdf(images);
-        if (!blob || loadedCount === 0) {
-          const li = document.createElement("li");
-          li.className = "fail";
-          li.textContent = `✗ ${t("imgNoneLoaded")}`;
-          resultsEl.appendChild(li);
+      if (f.kind === "article") {
+        let blob, filenameBase;
+        if (isPdfSource) {
+          blob = pdfSourceBlob;
+          filenameBase = sanitizeFilename(currentTabInfo?.title || "Dokument");
         } else {
-          if (loadedCount < totalCount) {
-            const warn = document.createElement("li");
-            warn.textContent = `⚠ ${totalCount - loadedCount} / ${totalCount}`;
-            resultsEl.appendChild(warn);
-          }
-          const filenameBase = images.length === 1
-            ? sanitizeFilename(images[0].alt || filenameFromUrl(images[0].src))
-            : sanitizeFilename(currentTabInfo?.pageTitle || currentTabInfo?.title || "Bilder");
-          await uploadToAllServers(blob, filenameBase, resultsEl, targets);
+          blob = await buildPdfFromArticle(articleData.title || "Artikel", articleData.content, fontSize, currentTabInfo?.url);
+          filenameBase = sanitizeFilename(articleData.title || "Artikel");
         }
-      } catch (e) {
-        const li = document.createElement("li");
-        li.className = "fail";
-        li.textContent = t("upFail", { msg: e.message || e }, `✗ Fehlgeschlagen: ${e.message || e}`);
-        resultsEl.appendChild(li);
+        const res = await uploadToAllServers(blob, filenameBase, targets);
+        settle(i, resultClass(res), res);
+      } else if (f.kind === "images") {
+        const { blob, loadedCount, totalCount } = await buildImagesPdf(f.list);
+        if (!blob || loadedCount === 0) { settle(i, "fail", { label: t("imgNoneLoaded") }); return; }
+        const filenameBase = sanitizeFilename(currentTabInfo?.pageTitle || currentTabInfo?.title || "Bilder");
+        const res = await uploadToAllServers(blob, filenameBase, targets);
+        if (loadedCount < totalCount) {
+          const warn = t("imgSomeLoaded", { n: totalCount - loadedCount, m: totalCount });
+          res.detail = warn + "\n" + res.detail;
+          settle(i, res.ok > 0 ? "partial" : "fail", res);
+        } else {
+          settle(i, resultClass(res), res);
+        }
+      } else {
+        const { blob } = await buildImagesPdf([f.img]);
+        if (!blob) { settle(i, "fail", { label: t("imgNoneLoaded") }); return; }
+        const res = await uploadToAllServers(blob, sanitizeFilename(f.img.alt || filenameFromUrl(f.img.src)), targets);
+        settle(i, resultClass(res), res);
       }
+    } catch (e) {
+      settle(i, "fail", { label: String(e.message || e), detail: String(e.message || e) });
     }
-  }
+  }));
 
+  spin.hidden = true;
   sending = false;
   updateSendButton();
 }

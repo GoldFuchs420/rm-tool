@@ -151,10 +151,7 @@
         (doc ? '<div class="rmx-dpv" id="dt-prev" data-dt="prev" role="button" tabindex="0" aria-label="' + esc(t('preview')) + '"><span class="rmx-spinner"></span></div>' : '') +
         '<dl class="rmx-dl">' + rows.map(function (r) {
           return '<div><dt class="responsive-body-sm rmx-muted">' + esc(r[0]) + '</dt><dd class="responsive-body-md">' + esc(r[1]) + (r[0] === t('dFav') && it.Bookmarked ? ' ' + icon('starFill', 16, 'class="rmx-starinl"') : '') + '</dd></div>';
-        }).join('') + '</dl></div>' +
-        (doc ? '<div class="rmx-dialog__foot rmx-foot--list">' : '<div hidden>') + (doc
-          ? app.btn(t('preview'), 'data-dt="prev"', 'preview')
-          : '') + '</div>';
+        }).join('') + '</dl></div>';
       dlgD.setAttribute('aria-labelledby', 'dlg-detail-title');
       if (!dlgD.open) dlgD.showModal();
       if (doc) {
@@ -164,6 +161,12 @@
           if (tok !== detailTok || !host) return;
           host.innerHTML = '';
           host.appendChild(canvas);
+          /* Augen-Badge als Klick-Hinweis: das Bild ist die Vorschau */
+          var hint = document.createElement('span');
+          hint.className = 'rmx-dpv-eye';
+          hint.setAttribute('aria-hidden', 'true');
+          hint.innerHTML = icon('eye', 16);
+          host.appendChild(hint);
           host.classList.add('is-ready');
         }).catch(function (e) {
           var host = $('#dt-prev');

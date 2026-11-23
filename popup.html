@@ -11,58 +11,67 @@
 <body>
   <header class="rmx-popup-header">
     <p class="responsive-heading-sm" style="margin:0">reMarkable Toolkit</p>
-    <button id="openManager" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" data-i18n-title="openManager" title="Dateiverwaltung öffnen" aria-label="Dateiverwaltung öffnen">🗂</button>
+    <button id="openManager" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" data-i18n-title="openManager" title="Dateiverwaltung öffnen" aria-label="Dateiverwaltung öffnen">🗃</button>
   </header>
 
   <section id="serverPanel" class="rmx-popup-section"></section>
 
   <section class="rmx-popup-section rmx-popup-group">
-    <div class="rmx-section-head">
-      <p class="responsive-body-md" style="margin:0;font-weight:600" data-i18n="pageAsPdfHead">Seite als PDF</p>
-    </div>
-    <div class="rmx-switchrow">
-      <span class="ark-switch">
-        <input type="checkbox" role="switch" class="ark-switch--input" id="includeArticle" checked>
-        <span class="ark-switch--track"><span class="ark-switch--thumb"></span></span>
-      </span>
-      <label for="includeArticle" class="txt" style="cursor:pointer">
-        <span class="responsive-body-md" data-i18n="articleSend">Artikel als PDF senden</span>
+    <div class="rmx-xrow">
+      <label class="rmx-xcheck" for="includeArticle">
+        <input type="checkbox" class="ark-input-checkbox" id="includeArticle" checked>
       </label>
+      <span class="responsive-body-md rmx-xtitle" data-i18n="pageAsPdfHead">Seite als PDF</span>
     </div>
-    <p id="articleStatus" class="responsive-body-sm rmx-muted" data-i18n="loading">Lade …</p>
-    <div class="rmx-field-row">
-      <label for="fontSlider" class="responsive-body-sm rmx-muted" data-i18n="fontSize">Schriftgröße</label>
-      <input id="fontSlider" type="range" min="10" max="28" value="16" step="1" />
-      <span id="fontSizeValue" class="rmx-value-badge">16</span>
+    <div class="rmx-xbody">
+      <p id="articleStatus" class="responsive-body-sm rmx-muted" data-i18n="loading">Lade …</p>
+      <div class="rmx-field-row">
+        <label for="fontSlider" class="responsive-body-sm rmx-muted" data-i18n="fontSize">Schriftgröße</label>
+        <input id="fontSlider" type="range" min="10" max="28" value="16" step="1" />
+        <span id="fontSizeValue" class="rmx-value-badge">16</span>
+      </div>
     </div>
   </section>
 
-  <section class="rmx-popup-section rmx-popup-group">
-    <div class="rmx-section-head">
-      <p class="responsive-body-md" style="margin:0;font-weight:600" data-i18n="imagesHead">Bilder</p>
+  <details class="rmx-popup-section rmx-popup-group rmx-xpander" id="grpImages">
+    <summary class="rmx-xhead">
+      <span class="responsive-body-md rmx-xpander__title" data-i18n="imagesHead">Bilder</span>
+      <span class="rmx-flex"></span>
       <button id="rescanBtn" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" data-i18n-title="rescanTitle" title="Seite erneut durchsuchen" aria-label="Seite erneut durchsuchen">↻</button>
+      <svg class="rmx-caret" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+    </summary>
+    <div class="rmx-xbody">
+      <p id="imageStatus" class="responsive-body-sm rmx-muted">—</p>
+      <div id="imageStrip" class="image-strip"></div>
+      <div class="rmx-select-row">
+        <button id="selectAllBtn" type="button" class="ark-link responsive-body-sm" data-i18n="selectAll">Alles auswählen</button>
+        <button id="selectNoneBtn" type="button" class="ark-link responsive-body-sm" data-i18n="clearSelection">Auswahl aufheben</button>
+      </div>
+      <div class="rmx-switchrow">
+        <span class="ark-switch">
+          <input type="checkbox" role="switch" class="ark-switch--input" id="onePerPdf">
+          <span class="ark-switch--track"><span class="ark-switch--thumb"></span></span>
+        </span>
+        <label for="onePerPdf" class="txt" style="cursor:pointer">
+          <span class="responsive-body-md" data-i18n="oneImagePerPdf">Einzelmodus</span>
+          <small class="responsive-body-sm rmx-muted" data-i18n="oneImagePerPdfHint">Jedes Bild als eigenes PDF</small>
+        </label>
+      </div>
     </div>
-    <p id="imageStatus" class="responsive-body-sm rmx-muted">—</p>
-    <div id="imageStrip" class="image-strip"></div>
-    <div class="rmx-select-row">
-      <button id="selectAllBtn" type="button" class="ark-link responsive-body-sm" data-i18n="selectAll">Alles auswählen</button>
-      <button id="selectNoneBtn" type="button" class="ark-link responsive-body-sm" data-i18n="clearSelection">Auswahl aufheben</button>
-    </div>
-    <div class="rmx-switchrow">
-      <span class="ark-switch">
-        <input type="checkbox" role="switch" class="ark-switch--input" id="onePerPdf">
-        <span class="ark-switch--track"><span class="ark-switch--thumb"></span></span>
-      </span>
-      <label for="onePerPdf" class="txt" style="cursor:pointer">
-        <span class="responsive-body-md" data-i18n="oneImagePerPdf">Ein Bild pro PDF</span>
-        <small class="responsive-body-sm rmx-muted" data-i18n="oneImagePerPdfHint">Aus: alle gewählten Bilder in einem PDF</small>
-      </label>
-    </div>
-  </section>
+  </details>
+
+  <details class="rmx-popup-section rmx-xpander rmx-popup-status" id="statusBox" hidden>
+    <summary class="rmx-xhead">
+      <svg class="rmx-caret" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+      <span class="responsive-body-sm rmx-xpander__title rmx-muted" id="statusSummaryText"></span>
+      <span class="rmx-flex"></span>
+      <span class="rmx-spinner rmx-status-spin" id="statusSpin" aria-hidden="true"></span>
+    </summary>
+    <ul id="results" class="results-list"></ul>
+  </details>
 
   <section class="rmx-popup-section rmx-popup-section--send">
-    <button id="sendBtn" type="button" class="ark-button ark-button--primary ark-button-large" disabled style="width:100%" data-i18n="sendBtnLabel">Senden</button>
-    <ul id="results" class="results-list"></ul>
+    <button id="sendBtn" type="button" class="ark-button ark-button--primary ark-button-large" disabled style="width:100%">Senden</button>
   </section>
 
   <script src="shared/filename.js"></script>
