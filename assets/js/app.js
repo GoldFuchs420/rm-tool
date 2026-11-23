@@ -346,19 +346,13 @@
 
   /* ================= rendering ================= */
 
-  var NAV_LINKS = [
-    ['https://remarkable.com/store/connect', 'syncConnect'],
-    ['https://support.remarkable.com/s/article/Transferring-files-using-a-USB-cable', 'support'],
-    ['https://remarkable.com/', null]
-  ];
   function renderFrame() {
     var link = function (href, label) {
       return '<a href="' + href + '" target="_blank" rel="external noopener" class="ark-link"><span class="responsive-body-sm">' + esc(label) + '</span></a>';
     };
     $('#langsel').innerHTML = '<div class="ark-select rmx-lang"><select id="lang-select" aria-label="Language" title="Language">' +
       R.langs.map(function (l) { return '<option value="' + l[0] + '" title="' + esc(l[1]) + '"' + (l[0] === R.lang ? ' selected' : '') + '>' + l[0].toUpperCase() + '</option>'; }).join('') + '</select>' + CHEV + '</div>';
-    $('[data-rmx-footer]').innerHTML = NAV_LINKS.slice(0, 2).map(function (l) { return link(l[0], t(l[1])); }).join('') +
-      link('https://remarkable.com/legal/privacy', t('privacy')) +
+    $('[data-rmx-footer]').innerHTML =
       '<a href="/log.txt" class="ark-link"><span class="responsive-body-sm">' + esc(t('downloadLogs')) + '</span></a>' +
       link('https://remarkable.com/', 'remarkable.com');
     document.documentElement.lang = R.lang;
@@ -571,8 +565,8 @@
       '<div class="ark-field">' + sel('f-type', t('fType'), '<option value="">' + esc(t('fTypeAll')) + '</option>') + chk('f-fav', t('fFav')) + '</div>' +
       '<div class="ark-field">' + sel('f-folder', t('fFolder'), '') + chk('f-sub', t('fSub')) + '</div>' +
       '<div class="rmx-daterow">' +
-      '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
-      '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
+      '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><div class="rmx-datewrap" data-empty="1"><input id="f-from" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div></div>' +
+      '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><div class="rmx-datewrap" data-empty="1"><input id="f-to" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div></div>' +
       '<div class="rmx-presets">' + ['30', '14', '7'].map(function (p) {
         var labl = t(p === '30' ? 'fPreset30' : p === '14' ? 'fPreset14' : 'fPreset7');
         return '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset="' + p + '" title="' + esc(labl) + '" aria-label="' + esc(labl) + '">' +
@@ -582,6 +576,21 @@
       }).join('') +
       '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset-reset title="' + esc(t('fDateReset')) + '" aria-label="' + esc(t('fDateReset')) + '">' + icon('calendarX', 18) + '</button></div>' +
       '</div></div>';
+    ['f-from', 'f-to'].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener('input', syncDateEmpty);
+      el.addEventListener('change', syncDateEmpty);
+    });
+    syncDateEmpty();
+  }
+  function syncDateEmpty() {
+    ['f-from', 'f-to'].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      var wrap = el.closest('.rmx-datewrap');
+      if (wrap) wrap.setAttribute('data-empty', el.value ? '0' : '1');
+    });
   }
   function syncFilterFields() {
     var f = state.filter;
@@ -590,6 +599,7 @@
     var fav = $('#f-fav'); if (fav) fav.checked = f.fav;
     var sub = $('#f-sub'); if (sub) sub.checked = f.sub;
     var fo = $('#f-folder'); if (fo) fo.value = f.folder;
+    syncDateEmpty();
   }
   function updateFilterbar() {
     var sel = $('#f-folder');
@@ -927,8 +937,8 @@
       '<span class="ark-switch--track"><span class="ark-switch--thumb"></span></span></span>' +
       '<label for="ex-keep" class="txt" style="cursor:pointer"><span class="responsive-body-md">' + esc(t('keepStructure')) + '</span><small>' + esc(t('keepStructureHint')) + '</small></label></div>' +
       '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('nameTemplate')) + '</legend>' +
-      '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="ex-date"' + (store('rmx.dateprefix') !== '0' ? ' checked' : '') + '><span class="txt"><span class="responsive-body-md">' + esc(t('datePrefix')) + '</span></span></label>' +
-      '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="ex-ascii"' + (store('rmx.ascii') === '1' ? ' checked' : '') + '><span class="txt"><span class="responsive-body-md">' + esc(t('asciiNames')) + '</span></span></label>' +
+      '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="ex-date"' + (store('rmx.ex.date') === '1' ? ' checked' : '') + '><span class="txt"><span class="responsive-body-md">' + esc(t('datePrefix')) + '</span></span></label>' +
+      '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="ex-ascii"' + (store('rmx.ex.ascii') === '1' ? ' checked' : '') + '><span class="txt"><span class="responsive-body-md">' + esc(t('asciiNames')) + '</span></span></label>' +
       '<small class="rmx-muted responsive-body-sm" id="ex-sample" style="word-break:break-all;margin-top:4px"></small></fieldset>' +
       '</div>' +
       '<div id="ex-run" class="rmx-run" hidden><div class="name responsive-body-md" id="ex-status"></div><div class="rmx-progress" id="ex-bar"><i></i></div><ul class="rmx-errlist" id="ex-errors" hidden></ul></div>' +
@@ -999,7 +1009,7 @@
     var arch = exVal('archive');
     var keep = $('#ex-keep').checked;
     var naming = currentNaming();
-    store('rmx.dateprefix', naming.prefix ? '1' : '0'); store('rmx.ascii', naming.ascii ? '1' : '0');
+    store('rmx.ex.date', naming.prefix ? '1' : '0'); store('rmx.ex.ascii', naming.ascii ? '1' : '0');
     var plan = makePlan(scopeLeaves(scope), fmt, keep, naming);
     var n = plan.docs.length;
     if (!n && !plan.dirs.length) { toast(t('exportNothing'), true); return; }

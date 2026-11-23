@@ -77,18 +77,23 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 @media (prefers-reduced-motion: reduce) { .rmx-spinner { animation-duration: 3s; } }
 
 /* ---------- search / filters / toolbar ---------- */
-.rmx-search { display: flex; gap: 8px; align-items: center; }
+.rmx-search { display: flex; gap: 4px; align-items: center; }
+/* filter button and reset icon same visual height (36px) */
+.rmx-search .ark-button-medium { min-height: 2.25rem; height: 2.25rem; font-size: .875rem; }
 .rmx-search__field { position: relative; flex: 1 1 auto; min-width: 0; }
 .rmx-search__field svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .7; }
 .rmx-search__field .ark-input { width: 100%; padding-left: 44px; box-sizing: border-box; }
-#f-reset { flex: none; width: 2rem; height: 2rem; margin-left: 2px; }
+#f-reset { flex: none; width: 2.25rem; height: 2.25rem; margin-left: 0; }
 .rmx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; padding: 20px; margin-top: 8px; border-radius: 4px; background: var(--rmx-surface); }
 /* Bezeichnung links, Element rechts: zweispaltiges Layout je Feld */
 .rmx-filters .ark-field { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; align-items: center; }
 .rmx-filters .ark-field .rmx-choice { grid-column: 1 / -1; }
 .rmx-filters .ark-input, .rmx-filters .ark-select { width: 100%; box-sizing: border-box; }
 .rmx-filters input[type="date"] { background-clip: padding-box; cursor: pointer; }
-.rmx-filters .datehint { grid-column: 2; margin-top: -2px; color: var(--ark-text-muted); }
+/* date format sits INSIDE the date input (placeholder), hidden once a value is set */
+.rmx-datewrap { position: relative; }
+.rmx-datewrap .datehint { position: absolute; left: .5rem; top: 50%; transform: translateY(-50%); margin: 0; color: var(--ark-text-muted); pointer-events: none; }
+.rmx-datewrap[data-empty="0"] .datehint { display: none; }
 .rmx-filters .rmx-choice { margin-top: 4px; }
 .rmx-daterow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }

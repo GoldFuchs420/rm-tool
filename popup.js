@@ -670,6 +670,7 @@ async function scanCurrentTab() {
   selectedSrcs.clear();
   minEdgeMax = 0;
   $("minEdgeSlider").value = "0";
+  $("maxEdgeSlider").value = "0";
   refreshMinEdgeRow();
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
@@ -697,14 +698,21 @@ async function scanCurrentTab() {
    sichtbar; das Maximum waechst mit, sobald groessere Bilder nachladen. */
 function imgIncluded(img) {
   if (img.svg || img.minEdge === undefined) return true;
-  return img.minEdge >= Number($("minEdgeSlider").value || 0);
+  const minV = Number($("minEdgeSlider").value || 0);
+  const maxV = Number($("maxEdgeSlider").value || minEdgeMax);
+  return img.minEdge >= minV && img.minEdge <= maxV;
 }
-function refreshMinEdgeRow() {
-  const row = $("minEdgeRow"), slider = $("minEdgeSlider");
+function refreshMinEdgeRow(bump) {
+  const row = $("minEdgeRow"), lo = $("minEdgeSlider"), hi = $("maxEdgeSlider");
   row.hidden = minEdgeMax <= 0;
   if (row.hidden) return;
-  slider.max = String(minEdgeMax);
-  $("minEdgeValue").textContent = slider.value + " px";
+  lo.max = hi.max = String(minEdgeMax);
+  if (bump) hi.value = String(Math.max(Number(hi.value), minEdgeMax));
+  $("minEdgeMin").textContent = lo.value + " px";
+  $("minEdgeMaxVal").textContent = hi.value + " px";
+  const r = $("edgeRange");
+  r.style.setProperty("--lo", (Number(lo.value) / minEdgeMax) * 100 + "%");
+  r.style.setProperty("--hi", (Number(hi.value) / minEdgeMax) * 100 + "%");
 }
 
 function renderImageStrip() {
@@ -736,7 +744,7 @@ function renderImageStrip() {
     thumb.addEventListener("load", () => {
       if (img.svg || !thumb.naturalWidth || !thumb.naturalHeight) return;
       img.minEdge = Math.min(thumb.naturalWidth, thumb.naturalHeight);
-      if (img.minEdge > minEdgeMax) { minEdgeMax = img.minEdge; refreshMinEdgeRow(); }
+      if (img.minEdge > minEdgeMax) { minEdgeMax = img.minEdge; refreshMinEdgeRow(true); }
       if (!imgIncluded(img)) { img._tile.remove(); img._tile = null; updateSendButton(); }
     });
     thumb.src = img.src;
@@ -778,11 +786,16 @@ $("selectNoneBtn").addEventListener("click", () => {
   renderImageStrip();
   updateSendButton();
 });
-$("minEdgeSlider").addEventListener("input", () => {
-  $("minEdgeValue").textContent = $("minEdgeSlider").value + " px";
+function onEdgeInput() {
+  const lo = $("minEdgeSlider"), hi = $("maxEdgeSlider");
+  if (Number(lo.value) > Number(hi.value)) hi.value = lo.value;
+  if (Number(hi.value) < Number(lo.value)) lo.value = hi.value;
+  refreshMinEdgeRow();
   renderImageStrip();
   updateSendButton();
-});
+}
+$("minEdgeSlider").addEventListener("input", onEdgeInput);
+$("maxEdgeSlider").addEventListener("input", onEdgeInput);
 /* ---- PDF-Erzeugung: jedes Bild bekommt eine eigene Seite im exakten
    Bild-Seitenverhältnis (randlos, kein Letterboxing). ---- */
 async function loadImageBytes(src) {
@@ -855,7 +868,14 @@ function updateSendButton() {
   btn.disabled = files === 0 || readyServers().length === 0 || sending;
   /* Kein Server erreichbar: nur das Serverpanel zeigen (Senden/Konfiguration
      der restlichen Bereiche ist dann ohne Zweck). */
-  document.body.classList.toggle("rmx-nosrv", readyServers().length === 0);
+  const noneReady = readyServers().length === 0;
+  /* Klasse fuer den Zustand ohne JS; hidden-Attribute als robuste Absicherung
+     in Chrome, unabhaengig von CSS-Kaskade und Resource-Cache. */
+  document.body.classList.toggle("rmx-nosrv", noneReady);
+  $("grpPage").hidden = noneReady;
+  $("grpImages").hidden = noneReady;
+  $("sendPanel").hidden = noneReady;
+  if (noneReady) $("statusBox").hidden = true;
   if (!sending) btn.textContent = files > 0 ? t("sendPdfCount", { n: files }) : t("sendBtnLabel", null, "Senden");
   /* Zaehlbadge im Expander-Kopf (Platz fix reserviert). Grau ausgeblendeter
      leerer Kreis solange nichts gesendet wird (z. B. Bilder ausgewaehlt,

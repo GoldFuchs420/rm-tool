@@ -128,8 +128,8 @@
       if (!dlg.open) {
         items = []; mode = 'setup'; ctrl = null; fails = [];
         vals.mergeName = '';
-        vals.datePrefix = app.store('rmx.dateprefix') !== '0';
-        vals.ascii = app.store('rmx.ascii') === '1';
+        vals.datePrefix = app.store('rmx.im.date') === '1';
+        vals.ascii = app.store('rmx.im.ascii') !== '0';
         buildShell();
         dlg.showModal();
         renderMain();   /* also with an empty dialog: this creates the "Add files" button */
@@ -358,8 +358,8 @@
     dlg.addEventListener('change', function (e) {
       if (e.target.id === 'im-date' || e.target.id === 'im-ascii') {
         readOptions();
-        app.store('rmx.dateprefix', vals.datePrefix ? '1' : '0');
-        app.store('rmx.ascii', vals.ascii ? '1' : '0');
+        app.store('rmx.im.date', vals.datePrefix ? '1' : '0');
+        app.store('rmx.im.ascii', vals.ascii ? '1' : '0');
         return;
       }
       if (e.target.id === 'im-merge' || e.target.name === 'page') renderMain();

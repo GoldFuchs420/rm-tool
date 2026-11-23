@@ -668,6 +668,38 @@ Weitere UX-Runde nach Feedback:
   Statusmeldungen („Prüft …“, Upload-Ergebnisse) bleiben bis zur nächsten
   Aktion in der alten Sprache.
 
+## Runde 10: Verbindungsgating gehärtet, Breiten-Dual-Slider, Icon-Auswahlleiste, Speicher-Defaults
+
+- **Popup-Regression behoben:** Solange kein Server *online* ist — auch
+  während des Verbindungsaufbaus (blinkendes graues Symbol) — bleiben
+  alle Upload-Bereiche zusätzlich zum CSS-Mechanismus per
+  `hidden`-Attribut ausgeblendet. Das ist unabhängig von der
+  CSS-Kaskade und verhindert das Aufblitzen der Sektionen in der
+  Prüfphase zuverlässig. Sobald ein Server online ist, erscheinen
+  Senden,_statusBox und die Gruppen wie gewohnt.
+- **Breiten-Slider statt Minimal-Kantenlänge:** Unter dem Bilderstreifen
+  sitzt jetzt ein **Doppel-Slider** (Min–Max). Links und rechts steht
+  nur noch die Zahl in Pixel. Bilder unterhalb des Minimums oder
+  oberhalb des Maximums verschwinden aus der Liste; ist damit alles
+  gefiltert, erscheint ein Hinweis. SVGs bleiben immer sichtbar.
+- **Auswahlleiste im Popup wie im Dateimanager:** „Alles auswählen“ und
+  „Auswahl aufheben“ sind jetzt dieselben Icon-Buttons (Selbar-Design,
+  Checks-Icon plus Geistervariante) oberhalb der Bildliste.
+- **Fußzeile gestrafft:** Im Dateimanager bleiben nur noch
+  **Protokolle herunterladen** und **remarkable.com** — alle anderen
+  Links sind entfernt.
+- **Dateioptionen merken sich den letzten Zustand:** Export- und
+  Import-Checkboxen (Datumspräfix, Umlaute-ersetzen,
+  Ordnerstruktur vereinfachen, Dateien zusammenführen) starten
+  grundsätzlich **inaktiv**; die letzte Wahl wird pro Dialog
+  getrennt gespeichert (`rmx.ex.*`, `rmx.im.*`). Einzige Ausnahme:
+  Im Import ist **Umlaute ersetzen (ASCII)** standardmäßig **aktiv**.
+- **Kompakte Filterbuttons:** Filter-Umschalter und Filter-Reset neben
+  der Suche haben weniger Abstand und exakt dieselbe visuelle Höhe (36 px).
+- **Datumsformat als Platzhalter:** Das Format (z. B. JJJJ-MM-TT) steht
+  jetzt **in** den Datumseingaben statt als Hinweis darunter und
+  verschwindet, sobald ein Datum gesetzt ist.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
