@@ -17,6 +17,7 @@ let fontSize = 16;
 // Bilder
 let foundImages = [];
 let selectedSrcs = new Set();
+let minEdgeMax = 0;   // groesste kleinste Bildkante in Pixel (Slider-Maximum)
 let sending = false;         // verhindert parallele Sende-Vorgänge
 
 const $ = (id) => document.getElementById(id);
@@ -44,6 +45,20 @@ applyI18n();
  * Server (gemeinsame Komponente, siehe shared/servers.js) + Einstellungen
  * pro Seite (Hostname) für die Schriftgröße
  * ------------------------------------------------------------------- */
+/* Sprachwahl im Popup-Kopf: Optionen einmal fuellen, Wechsel uebersetzt
+   sofort (statische Texte + Serverliste) ohne Neuladen. */
+function buildLangSelect() {
+  if (!window.RMX || !RMX.langs) return;
+  const sel = $("lang-select");
+  sel.innerHTML = RMX.langs.map((l) => '<option value="' + l[0] + '"' + (l[0] === RMX.lang ? ' selected' : '') + '>' + l[0].toUpperCase() + '</option>').join("");
+  sel.addEventListener("change", (e) => {
+    RMX.setLang(e.target.value);
+    applyI18n();
+    if (serverComponent) serverComponent.redraw();
+    updateSendButton();
+  });
+}
+
 function readyServers() {
   return serverComponent ? serverComponent.readyServers() : [];
 }
@@ -644,7 +659,7 @@ function scanImagesInPage() {
       if (w && h && (w < 40 || h < 40)) return;
     }
     seen.add(src);
-    results.push({ src, alt: (img.getAttribute("alt") || "").trim() });
+    results.push({ src, alt: (img.getAttribute("alt") || "").trim(), svg: /\.svg(\?|#|$)/i.test(src) });
   });
   return { images: results, pageTitle: document.title };
 }
@@ -653,6 +668,9 @@ async function scanCurrentTab() {
   $("imageStatus").textContent = t("stScanning", null, "Durchsuche Seite nach Bildern…");
   $("imageStrip").innerHTML = "";
   selectedSrcs.clear();
+  minEdgeMax = 0;
+  $("minEdgeSlider").value = "0";
+  refreshMinEdgeRow();
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
     $("imageStatus").textContent = t("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
@@ -695,9 +713,15 @@ function renderImageStrip() {
     const box = document.createElement("div");
     box.className = "thumb-box";
     const thumb = document.createElement("img");
-    thumb.src = img.src;
     thumb.loading = "lazy";
     thumb.decoding = "async";
+    thumb.addEventListener("load", () => {
+      if (img.svg || !thumb.naturalWidth || !thumb.naturalHeight) return;
+      img.minEdge = Math.min(thumb.naturalWidth, thumb.naturalHeight);
+      if (img.minEdge > minEdgeMax) { minEdgeMax = img.minEdge; refreshMinEdgeRow(); }
+      img._tile && img._tile.classList.toggle("below-edge", !imgIncluded(img));
+    });
+    thumb.src = img.src;
     box.appendChild(thumb);
 
     const badge = document.createElement("div");
@@ -719,20 +743,27 @@ function renderImageStrip() {
 
     box.append(badge);
     tile.append(box, label);
+    img._tile = tile;
     frag.appendChild(tile);
   }
   strip.innerHTML = "";
   strip.appendChild(frag);
+  paintEdgeDimming();
 }
 
 $("selectAllBtn").addEventListener("click", () => {
-  foundImages.forEach((img) => selectedSrcs.add(img.src));
+  foundImages.forEach((img) => { if (imgIncluded(img)) selectedSrcs.add(img.src); });
   renderImageStrip();
   updateSendButton();
 });
 $("selectNoneBtn").addEventListener("click", () => {
   selectedSrcs.clear();
   renderImageStrip();
+  updateSendButton();
+});
+$("minEdgeSlider").addEventListener("input", () => {
+  $("minEdgeValue").textContent = $("minEdgeSlider").value + " px";
+  paintEdgeDimming();
   updateSendButton();
 });
 /* ---- PDF-Erzeugung: jedes Bild bekommt eine eigene Seite im exakten
@@ -799,7 +830,7 @@ function imageBaseNames(images) {
 function updateSendButton() {
   /* Der Zustand der Gruppen (aus-/eingeklappt) steuert, was gesendet wird. */
   const hasArticle = $("grpPage").open && articleReady;
-  const n = selectedSrcs.size;
+  const n = foundImages.filter((img) => selectedSrcs.has(img.src) && imgIncluded(img)).length;
   const imgIncl = $("grpImages").open;
   /* Gesamte PDFs: Webseite (0/1) plus Bilder (Einzelmodus: je Bild, sonst 1). */
   const files = (hasArticle ? 1 : 0) + (imgIncl && n > 0 ? (onePerPdf ? n : 1) : 0);
@@ -941,7 +972,7 @@ async function sendNow({ article, images } = {}) {
         }
       } else {
         const { blob } = await buildImagesPdf([f.img]);
-        if (!blob) { settle(i, "fail", { label: t("imgNoneLoaded") }); return; }
+        if (!blob) { settle(i, "fail", { label: t("imgOneFail", { name: f.base }) }); return; }
         const res = await uploadToAllServers(blob, f.base, targets);
         settle(i, resultClass(res), res);
       }
@@ -957,7 +988,7 @@ async function sendNow({ article, images } = {}) {
 
 $("sendBtn").addEventListener("click", () => {
   const hasArticle = $("grpPage").open && articleReady;
-  const images = $("grpImages").open ? foundImages.filter((img) => selectedSrcs.has(img.src)) : [];
+  const images = $("grpImages").open ? foundImages.filter((img) => selectedSrcs.has(img.src) && imgIncluded(img)) : [];
   sendNow({ article: hasArticle, images });
 });
 
@@ -978,6 +1009,7 @@ $("openManager").addEventListener("click", () => {
   $("fontSlider").value = String(fontSize);
   $("fontSizeValue").textContent = String(fontSize);
 
+  buildLangSelect();
   serverComponent = RMXServers.mount($("serverPanel"), { onChange: updateSendButton });
   updateSendButton(); /* bis zum ersten Check gilt: kein Server → nur Serverpanel */
 

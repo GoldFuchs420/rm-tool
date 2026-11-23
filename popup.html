@@ -11,7 +11,13 @@
 <body>
   <header class="rmx-popup-header">
     <p class="responsive-heading-sm" style="margin:0">reMarkable Toolkit</p>
-    <button id="openManager" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" data-i18n-title="openManager" title="Dateiverwaltung öffnen" aria-label="Dateiverwaltung öffnen">🗃</button>
+    <span class="rmx-popup-tools">
+      <button id="openManager" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" data-i18n-title="openManager" title="Dateiverwaltung öffnen" aria-label="Dateiverwaltung öffnen">🗃</button>
+      <div class="ark-select rmx-lang rmx-popup-lang">
+        <select id="lang-select" aria-label="Language" title="Language"></select>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+      </div>
+    </span>
   </header>
 
   <section id="serverPanel" class="rmx-popup-section"></section>
@@ -41,6 +47,11 @@
     <div class="rmx-xbody">
       <p id="imageStatus" class="responsive-body-sm rmx-muted">—</p>
       <div id="imageStrip" class="image-strip"></div>
+      <div id="minEdgeRow" class="rmx-field-row rmx-minedge-row" hidden>
+        <label for="minEdgeSlider" class="responsive-body-sm rmx-muted" data-i18n="minEdge">Minimale Kantenlänge</label>
+        <input id="minEdgeSlider" type="range" min="0" max="0" value="0" step="1" />
+        <span id="minEdgeValue" class="rmx-value-badge">0 px</span>
+      </div>
       <div class="rmx-select-row">
         <button id="selectAllBtn" type="button" class="ark-link responsive-body-sm" data-i18n="selectAll">Alles auswählen</button>
         <button id="selectNoneBtn" type="button" class="ark-link responsive-body-sm" data-i18n="clearSelection">Auswahl aufheben</button>

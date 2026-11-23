@@ -649,6 +649,25 @@ Weitere UX-Runde nach Feedback:
   gemeinsamen `STROKE_ICONS`-Map im `icon()`-Helfer, Größe/Aria-Extras
   verhalten sich wie bei den Pfad-Icons.
 
+## Runde 9: Pro-Bild-Fehlermeldung, Minimale Kantenlänge, Sprachwahl im Popup
+
+- Schlägt der Upload eines einzelnen Bildes fehl (Einzelmodus), nennt die
+  Statusmeldung jetzt das Bild selbst: **„{Alt-Text} konnte nicht
+  hochgeladen werden (z. B. ungültiges Format).“** — statt des früheren
+  pauschalen „Keines der Bilder konnte geladen werden“.
+- Neue Zeile **Minimale Kantenlänge** unter dem Bilderstreifen: Ein Slider
+  (0 bis größte kleinste Bildkante in Pixel) sortiert kleine Bilder wie
+  Icons aus — zu kleine Kacheln werden durchscheinend dargestellt. Der
+  Slider wächst automatisch mit, sobald größere Bilder nachladen. SVGs
+  und Bilder ohne messbare Pixelgröße bleiben immer sichtbar. Auswahl
+  („Alles auswählen“), Zähler und Senden berücksichtigen den Filter.
+- **Sprachwahl im Popup** rechts neben dem 🗃-Icon (fünf Sprachen wie im
+  Dateimanager). Ein Wechsel übersetzt das Popup **sofort** — ohne Neuladen:
+  statische Texte, Zähler, Senden-Button und die komplette Serverliste
+  (`.redraw()`-Hook der Server-Komponente). Lediglich laufende
+  Statusmeldungen („Prüft …“, Upload-Ergebnisse) bleiben bis zur nächsten
+  Aktion in der alten Sprache.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
