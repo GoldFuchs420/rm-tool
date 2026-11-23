@@ -734,6 +734,13 @@ Weitere UX-Runde nach Feedback:
   Dateiname und der Anzahl-Zeile (Dateien/Ordner) ist er stark
   reduziert (~80 %).
 
+## Runde 10c: Abstand über dem Breiten-Slider
+
+- Unter der Bilderleiste im Popup sitzen jetzt 5 px Margin — dadurch
+  entsteht der zuletzt gefehlte Abstand zwischen Leiste und
+  Breiten-Slider (die Zeile hatte dort effektiv 0, da eine
+  Gruppe-Regel höhere Spezifität hatte).
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
