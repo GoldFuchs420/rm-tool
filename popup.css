@@ -15,7 +15,7 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
 }
 .rmx-popup-section--send { border-bottom: none; }
 
-/* Expander: Kopf mit Zaehlbadge links und Caret ganz rechts am Rand.
+/* Expander: Kopf mit Zaehlbadge links und Schalter ganz rechts (zu-/aufgeklappt).
    Der Badge-Platz ist fix reserviert, damit die Kopfzeile nicht springt. */
 .rmx-xhead {
   display: flex; align-items: center; gap: 8px; cursor: pointer;
@@ -26,7 +26,21 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
 .rmx-caret { width: 14px; height: 14px; flex: none; margin-left: auto; color: var(--ark-text-muted); transition: transform .15s ease; }
 details:not([open]) > .rmx-xhead .rmx-caret { transform: rotate(-90deg); }
 .rmx-xbody { margin-top: 10px; }
-#grpPage .rmx-xhead { padding-bottom: 6px; }
+
+/* Schalter im Gruppenkopf: rein visuell, das <details>-Toggle schaltet selbst.
+   Grau = zugeklappt, braun = aufgeklappt. */
+.rmx-xswitch {
+  position: relative; flex: none; width: 26px; height: 15px; margin-left: auto;
+  border-radius: 99px; background: var(--ark-interaction-primary-unselected-default);
+  transition: background-color .15s ease;
+}
+.rmx-xswitch-thumb {
+  position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--ark-interaction-primary-foreground); box-shadow: 0 1px 2px rgb(0 0 0 / .25);
+  transition: transform .15s ease;
+}
+details[open] > .rmx-xhead .rmx-xswitch { background: var(--ark-interaction-primary-default); }
+details[open] > .rmx-xhead .rmx-xswitch-thumb { transform: translateX(11px); }
 .rmx-badgeslot { display: inline-flex; justify-content: flex-start; width: 24px; flex: none; }
 
 /* Status-Expander vor dem Senden-Button */
@@ -44,7 +58,8 @@ details:not([open]) > .rmx-xhead .rmx-caret { transform: rotate(-90deg); }
 
 .rmx-select-row { display: flex; gap: 14px; margin-top: 8px; }
 
-/* Zwei getrennte, kompakte Gruppierungen: "Seite als PDF" und "Bilder" */
+/* Zwei getrennte, kompakte Gruppierungen: "Seite als PDF" und "Bilder".
+   Padding oben wie unten: geschlossen bleibt der Kopf-Abstand uniform. */
 .rmx-popup-group {
   margin: 8px 10px 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
   border: 1px solid var(--ark-divider-muted); border-radius: 6px; border-bottom: 1px solid var(--ark-divider-muted);

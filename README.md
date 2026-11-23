@@ -549,6 +549,38 @@ Weitere UX-Runde nach Feedback:
 
 ---
 
+## Popup-Schalter, Braun-Töne, Import-Vorschau (Runde 7)
+
+- **Popup-Expander**: der Pfeil rechts oben ist jetzt ein **Schalter** –
+  Grau = zugeklappt, Braun = aufgeklappt (Inhalt sichtbar, Upload aktiv).
+  Das gilt für „Seite als PDF" und „Bilder"; der Status-Expander behält
+  seinen Pfeil. Die Kopfzeile ist geschlossen im Abstand uniform (oben
+  wie unten gleich groß).
+- **Zähler-Badges**: mit Bildern, deren Schalter aber inaktiv ist,
+  erscheint links oben ein **leerer grauer Outline-Kreis** statt der
+  Zahl; aktiv und gefüllt zählt er in Braun.
+- **Braun statt Blau**: alle Schalter, Zähler, Checkboxen (inklusive
+  Häkchen-Farbe), Auswahlrahmen und die blautönigen Buttons nutzen
+  jetzt eine abgestufte reMarkable-Braun-Skala (`--rmx-brown`), die die
+  Ark-Interaktions-Tokens übersteuert.
+- **Import**: statt des Typ-Icons zeigt jede Zeile eine kleine
+  **Vorschauleiste (Canvas) mit Auge**; ein Klick öffnet die Vorschau
+  wie in den Details (wiederentwendete Funktionen: `firstPageCanvas`,
+  `previewBlob`). Bilder und PDFs zeigen die Kachel bereits beim
+  Hinzufügen, Text/Markdown konvertiert beim Klick.
+- **Vorschau-Dialog**: die beiden Download-Buttons (PDF/RMDoc) sind
+  entfernt – Downloads gibt es nur noch in der Dateiliste und in der
+  Upload-Liste des Imports.
+- **Filter-Reset**: der Button „Zurücksetzen" ist jetzt ein kompaktes
+  Icon ohne Beschriftung (X, Tooltipp bleibt).
+- **Fix (Dateimanager)**: bei Basic-Auth-geschützten Servern öffnete
+  Chrome im Tab den **nativen Login-Dialog**, der nach 3,5 s vom
+  Erreichbarkeits-Timeout abgebrochen wurde – danach sprang der Server
+  auf Rot. Es wird jetzt immer ein Authorization-Header mitgeschickt
+  (ohne gespeicherte Zugangsdaten ein leerer Basic-Header): Chrome
+  öffnet keinen nativen Dialog mehr, der Server geht wie im Popup auf
+  Gelb („Login nötig") mit der Inline-Anmeldekarte.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.

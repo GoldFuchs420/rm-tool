@@ -1,9 +1,9 @@
 /*
  * Preview (PDF in an embedded viewer) and details dialog.
- *  - documents on the device: the device renders /download/{id}/pdf;
- *    the preview offer PDF and (if available) RMDoc downloads
+ *  - documents on the device: the device renders /download/{id}/pdf
  *  - generated files: the blob is shown before upload
- *  - details: pure info; downloads and selection live elsewhere
+ *  - downloads live only in the file list and the import upload list,
+ *    the preview shows and nothing else
  */
 (function () {
   'use strict';
@@ -38,50 +38,31 @@
     dlgP.addEventListener('close', cleanup);
     dlgP.addEventListener('click', function (e) {
       var b = e.target.closest('[data-pv]');
-      if (!b || !cur) return;
-      var a = b.getAttribute('data-pv');
-      if (a === 'close') dlgP.close();
-      else if (a === 'dl' && cur.blob) app.saveBlob(cur.blob, cur.name);
-      else if (a === 'rmdl' && cur.rmdocId) {
-        b.disabled = true;
-        R.api.download(cur.rmdocId, 'rmdoc').then(function (blob) {
-          app.saveBlob(blob, R.archive.sanitizeSegment(String(cur.name).replace(/\.pdf$/i, '')) + '.rmdoc');
-        }).catch(function () { app.toast(t('rmdocUnavailable'), true); }).then(function () { b.disabled = false; });
-      }
-      else if (a === 'up' && cur.onUpload) {
-        b.disabled = true;
-        Promise.resolve(cur.onUpload()).then(function (ok) { if (ok) { var m = $('#pv-msg'); if (m) m.textContent = ''; } else b.disabled = false; });
-      }
+      if (b && cur && b.getAttribute('data-pv') === 'close') dlgP.close();
     });
 
-    /** o: {title, name, loader(signal) -> Promise<Blob>, rmdocId?, onUpload?} */
+    /** o: {title, name, loader(signal) -> Promise<Blob>} */
     app.openPreview = async function (o) {
       cleanup();
       var ctrl = new AbortController();
-      cur = { ctrl: ctrl, viewer: null, blob: null, name: o.name || 'preview.pdf', rmdocId: o.rmdocId, onUpload: o.onUpload };
+      cur = { ctrl: ctrl, viewer: null, name: o.name || 'preview.pdf' };
       var mine = cur;
       dlgP.innerHTML = app.dlgHead('dlg-preview-title', o.title || t('preview'), 'data-pv="close"') +
         '<div class="rmx-dialog__body rmx-pv-body"><div class="rmx-pv-status responsive-body-sm" id="pv-msg" role="status"><span class="rmx-spinner"></span><span>' + esc(t('previewLoading')) + '</span></div>' +
-        '<div class="rmx-pv-pages" id="pv-pages" hidden></div></div>' +
-        '<div class="rmx-dialog__foot">' + app.btn(t('downloadPdf'), 'data-pv="dl" disabled', 'pdf') +
-        (o.rmdocId ? app.btn(t('downloadRmdoc'), 'data-pv="rmdl" disabled', 'rmdoc') : '') +
-        (o.onUpload ? app.btn(t('uploadNow'), 'data-pv="up" disabled', 'primary') : '') + '</div>';
+        '<div class="rmx-pv-pages" id="pv-pages" hidden></div></div>';
       dlgP.setAttribute('aria-labelledby', 'dlg-preview-title');
       if (!dlgP.open) dlgP.showModal();
       try {
         var blob = await o.loader(ctrl.signal);
         if (cur !== mine) return;
-        mine.blob = blob;
         var host = $('#pv-pages');
         host.hidden = false;
         mine.viewer = await R.pdfview.show(host, blob);
         if (cur !== mine) { mine.viewer.destroy(); return; }
         $('#pv-msg').hidden = true;
-        dlgP.querySelectorAll('[data-pv]').forEach(function (b) { b.disabled = false; });
       } catch (e) {
         if (cur !== mine || e.name === 'AbortError') return;
         $('#pv-msg').innerHTML = '<span>' + esc(t('previewFailed', { msg: e.message })) + '</span>';
-        if (mine.blob) dlgP.querySelectorAll('[data-pv="dl"]').forEach(function (b) { b.disabled = false; });
       }
     };
 
@@ -91,8 +72,7 @@
       app.openPreview({
         title: it.VissibleName,
         name: R.archive.sanitizeSegment(it.VissibleName) + '.pdf',
-        loader: function (signal) { return app.getPdf(id, signal); },
-        rmdocId: id
+        loader: function (signal) { return app.getPdf(id, signal); }
       });
     };
     app.downloadDocument = async function (id, btn, fmt) {

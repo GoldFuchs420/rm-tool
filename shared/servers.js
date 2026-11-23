@@ -65,10 +65,18 @@
     async function saveServers() {
       await chrome.storage.local.set({ servers: servers });
     }
-    function authHeaderFor(s) {
-      if (!s.hasCreds) return null;
-      return "Basic " + btoa(s.user + ":" + s.pass);
-    }
+    /* Immer eine Authorization mitschicken (ohne Credentials: ein leerer
+       Basic-Header). Ohne Header wuerde Chrome – nur im Tab, nicht im
+       Popup – bei 401 den nativen Login-Dialog oeffnen; der haengt am
+       selben fetch, den der Probe-Timeout nach 3,5 s abbricht. Der
+       Server sprang dann auf "offline" (rot), statt auf "auth" (gelb,
+       Inline-Login wie im Popup). Geraet/Proxy ohne Auth ignorieren den
+       Header einfach. */
+    RMXServers.authHeaderFor = function (s) {
+      if (!s) return null;
+      return "Basic " + btoa((s.user || "") + ":" + (s.pass || ""));
+    };
+    var authHeaderFor = RMXServers.authHeaderFor;
     function readyServers() {
       return servers.filter(function (s) { return s._status === "online"; });
     }
@@ -77,9 +85,7 @@
       var ctrl = new AbortController();
       var timer = setTimeout(function () { ctrl.abort(); }, 3500);
       try {
-        var headers = {};
-        var h = authHeaderFor(s);
-        if (h) headers.Authorization = h;
+        var headers = { Authorization: authHeaderFor(s) };
         var res = await fetch(s.url + "/documents/", { method: "GET", headers: headers, signal: ctrl.signal, cache: "no-store" });
         clearTimeout(timer);
         if (res.status === 401 || res.status === 403) return "auth";
