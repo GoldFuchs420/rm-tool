@@ -639,6 +639,16 @@ Weitere UX-Runde nach Feedback:
   Inhalt auf. Sobald ein Server erreichbar ist, erscheinen alle
   Elemente wie gehabt.
 
+## Runde 8c: Eigenes Icon für den Datums-Filter-Reset
+
+- Der Reset-Button der Datumsfilter bekommt sein eigenes Icon:
+  **Kalender mit X** (Phosphor „calendar-x") — passend zu den
+  Kalender-Icons der -30/-14/-7-Tage-Voreinstellungen. Der
+  Gesamtfilter-Reset behält den **Trichter mit X**.
+- Technisch: die Linien-Icons (Stroke statt Pfad) liegen jetzt in einer
+  gemeinsamen `STROKE_ICONS`-Map im `icon()`-Helfer, Größe/Aria-Extras
+  verhalten sich wie bei den Pfad-Icons.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
