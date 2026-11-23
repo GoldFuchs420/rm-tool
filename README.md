@@ -750,6 +750,30 @@ Weitere UX-Runde nach Feedback:
   Container-Abstand (40 px); er wird jetzt ausgeblendet, und die
   Suchzeile sitzt direkt unter der Aktionen-Zeile.
 
+## Runde 11: Filter-Umbau, Lade-Status, kleinere Zähler
+
+- **Fünf Pixel Luft über Suchleiste und Filterpanel** (Abstand zur
+  Aktionen-Zeile).
+- **Lade-Status der Ordnerstruktur:** Die Statuszeile erscheint direkt
+  über der Dateiliste, und diese wird erst nach dem vollständigen
+  Laden der Struktur angezeigt (zuvor wurde während des Ladens eine
+  Teilliste gezeigt und der Status oben im Banner).
+- **Datumsfilter modernisiert:** Kein Platzhalter-Text mehr — nur noch
+  ein kompakter Datepicker mit dauerhaft sichtbarem Kalender-Icon
+  (reMarkable-Stil); die alte Overlay-/Sync-Logik wurde entfernt.
+- **Dateitypen** sind jetzt **drei separate Checkboxen in einer Zeile**
+  (PDF, EPUB, Notebook) statt eines Selects; der Rest des Filters bleibt
+  unverändert. Füllt man mehrere Typen, werden Dokumente allen
+  aktiven Typen zugeordnet (Vereinigung).
+- **Zähler-Bubbles 20 % kleiner:** Die Zahlen neben dem
+  Filter-Umschalter (Dateimanager) sowie Seiten-/Bildzähler im Popup.
+  Die leeren Kreise (inaktiv) haben jetzt denselben Durchmesser wie die
+  Bubble — ebenso die grünen/gelben/roten Statuspunkte in den
+  Serverlisten von Dateimanager und Popup (1,2 rem).
+- **Dateiliste bei aktivem Suchfilter:** Die Buttons stehen unterhalb
+  des Dateipfades, mit mindestens 20 px Abstand darüber.
+- README: Sektion „Runde 11“.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.

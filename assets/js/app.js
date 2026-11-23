@@ -136,7 +136,7 @@
     sortKey: 'lastModified',
     sortReverse: false,
     sortOpen: false,
-    filter: { q: '', type: '', fav: false, from: '', to: '', folder: 'all', sub: true },
+    filter: { q: '', types: {}, fav: false, from: '', to: '', folder: 'all', sub: true },
     filterOpen: false,
     ver: 0,
     rowLimit: 300,
@@ -391,9 +391,6 @@
     if (!state.connection) {
       el.innerHTML = '<div class="rmx-banner rmx-banner--error"><span class="grow responsive-body-sm">' + esc(t('noConnection')) + '</span>' +
         '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="refresh">' + esc(t('refresh')) + '</button></div>';
-    } else if (state.crawling) {
-      el.innerHTML = '<div class="rmx-banner"><span class="rmx-spinner"></span><span class="responsive-body-sm">' +
-        esc(t('loadingStructure', { done: Math.min(state.crawlDone, state.crawlTotal), total: state.crawlTotal })) + '</span></div>';
     } else el.innerHTML = '';
   }
 
@@ -453,8 +450,8 @@
     var date = doc ? '<span class="rmx-date rmx-muted">' + esc(ago(it.ModifiedClient)) + '</span>' : '';
     return '<div class="nm"><p class="responsive-body-sm">' + esc(title) + '</p>' + star + '</div>' +
       (doc ? '<div class="rmx-meta">' + pg + date + '</div>' : '') +
-      (doc ? '<div class="rmx-acts far">' + actBtns(it) + '</div>' : '') +
-      (showPath ? '<small class="rmx-path">' + esc(pathLabel(pk(it))) + '</small>' : '');
+      (showPath ? '<small class="rmx-path">' + esc(pathLabel(pk(it))) + '</small>' : '') +
+      (doc ? '<div class="rmx-acts far">' + actBtns(it) + '</div>' : '');
   }
   function actBtns(it) {
     var doc = !isFolder(it);
@@ -487,13 +484,16 @@
     var ft = String(it.fileType || '').toLowerCase();
     return ft && ft !== 'notebook' ? ft : 'notebook';
   }
+  function typeChecks(f) {
+    return Object.keys(f.types || {}).filter(function (k) { return f.types[k]; });
+  }
   function filterCount() {
     var f = state.filter;
-    return (f.type ? 1 : 0) + (f.fav ? 1 : 0) + (f.from || f.to ? 1 : 0) + (f.folder !== 'all' ? 1 : 0);
+    return typeChecks(f).length + (f.fav ? 1 : 0) + (f.from || f.to ? 1 : 0) + (f.folder !== 'all' ? 1 : 0);
   }
   function filterActive() { return !!state.filter.q.trim() || filterCount() > 0; }
   function resetFilter() {
-    state.filter = { q: '', type: '', fav: false, from: '', to: '', folder: 'all', sub: true };
+    state.filter = { q: '', types: {}, fav: false, from: '', to: '', folder: 'all', sub: true };
     var q = $('#f-q'); if (q) q.value = '';
     syncFilterFields();
   }
@@ -508,19 +508,18 @@
     var nq = norm(f.q.trim());
     var from = f.from ? new Date(f.from + 'T00:00:00') : null;
     var to = f.to ? new Date(f.to + 'T23:59:59.999') : null;
-    var docOnly = !!(f.fav || f.from || f.to) || (f.type && f.type !== 'folder');
-    var foldersOnly = f.type === 'folder';
+    var types = typeChecks(f);
+    var docOnly = !!(f.fav || f.from || f.to) || types.length > 0;
     var folders = [];
     var docs = [];
     state.items.forEach(function (it) {
       if (isFolder(it)) {
-        if (docOnly || (!nq && !foldersOnly) || (nq && (it._n || (it._n = norm(it.VissibleName))).indexOf(nq) < 0) || !inScope(it)) return;
+        if (docOnly || !nq || (nq && (it._n || (it._n = norm(it.VissibleName))).indexOf(nq) < 0) || !inScope(it)) return;
         folders.push(it);
         return;
       }
-      if (foldersOnly) return;
       if (nq && (it._n || (it._n = norm(it.VissibleName))).indexOf(nq) < 0) return;
-      if (f.type && typeKey(it) !== f.type) return;
+      if (types.length && !f.types[typeKey(it)]) return;
       if (f.fav && !it.Bookmarked) return;
       if (from || to) {
         var d = new Date(it.ModifiedClient);
@@ -533,6 +532,10 @@
   }
   var RESULT_CAP = 500;
   var curResults = null;
+  function crawlStatusHtml() {
+    return '<div class="rmx-crawlstatus"><span class="rmx-spinner" style="margin:0"></span><span class="responsive-body-sm rmx-muted">' +
+      esc(t('loadingStructure', { done: Math.min(state.crawlDone, state.crawlTotal), total: state.crawlTotal })) + '</span></div>';
+  }
   function renderSearchView() {
     var res = curResults || [];
     if (!res.length) {
@@ -562,11 +565,11 @@
       '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-medium" data-act="filter-toggle" id="f-toggle" aria-expanded="false" aria-controls="f-panel">' + icon('sliders', 20) + '<p class="responsive-body-md">' + esc(t('filters')) + '</p><span class="rmx-count" id="f-badge" hidden></span></button>' +
       '<button type="button" class="rmx-iconbtn" data-act="filter-reset" id="f-reset" hidden aria-label="' + esc(t('filtersReset')) + '" title="' + esc(t('filtersReset')) + '">' + icon('funnelClear', 18) + '</button></div>' +
       '<div class="rmx-filters" id="f-panel" hidden>' +
-      '<div class="ark-field">' + sel('f-type', t('fType'), '<option value="">' + esc(t('fTypeAll')) + '</option>') + chk('f-fav', t('fFav')) + '</div>' +
+      '<div class="ark-field"><label class="responsive-body-sm">' + esc(t('fType')) + '</label><div class="rmx-typerow">' + chk('f-t-pdf', 'PDF') + chk('f-t-epub', 'EPUB') + chk('f-t-notebook', t('typeNotebook')) + '</div>' + chk('f-fav', t('fFav')) + '</div>' +
       '<div class="ark-field">' + sel('f-folder', t('fFolder'), '') + chk('f-sub', t('fSub')) + '</div>' +
       '<div class="rmx-daterow">' +
-      '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><div class="rmx-datewrap" data-empty="1"><input id="f-from" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div></div>' +
-      '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><div class="rmx-datewrap" data-empty="1"><input id="f-to" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div></div>' +
+      '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input"></div>' +
+      '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input"></div>' +
       '<div class="rmx-presets">' + ['30', '14', '7'].map(function (p) {
         var labl = t(p === '30' ? 'fPreset30' : p === '14' ? 'fPreset14' : 'fPreset7');
         return '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset="' + p + '" title="' + esc(labl) + '" aria-label="' + esc(labl) + '">' +
@@ -576,35 +579,14 @@
       }).join('') +
       '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset-reset title="' + esc(t('fDateReset')) + '" aria-label="' + esc(t('fDateReset')) + '">' + icon('calendarX', 18) + '</button></div>' +
       '</div></div>';
-    ['f-from', 'f-to'].forEach(function (id) {
-      var el = $(id);
-      if (!el) return;
-      el.addEventListener('input', syncDateEmpty);
-      el.addEventListener('change', syncDateEmpty);
-    });
-    syncDateEmpty();
-  }
-  function syncDateEmpty() {
-    ['f-from', 'f-to'].forEach(function (id) {
-      var el = $(id);
-      if (!el) return;
-      var wrap = el.closest('.rmx-datewrap');
-      if (wrap) {
-        var empty = !el.value;
-        wrap.setAttribute('data-empty', empty ? '1' : '0');
-        var hint = wrap.querySelector('.datehint');
-        if (hint) hint.hidden = !empty;
-      }
-    });
   }
   function syncFilterFields() {
     var f = state.filter;
     var set = function (id, v) { var el = $(id); if (el) el.value = v; };
-    set('#f-type', f.type); set('#f-from', f.from); set('#f-to', f.to);
+    typeChecks(f).forEach(function (k) { var c = $('#f-t-' + k); if (c) c.checked = true; }); ['#f-t-pdf', '#f-t-epub', '#f-t-notebook'].forEach(function (id) { var c = $(id); if (c && !f.types[id.slice(5)]) c.checked = false; }); set('#f-from', f.from); set('#f-to', f.to);
     var fav = $('#f-fav'); if (fav) fav.checked = f.fav;
     var sub = $('#f-sub'); if (sub) sub.checked = f.sub;
     var fo = $('#f-folder'); if (fo) fo.value = f.folder;
-    syncDateEmpty();
   }
   function updateFilterbar() {
     var sel = $('#f-folder');
@@ -614,14 +596,6 @@
       var sig = ids.length + ':' + state.ver + ':' + R.lang;
       if (sig !== filterFolderSig) {
         filterFolderSig = sig;
-        var types = {};
-        state.items.forEach(function (it) { if (!isFolder(it)) types[typeKey(it)] = 1; });
-        var tsel = $('#f-type');
-        if (tsel) {
-          tsel.innerHTML = '<option value="">' + esc(t('fTypeAll')) + '</option><option value="folder">' + esc(t('typeFolder')) + '</option>' +
-            Object.keys(types).sort().map(function (k) { return '<option value="' + esc(k) + '">' + esc(k === 'notebook' ? t('typeNotebook') : k.toUpperCase()) + '</option>'; }).join('');
-          tsel.value = state.filter.type;
-        }
         var opts = [{ id: 'all', label: t('fFolderAll') }].concat(ids.map(function (id) { return { id: id, label: pathLabel(id) }; })
           .sort(function (a, b) { return a.label.localeCompare(b.label, R.lang, { numeric: true }); }));
         sel.innerHTML = opts.map(function (o) { return '<option value="' + esc(o.id) + '">' + esc(o.label) + '</option>'; }).join('');
@@ -648,7 +622,9 @@
     bar.addEventListener('change', function (e) {
       var f = state.filter;
       switch (e.target.id) {
-        case 'f-type': f.type = e.target.value; break;
+        case 'f-t-pdf': f.types.pdf = e.target.checked; break;
+        case 'f-t-epub': f.types.epub = e.target.checked; break;
+        case 'f-t-notebook': f.types.notebook = e.target.checked; break;
         case 'f-folder': f.folder = e.target.value; break;
         case 'f-sub': f.sub = e.target.checked; break;
         case 'f-from': f.from = e.target.value; break;
@@ -665,12 +641,12 @@
         var k = p.getAttribute('data-preset');
         d.setDate(d.getDate() - parseInt(k, 10));
         state.filter.from = ymd(d); state.filter.to = ymd(new Date());
-        syncFilterFields(); syncDateEmpty(); render();
+        syncFilterFields(); render();
       }
       var r = e.target.closest('[data-preset-reset]');
       if (r) {
         state.filter.from = ''; state.filter.to = '';
-        syncFilterFields(); syncDateEmpty(); render();
+        syncFilterFields(); render();
       }
     });
   }
@@ -721,7 +697,7 @@
     renderActions();
     renderBanner();
     renderToolbar();
-    $('#content').innerHTML = curResults ? renderSearchView() : renderFolderView();
+    $('#content').innerHTML = state.crawling ? crawlStatusHtml() : (curResults ? renderSearchView() : renderFolderView());
     if (app.observeThumbs) app.observeThumbs();
     updateFilterbar();
     // indeterminate state can only be set through the DOM

@@ -64,7 +64,7 @@ details:not([open]) > .rmx-xhead .rmx-caret { transform: rotate(-90deg); }
 }
 details[open] > .rmx-xhead .rmx-xswitch { background: var(--ark-interaction-primary-default); }
 details[open] > .rmx-xhead .rmx-xswitch-thumb { transform: translateX(11px); }
-.rmx-badgeslot { display: inline-flex; justify-content: flex-start; width: 24px; flex: none; }
+.rmx-badgeslot { display: inline-flex; justify-content: flex-start; width: 1.2rem; flex: none; }
 
 /* Status-Expander vor dem Senden-Button */
 .rmx-popup-status .rmx-xhead { list-style: none; }

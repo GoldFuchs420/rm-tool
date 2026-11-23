@@ -21,7 +21,7 @@
 .rmx-srv-row {
   display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px;
 }
-.rmx-srv-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
+.rmx-srv-dot { width: 1.2rem; height: 1.2rem; border-radius: 50%; flex: none; display: inline-block; }
 .rmx-srv-dot--online { background: #2e9e4f; }
 .rmx-srv-dot--auth { background: #c98a12; }
 .rmx-srv-dot--offline { background: var(--ark-interaction-danger-default, #da0810); }
