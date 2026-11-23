@@ -61,9 +61,17 @@
       servers = data.servers && data.servers.length ? data.servers : [
         { id: crypto.randomUUID(), url: "https://10.11.99.1", user: "", pass: "", hasCreds: false }
       ];
+      servers.forEach(function (s) { delete s._status; });
+    }
+    /* Ohne den internen Status (_status): der darf beim nächsten Öffnen
+       nicht als "online" gelten, bevor der erste Erreichbarkeits-Check
+       gelaufen ist (sonst zeigten Popup/Dateimanager Senden bzw. Listen
+       kurz sofort an, solange die Server gerade erst geprüft werden). */
+    function plainServers() {
+      return servers.map(function (s) { var c = Object.assign({}, s); delete c._status; return c; });
     }
     async function saveServers() {
-      await chrome.storage.local.set({ servers: servers });
+      await chrome.storage.local.set({ servers: plainServers() });
     }
     /* Immer eine Authorization mitschicken (ohne Credentials: ein leerer
        Basic-Header). Ohne Header wuerde Chrome – nur im Tab, nicht im
@@ -89,7 +97,7 @@
       var timer = setTimeout(function () { ctrl.abort(); }, 8000);
       try {
         var headers = { Authorization: authHeaderFor(s) };
-        var res = await fetch(s.url + "/documents/", { method: "GET", headers: headers, signal: ctrl.signal, cache: "no-store" });
+        var res = await fetch(s.url + "/documents/", { method: "GET", headers: headers, signal: ctrl.signal, cache: "no-store", credentials: "omit" });
         clearTimeout(timer);
         var scheme = null;
         try {

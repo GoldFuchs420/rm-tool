@@ -73,7 +73,11 @@
     var onAbort = function () { ctrl.abort(); };
     if (o.signal) o.signal.addEventListener('abort', onAbort, { once: true });
     try {
-      var merged = Object.assign({ credentials: 'same-origin', signal: ctrl.signal }, opts);
+      /* credentials: "omit" — die Auth läuft ausschließlich ueber den
+         Authorization-Header; mit Credentials müsste Chrome bei 401 den
+         nativen Basic-Login-Dialog öffnen (Fetch-Spec: Prompt erfordert
+         includeCredentials). */
+      var merged = Object.assign({ credentials: 'omit', signal: ctrl.signal }, opts);
       if (authHeader) merged.headers = Object.assign({}, opts.headers || {}, { Authorization: authHeader });
       var res = await fetch((baseUrl || '') + url, merged);
       var body = null;

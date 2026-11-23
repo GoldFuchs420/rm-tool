@@ -611,6 +611,21 @@ Weitere UX-Runde nach Feedback:
   zusätzlich gegen echte lokale HTTP-Server (Basic, Digest, HTTP-503)
   automatisiert geprüft.
 
+## Runde 8a: Follow-up-Fixes
+
+- **Popup**: die beim Speichern mitgeschriebenen internen Server-Status
+  (`_status`) werden nicht mehr persistiert bzw. beim Laden entfernt —
+  der Senden-Button erschien sonst sofort, obwohl die Server gerade erst
+  geprüft wurden; er erscheint jetzt erst nach dem Erreichbarkeits-Check.
+- **Nativer Basic-Dialog**: alle Tablet-Anfragen (Probe, API, Upload)
+  gehen mit `credentials: "omit"` raus — Chrome öffnet den nativen
+  Login-Dialog dann nicht mehr (Spec: der 401-Prompt erfordert
+  mitgeschickte Credentials), die inline Anmeldung bleibt.
+- **Import**: die Vorschaukachel schmiegt sich an die Thumbnail-Größe,
+  das Auge sitzt damit immer auf der Kante des sichtbaren Bildes statt
+  außerhalb.
+- **Filter-Reset**: Trichter mit X statt nacktem X.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
