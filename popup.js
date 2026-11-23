@@ -804,6 +804,9 @@ function updateSendButton() {
   const hasArticle = $("includeArticle").checked && articleReady;
   const hasImages = selectedSrcs.size > 0;
   $("sendBtn").disabled = (!hasArticle && !hasImages) || readyServers().length === 0 || sending;
+  /* Kein Server erreichbar: nur das Serverpanel zeigen (Senden/Konfiguration
+     der restlichen Bereiche ist dann ohne Zweck). */
+  document.body.classList.toggle("rmx-nosrv", readyServers().length === 0);
 }
 
 async function sendNow({ article, images } = {}) {
@@ -892,6 +895,7 @@ $("openManager").addEventListener("click", () => {
   $("fontSizeValue").textContent = String(fontSize);
 
   serverComponent = RMXServers.mount($("serverPanel"), { onChange: updateSendButton });
+  updateSendButton(); /* bis zum ersten Check gilt: kein Server → nur Serverpanel */
 
   await Promise.all([prepareArticleSection(), scanCurrentTab()]);
   updateSendButton();

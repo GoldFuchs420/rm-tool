@@ -67,3 +67,7 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
 .results-list li.ok { color: #2e9e4f; }
 .results-list li.fail { color: var(--ark-interaction-danger-default, #da0810); }
 .results-list li:not(.ok):not(.fail) { color: #c98a12; }
+
+/* Kein Server erreichbar: nur das Serverpanel zeigen (gleiche gemeinsame
+   Komponente wie im Dateimanager, inkl. integrativer Login-Karte). */
+body.rmx-nosrv section:not(#serverPanel) { display: none; }

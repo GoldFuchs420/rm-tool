@@ -14,10 +14,11 @@
 
     var items = [];        // {id, file, kind: native|image|text, fromUrl}
     var uid = 0;
+    var adding = Promise.resolve();   // serialises late additions in the results view
     var mode = 'setup';    // setup | working | results
     var ctrl = null;       // result list controller
     var abort = null;
-    var vals = { page: 'remarkable', merge: false, mergeName: '', tfmt: 'remarkable', tfont: 'normal' };
+    var vals = { page: 'remarkable', merge: false, mergeName: '', tfmt: 'remarkable', tfont: 'normal', datePrefix: false, ascii: false };
     var NATIVE = ['pdf', 'epub', 'rmdoc'];
     var extOf = function (n) { var m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
 
@@ -58,35 +59,48 @@
 
     app.openImport = async function (files) {
       if (!dlg.open) {
-        items = []; mode = 'setup'; ctrl = null;
+        items = []; mode = 'setup'; ctrl = null; fails = [];
         vals.mergeName = '';
+        vals.datePrefix = app.store('rmx.dateprefix') !== '0';
+        vals.ascii = app.store('rmx.ascii') === '1';
         buildShell();
         dlg.showModal();
-      } else {
-        if (mode === 'working') return;
-        if (mode === 'results') { if (ctrl) ctrl.abort(); ctrl = null; mode = 'setup'; $('#im-summary').hidden = true; }
+      } else if (mode === 'working') {
+        return; /* while converting, queued files are completed first */
       }
-      await addFiles(files);
-      renderMain();
-      if (items.length && mode === 'setup') run();
+      if (!files.length) return;
+      if (mode === 'setup') {
+        await addFiles(files);
+        if (!items.length) return;
+        renderMain();
+        run();
+      } else {
+        /* results: fold the new files in at any time and append them to the list */
+        adding = adding.then(async function () {
+          var from = items.length;
+          await addFiles(files);
+          await runMore(items.slice(from));
+        });
+        await adding;
+      }
     };
 
     function buildShell() {
       dlg.innerHTML = app.dlgHead('dlg-import-title', t('importTitle'), 'data-im="close"') +
         '<div class="rmx-dialog__body"><div id="im-main" style="display:flex;flex-direction:column;gap:28px"></div>' +
-        '<div id="im-common" style="display:flex;flex-direction:column;gap:28px">' + app.outputs.fieldsHtml('im', state.folder, true) + '</div>' +
+        '<div id="im-common" style="display:flex;flex-direction:column;gap:28px">' + app.outputs.fieldsHtml('im', state.folder, true) + app.outputs.namingFieldsHtml('im', vals) + '</div>' +
         '<div id="im-summary" class="responsive-body-sm" aria-live="polite" hidden></div></div>' +
         '<div class="rmx-dialog__foot" id="im-foot"></div>';
       dlg.setAttribute('aria-labelledby', 'dlg-import-title');
     }
 
     function readOptions() {
-      var main = $('#im-main');
-      if (!main || mode !== 'setup') return;
       var g = function (n) { var el = dlg.querySelector('input[name="' + n + '"]:checked'); return el ? el.value : null; };
       vals.page = g('page') || vals.page;
       var mg = $('#im-merge'); if (mg) vals.merge = mg.checked;
       var mn = $('#im-mergename'); if (mn) vals.mergeName = mn.value;
+      var d = $('#im-date'); if (d) vals.datePrefix = d.checked;
+      var a = $('#im-ascii'); if (a) vals.ascii = a.checked;
     }
 
     function renderMain() {
@@ -105,14 +119,16 @@
           (it.kind === 'image' && mergeable && vals.merge
             ? '<button type="button" class="rmx-iconbtn" data-im-up="' + it.id + '" aria-label="' + esc(t('moveUp')) + '" title="' + esc(t('moveUp')) + '"' + (idx === 0 ? ' disabled' : '') + '>' + icon('up', 20) + '</button>' +
               '<button type="button" class="rmx-iconbtn" data-im-down="' + it.id + '" aria-label="' + esc(t('moveDown')) + '" title="' + esc(t('moveDown')) + '"' + (idx === items.length - 1 ? ' disabled' : '') + '>' + icon('down', 20) + '</button>' : '') +
-          '<button type="button" class="rmx-iconbtn" data-im-rm="' + it.id + '" aria-label="' + esc(t('remove')) + '" title="' + esc(t('remove')) + '">' + icon('close', 20) + '</button></li>';
+          '<button type="button" class="rmx-iconbtn rmx-iconbtn--danger" data-im-rm="' + it.id + '" aria-label="' + esc(t('remove')) + '" title="' + esc(t('remove')) + '">' + icon('trash', 20) + '</button></li>';
       }).join('') + '</ul>';
 
-      var add = '<div class="rmx-addrow"><button type="button" class="ark-button ark-button--secondary ark-button-medium" data-im="add"><p class="responsive-body-md">' + esc(t('addFiles')) + '</p></button>' +
-        '<span class="rmx-muted responsive-body-sm">' + esc(t('importTypes')) + '</span></div>';
+      var add = addRowHtml();
 
+      /* Optionen, die nur eine Art von Datei betreffen (Seitenformat für Bilder,
+         Text-Format für Texte), erscheinen nur, wenn die ganze Liste aus dieser
+         Art besteht – bei mehreren gemischten Dateien bleiben sie weg. */
       var opts = '';
-      if (images.length) {
+      if (images.length && images.length === items.length) {
         opts += '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('pageSize')) + '</legend>' +
           app.choice('radio', 'page', 'original', t('pageOriginal'), t('pageOriginalHint'), vals.page === 'original') +
           app.choice('radio', 'page', 'remarkable', t('pageRm'), t('pageRmHint'), vals.page === 'remarkable') + '</fieldset>';
@@ -122,12 +138,20 @@
             (vals.merge ? '<div class="ark-field"><label for="im-mergename" class="responsive-body-md" style="font-weight:600">' + esc(t('mergeName')) + '</label><input id="im-mergename" class="ark-input" type="text" value="' + esc(defName) + '" autocomplete="off"></div>' : '');
         }
       }
-      if (texts.length) {
+      if (texts.length && texts.length === items.length) {
         opts += app.outputs.textOptionsHtml(vals);
       }
       main.innerHTML = list + add + opts;
-      var cr = $('#im-createrow'); if (cr) cr.hidden = !items.some(function (i) { return i.fromArchive; });
+      /* Flatten option (missing folders are created or not) only makes sense with
+         several files that bring folder structures with them */
+      var cr = $('#im-createrow');
+      if (cr) cr.hidden = !(items.length > 1 && items.some(function (i) { return i.fromArchive && i.folderPath && i.folderPath.length; }));
       renderFoot();
+    }
+
+    function addRowHtml() {
+      return '<div class="rmx-addrow"><button type="button" class="ark-button ark-button--secondary ark-button-medium" data-im="add"><p class="responsive-body-md">' + esc(t('addFiles')) + '</p></button>' +
+        '<span class="rmx-muted responsive-body-sm">' + esc(t('importTypes')) + '</span></div>';
     }
 
     function renderFoot() {
@@ -148,17 +172,17 @@
     }
 
     var fails = [];
-    async function build() {
+    async function build(subset) {
       readOptions();
+      var list = subset || items;
       var outs = [];
-      fails = [];
-      var images = items.filter(function (i) { return i.kind === 'image' && !i.fromArchive; });
+      var images = list.filter(function (i) { return i.kind === 'image' && !i.fromArchive; });
       var merge = images.length > 1 && vals.merge;
       var mergedDone = false;
       var page = vals.page;
       var textOpts = app.outputs.readTextOptions(dlg, vals);
-      for (var k = 0; k < items.length; k++) {
-        var it = items[k];
+      for (var k = 0; k < list.length; k++) {
+        var it = list[k];
         if (abort.signal.aborted) break;
         try {
           var meta = { folderPath: it.folderPath, fromArchive: it.fromArchive };
@@ -191,15 +215,32 @@
       mode = 'working';
       abort = new AbortController();
       renderFoot();
+      fails = [];
       var outs = await build();
       if (abort.signal.aborted) { dlg.close(); return; }
       if (!outs.length) { mode = 'setup'; renderMain(); return; }
       mode = 'results';
       var main = $('#im-main');
       main.innerHTML = '<h3 class="responsive-body-md" style="font-weight:600;margin:0">' + esc(t('results')) + '</h3><div id="im-results"></div>' +
+        addRowHtml() +
         (fails.length ? '<ul class="rmx-errlist">' + fails.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' : '');
       ctrl = app.outputs.createList($('#im-results'), outs, function () { return app.outputs.fieldValues('im'); });
       renderFoot();
+    }
+    /* nachgereicht: nur die neuen Einträge umwandeln und an die Liste anhängen */
+    async function runMore(newItems) {
+      abort = new AbortController();
+      var sum = $('#im-summary');
+      var btn = dlg.querySelector('[data-im="uploadall"]');
+      if (btn) btn.disabled = true;
+      sum.hidden = false;
+      sum.textContent = t('converting');
+      var before = fails.length;
+      var outs = await build(newItems);
+      if (!abort.signal.aborted && outs.length && ctrl) ctrl.addBatch(outs);
+      sum.hidden = fails.length === before;
+      sum.textContent = fails.length > before ? fails[fails.length - 1] : '';
+      if (btn) btn.disabled = false;
     }
     async function uploadAll() {
       var sum = $('#im-summary');
@@ -233,6 +274,12 @@
       }
     });
     dlg.addEventListener('change', function (e) {
+      if (e.target.id === 'im-date' || e.target.id === 'im-ascii') {
+        readOptions();
+        app.store('rmx.dateprefix', vals.datePrefix ? '1' : '0');
+        app.store('rmx.ascii', vals.ascii ? '1' : '0');
+        return;
+      }
       if (e.target.id === 'im-merge' || e.target.name === 'page') renderMain();
     });
     dlg.addEventListener('cancel', function (e) { if (mode === 'working') { e.preventDefault(); abort.abort(); } });

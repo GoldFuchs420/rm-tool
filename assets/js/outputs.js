@@ -1,7 +1,8 @@
 /*
  * Shared pieces for "import / convert" and "PDF tools":
  *   - target folder + name-conflict fields
- *   - result list with rename, remove, download per file and upload all
+ *   - result list with rename, remove, thumbnail, download per file and upload all
+ *   - naming options as in the export dialog (date prefix, plain characters)
  *   - upload naming: if a document with the same name already exists in the
  *     target folder, "yyyy-mm-dd name" (and "... 2", "... 3") is used, because the
  *     device interface can neither replace nor delete documents.
@@ -30,7 +31,15 @@
     };
     out.fieldValues = function (p) {
       var c = app.$('#' + p + '-create');
-      return { target: app.$('#' + p + '-target').value, create: !!(c && c.checked) };
+      var d = app.$('#' + p + '-date'), a = app.$('#' + p + '-ascii');
+      return { target: app.$('#' + p + '-target').value, create: !!(c && c.checked), datePrefix: !!(d && d.checked), ascii: !!(a && a.checked) };
+    };
+
+    /** Naming options like in the export dialog (date prefix, plain characters only). */
+    out.namingFieldsHtml = function (p, vals) {
+      return '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('nameTemplate')) + '</legend>' +
+        '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="' + p + '-date"' + (vals.datePrefix ? ' checked' : '') + '><span class="txt"><span class="responsive-body-md">' + esc(t('datePrefix')) + '</span></span></label>' +
+        '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="' + p + '-ascii"' + (vals.ascii ? ' checked' : '') + '><span class="txt"><span class="responsive-body-md">' + esc(t('asciiNames')) + '</span></span></label></fieldset>';
     };
 
     function cleanBase(s) { return window.RMXShared.sanitizeFilename(s); }
@@ -143,30 +152,45 @@
       var usedBy = {};   // folder id -> names taken during this run
       var memo = { cache: new Map(), noCreate: false };
       var abort = null;
-      var uploaded = {};
       var skipped = 0;
-      host.innerHTML = '<ul class="rmx-files rmx-outs">' + items.map(function (it, i) {
+      var pill = function (a, ico, text, title, cls) { return '<button type="button" class="rmx-pill rmx-pill--' + cls + '" data-o="' + a + '" aria-label="' + esc(title) + '" title="' + esc(title) + '">' + icon(ico, 16) + '<span>' + esc(text) + '</span></button>'; };
+      // Two panels per result row: top type icon + title with the small preview
+      // underneath (like in the file list), bottom size + download/remove.
+      var rowHtml = function (it, i) {
         var ext = extOf(it.name);
-        var pill = function (a, ico, text, title, cls) { return '<button type="button" class="rmx-pill rmx-pill--' + cls + '" data-o="' + a + '" aria-label="' + esc(title) + '" title="' + esc(title) + '">' + icon(ico, 16) + '<span>' + esc(text) + '</span></button>'; };
         var dlText = ext === 'pdf' ? 'PDF' : ext === 'rmdoc' ? 'RMDoc' : ext.toUpperCase();
         var dlTitle = ext === 'pdf' ? t('downloadPdf') : ext === 'rmdoc' ? t('downloadRmdoc') : t('download') + ' ' + dlText;
-        // Größe ganz links, Buttons (Vorschau/Download/Upload) rechts
-        // gruppiert in .obtns – reines Flexbox-Wrapping statt starrer
-        // nth-child-Grid-Positionen, damit auf schmalen (mobilen)
-        // Breiten nichts überlappt, sondern sauber umbricht.
+        var rmTitle = t('remove') + ': ' + baseOf(it.name);
         return '<li data-i="' + i + '" data-ext="' + esc(ext) + '" data-state="idle"><div class="orow">' +
-          '<span class="osize rmx-muted responsive-body-sm">' + esc(fmtSize(it.blob.size)) + '</span>' +
-          icon(ext === 'pdf' ? 'pdf' : 'notebook', 24) +
+          '<div class="opanel opanel--top">' +
+          '<span class="oico">' + icon(ext === 'pdf' ? 'pdf' : 'notebook', 24) + '</span>' +
           '<div class="oname"><input type="text" class="ark-input" value="' + esc(baseOf(it.name)) + '" aria-label="' + esc(t('renameField')) + '" spellcheck="false" autocomplete="off"></div>' +
-          '<div class="obtns">' +
+          '</div>' +
+          (ext === 'pdf' ? '<div class="othumb" hidden></div>' : '') +
+          '<div class="opanel opanel--bot">' +
+          '<span class="osize rmx-muted responsive-body-sm">' + esc(fmtSize(it.blob.size)) + '</span>' +
+          '<span class="rmx-flex"></span>' +
           pill('dl', 'importIcon', dlText, dlTitle, ext === 'pdf' ? 'pdf' : ext === 'rmdoc' ? 'rmdoc' : 'plain') +
-          '<button type="button" class="rmx-iconbtn" data-o="rm" aria-label="' + esc(t('remove')) + ': ' + esc(baseOf(it.name)) + '" title="' + esc(t('remove')) + ': ' + esc(baseOf(it.name)) + '">' + icon('close', 20) + '</button>' +
+          '<button type="button" class="rmx-iconbtn rmx-iconbtn--danger" data-o="rm" aria-label="' + esc(rmTitle) + '" title="' + esc(rmTitle) + '">' + icon('trash', 20) + '</button>' +
           '</div></div>' +
           (it.folderPath && it.folderPath.length ? '<div class="opath responsive-body-sm rmx-muted">' + icon('folderFull', 16) + '<span>' + esc(it.folderPath.join(' / ')) + '</span></div>' : '') +
           '<div class="state responsive-body-sm"></div></li>';
-      }).join('') + '</ul>';
-
+      };
+      var paintThumb = function (anchor, blob) {
+        if (!anchor || !R.pdfview || !R.pdfview.firstPageCanvas) return;
+        R.pdfview.firstPageCanvas(blob, 128).then(function (canvas) {
+          canvas.className = 'rmx-thumb';
+          anchor.hidden = false;
+          anchor.innerHTML = '';
+          anchor.appendChild(canvas);
+        }).catch(function () { /* no preview for this file */ });
+      };
+      host.innerHTML = '<ul class="rmx-files rmx-outs">' + items.map(rowHtml).join('') + '</ul>';
+      var listEl = host.querySelector('ul');
       var li = function (i) { return host.querySelector('li[data-i="' + i + '"]'); };
+      items.forEach(function (it, i) {
+        if (extOf(it.name) === 'pdf') paintThumb(li(i).querySelector('.othumb'), it.blob);
+      });
       var nameOf = function (i) {
         var inp = li(i).querySelector('input');
         return cleanBase(inp.value) + '.' + extOf(items[i].name);
@@ -191,10 +215,20 @@
         get skipped() { return skipped; },
         abort: function () { if (abort) abort.abort(); },
         nameOf: nameOf,
+        addBatch: function (additions) {
+          additions.forEach(function (o) {
+            var i = items.length;
+            items.push(o);
+            if (listEl) {
+              listEl.insertAdjacentHTML('beforeend', rowHtml(o, i));
+              if (extOf(o.name) === 'pdf') paintThumb(li(i).querySelector('.othumb'), o.blob);
+            }
+          });
+        },
         async uploadOne(i) {
-          if (uploaded[i]) return true;
           var ctx = getCtx();
           var item = items[i];
+          if (item._uploaded) return true;
           if (!abort || abort.signal.aborted) abort = new AbortController();
           var signal = abort.signal;
           try {
@@ -208,11 +242,14 @@
             await app.reloadFolder(folder);
             var ext = extOf(item.name);
             var base = baseOf(nameOf(i));
+            // naming options like in the export dialog
+            if (ctx.ascii) base = app.asciiName(base);
+            if (ctx.datePrefix) base = app.ymd(new Date()) + ' ' + base;
             // 2) archive entries: identical documents are skipped, different ones are numbered
             if (item.fromArchive) {
               var found = await findIdentical(folder, cleanBase(base), ext, item.blob, signal);
               if (found.same) {
-                uploaded[i] = true; skipped++;
+                item._uploaded = true; skipped++;
                 setState(i, 'done', t('skippedSame', { name: found.same.VissibleName }), 'check');
                 return true;
               }
@@ -223,7 +260,7 @@
             var type = ext === 'pdf' ? 'application/pdf' : (item.blob.type || 'application/octet-stream');
             var data = ext === 'rmdoc' ? await R.rmdoc.rename(item.blob, name) : item.blob;
             await R.api.upload(new File([data], name + '.' + ext, { type: type }), folder, signal);
-            uploaded[i] = true;
+            item._uploaded = true;
             setState(i, 'done', t('uploadedAs', { name: name }) + (notes.length ? ' · ' + notes.join(' ') : ''), 'check');
             return true;
           } catch (e) {

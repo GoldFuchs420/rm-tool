@@ -161,7 +161,10 @@
     }
 
     function render() {
-      var visible = editMode ? servers : servers.filter(function (s) { return s._status !== "offline"; });
+      /* Wenn kein Server online ist, alle zeigen (auch offline), damit die
+         Login-Karte und das Hinzufügen jederzeit erreichbar bleiben. */
+      var noneOnline = !servers.some(function (s) { return s._status === "online"; });
+      var visible = (editMode || noneOnline) ? servers : servers.filter(function (s) { return s._status !== "offline"; });
       var frag = document.createDocumentFragment();
 
       visible.forEach(function (s) {

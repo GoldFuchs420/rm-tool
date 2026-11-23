@@ -68,6 +68,11 @@ Konfiguration.
 - Server-Verwaltung (Liste, Erreichbarkeits-Check, Login bei Basic-Auth,
   Hinzufügen/Entfernen) ist jetzt eine **gemeinsame Komponente**
   (`shared/servers.js`), die exakt so auch im Dateimanager erscheint.
+- **Kein erreichbarer Server → nur das Serverpanel**: Sowohl im Popup
+  als auch im Dateimanager werden Dateilisten & Co. ausgeblendet, bis
+  mindestens ein Server online ist (ohne Server können sie ohnehin
+  nichts laden); die Login-Karte und "Hinzufügen" bleiben immer
+  erreichbar.
 
 ### Dateimanager (`filemanager.html`, über 🗂 im Popup erreichbar)
 Die von dir bereitgestellte erweiterte reMarkable-Weboberfläche,
@@ -83,10 +88,17 @@ eingebettet als vollwertige Extension-Seite:
   im Import-Dialog sind entfallen.
 - **Export** als PDF oder RMDoc (unverändert).
 - Server-Auswahl **unter dem Header, über "Meine Dateien"** — exakt die
-  gemeinsame Komponente aus dem Popup, inklusive Login-Karte bei
-  Basic-Auth und integriertem Anmeldedialog; jede Adresse hat einen
-  Kopieren-Button (Zwischenablage) und einen Button zum Öffnen in
-  einem neuen Browser-Tab.
+  gemeinsame Komponente aus dem Popup; die **Basic-Auth-Anmeldung
+  erscheint inline in der Serverliste** (keine eigenen Dialoge mehr).
+  Jede Adresse hat einen Kopieren-Button (Zwischenablage) und einen
+  Button zum Öffnen in einem neuen Browser-Tab.
+- **Dateiliste**: Checkbox und Dateityp-Icon stehen in der ersten Zeile
+  **links vom Titel**, darunter das Vorschaubild (mit flexiblem Raum
+  darunter); Titelhöhe ist variabel, die Dateiendung entfällt (der Typ
+  ist am Icon erkennbar). Die **PDF/RMDoc/Details-Buttons bekommen eine
+  eigene Zeile** unter Titel und Metadaten, statt neben dem
+  Seiten-Indikator umzubrechen. Ausgewählte Dateien erhalten zur Hintergrundtönung einen
+  deutlichen **Rahmen** (reMarkable-Primärfarbe).
 - **Entfernt**: der ursprüngliche "URL importieren"-Button (externer
   Lesedienst) sowie der zwischenzeitlich hinzugefügte "Von Webseite
   importieren"-Button (Tab-Auswahl-Dialog) — auf deinen Wunsch entfernt,
@@ -158,14 +170,22 @@ Neuer Ablauf beim Import (`assets/js/import.js`, `assets/js/outputs.js`):
   "Vorschau erstellen" und "Zurück" sind entfallen, ebenso der direkte
   Einzel-Upload. Nur noch "Alle hochladen" (ein Klick für die ganze
   Liste) und während der Umwandlung "Abbrechen" bleiben übrig.
-- **Einträge sind entfernbar**: Jede Ergebnis-Zeile hat einen ✕-Button
-  (nach dem Entfernen werden die restlichen Zeilen neu nummeriert);
-  umbenennen bleibt möglich, die Dateiendung wird nicht mehr angezeigt
-  (der Typ ist am Icon erkennbar).
-- **Dateigröße (KB) steht ganz links**, Download-Pille (farblich wie die
-  PDF/RMDoc-Buttons in der Dateiliste) und Entfernen-Button rechts
-  gruppiert (`.obtns`, per `margin-left:auto` an den rechten Rand
-  gedrückt).
+- **Mini-Vorschau wie in der Dateiliste**: Aus PDF-Ergebnissen wird die
+  erste Seite verkleinert unter Titel und Typ-Icon angezeigt (Bilder/
+  Texte zeigen keine Vorschaubild-Zeile).
+- **Zwei Panels pro Zeile**: oben Typ-Icon und Name, darunter getrennt
+  Dateigröße sowie Download-Pille (farblich wie die PDF/RMDoc-Buttons
+  in der Dateiliste) und Entfernen-Button.
+- **Einträge sind jederzeit ergänz- und entfernbar**: über den
+  "Dateien hinzufügen"-Button (auch im Ergebnis-Schritt) kommen weitere
+  Dateien in die Liste und werden sofort umgewandelt; statt des ✕
+  entfernt ein **roter Mülleimer** die Zeile (Neunummerierung
+  inklusive). Umbenennen bleibt möglich, die Dateiendung wird nicht
+  mehr angezeigt (der Typ ist am Icon erkennbar).
+- **Namensoptionen wie im Export** ("Datum vor Dateinamen",
+  "Nur einfache Zeichen ä → ae, é → e") stehen auch im Import zur
+  Verfügung und werden beim Upload angewandt; die Wahl wird
+  gespeichert.
 - **Kein Überlappen auf schmalen/mobilen Breiten**: Die vorherige
   Lösung positionierte Elemente über starre `nth-child`-Grid-Zellen —
   fragil, weil sie bei jeder Strukturänderung der Zeile neu hätte
@@ -174,6 +194,10 @@ Neuer Ablauf beim Import (`assets/js/import.js`, `assets/js/outputs.js`):
   sauber in eigene Zeilen um, statt sich zu überlagern — garantiert
   durch die Wrap-Eigenschaft selbst, nicht durch Breitenberechnung von
   Hand.
+- **Optionen nur passend zur Auswahl**: Die Bild-/Text-Formatoptionen
+  erscheinen nur, wenn die Liste ausschließlich aus dieser Art besteht;
+  die Option zum Beibehalten der Ordnerstruktur nur, wenn mehrere
+  Dateien mit Unterordnern importiert wurden.
 - **Sonderzeichen-Bereinigung beim Umbenennen**: Das Umbenennen-Feld im
   Import-Dialog nutzt jetzt dieselbe robuste Bereinigung wie das Popup
   (`shared/filename.js`, siehe unten) — vorher wurden nur `\`, `/` und
