@@ -184,8 +184,8 @@
     exportAsArchive: ["Als Archiv exportieren ({type})", "Export as archive ({type})", "Esporta come archivio ({type})", "Exportar como archivo ({type})", "Exporter en archive ({type})"],
     urlDoneEpub: ["Datei geladen. Für EPUB gibt es keine PDF-Vorschau, du kannst sie direkt hochladen.", "File loaded. There is no PDF preview for EPUB, you can upload it directly.", "File caricato. Per gli EPUB non c'è anteprima PDF, puoi caricarlo direttamente.", "Archivo cargado. Los EPUB no tienen vista previa en PDF; puedes subirlo directamente.", "Fichier chargé. Il n'y a pas d'aperçu PDF pour les EPUB, vous pouvez l'envoyer directement."],
     fDateHint: ["Format: JJJJ-MM-TT", "Format: YYYY-MM-DD", "Formato: AAAA-MM-GG", "Formato: AAAA-MM-DD", "Format : AAAA-MM-JJ"],
-    oneImagePerPdf: ["Ein Bild pro PDF", "One image per PDF", "Un'immagine per PDF", "Una imagen por PDF", "Une image par PDF"],
-    oneImagePerPdfHint: ["Aus: alle gewählten Bilder in einem PDF", "Off: all selected images in one PDF", "Disattivato: tutte le immagini scelte in un PDF", "Desactivado: todas las imágenes elegidas en un PDF", "Désactivé : toutes les images choisies dans un PDF"],
+    oneImagePerPdf: ["Einzelmodus", "Single mode", "Modalità singola", "Modo individual", "Mode individuel"],
+    oneImagePerPdfHint: ["Jedes Bild als eigenes PDF", "Each image as its own PDF", "Ogni immagine come PDF separato", "Cada imagen como PDF independiente", "Chaque image comme PDF distinct"],
     pageAsPdfHead: ["Seite als PDF", "Page as PDF", "Pagina come PDF", "Página como PDF", "Page en PDF"],
     imagesHead: ["Bilder", "Images", "Immagini", "Imágenes", "Images"],
     imageHead: ["Bild", "Image", "Immagine", "Imagen", "Image"],
@@ -228,7 +228,16 @@
     srvLogin: ["Anmelden", "Sign in", "Accedi", "Entrar", "Se connecter"],
     srvLoginFail: ["Anmeldung fehlgeschlagen.", "Login failed.", "Accesso non riuscito.", "Inicio de sesión fallido.", "\u00c9chec de la connexion."],
     srvChecking: ["Prüft \u2026", "Checking \u2026", "Verifica \u2026", "Comprobando \u2026", "Vérification \u2026"],
-    srvAddPh: ["z. B. https://10.11.99.1", "e.g. https://10.11.99.1", "es. https://10.11.99.1", "p. ej. https://10.11.99.1", "p. ex. https://10.11.99.1"]
+    srvAddPh: ["z. B. https://10.11.99.1", "e.g. https://10.11.99.1", "es. https://10.11.99.1", "p. ej. https://10.11.99.1", "p. ex. https://10.11.99.1"],
+    statusHead: ["Status", "Status", "Stato", "Estado", "Statut"],
+    statusSummary: ["{done} von {n} Dateien", "{done} of {n} files", "{done} di {n} file", "{done} de {n} archivos", "{done} sur {n} fichiers"],
+    sendPage: ["Webseite senden", "Send page", "Invia pagina", "Enviar página", "Envoyer la page"],
+    sendImage: ["{n} Bild senden", "Send {n} image", "Invia {n} immagine", "Enviar {n} imagen", "Envoyer {n} image"],
+    sendImages: ["{n} Bilder senden", "Send {n} images", "Invia {n} immagini", "Enviar {n} imágenes", "Envoyer {n} images"],
+    sendBothImage: ["Webseite und {n} Bild senden", "Send page and {n} image", "Invia pagina e {n} immagine", "Enviar página y {n} imagen", "Envoyer la page et {n} image"],
+    sendBothImages: ["Webseite und {n} Bilder senden", "Send page and {n} images", "Invia pagina e {n} immagini", "Enviar página y {n} imágenes", "Envoyer la page et {n} images"],
+    imgSomeLoaded: ["{n} von {m} Bildern geladen", "{n} of {m} images loaded", "{n} di {m} immagini caricate", "{n} de {m} imágenes cargadas", "{n} sur {m} images chargées"],
+    alreadyList: ["{n} Datei(en) bereits in der Liste – aktualisiert", "{n} file(s) already in the list – updated", "{n} file già nell'elenco – aggiornati", "{n} archivo(s) ya en la lista – actualizados", "{n} fichier(s) déjà dans la liste – mis à jour"]
   };
 
   var codes = R.langs.map(function (l) { return l[0]; });

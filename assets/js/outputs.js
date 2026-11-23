@@ -154,25 +154,32 @@
       var abort = null;
       var skipped = 0;
       var pill = function (a, ico, text, title, cls) { return '<button type="button" class="rmx-pill rmx-pill--' + cls + '" data-o="' + a + '" aria-label="' + esc(title) + '" title="' + esc(title) + '">' + icon(ico, 16) + '<span>' + esc(text) + '</span></button>'; };
-      // Two panels per result row: top type icon + title with the small preview
-      // underneath (like in the file list), bottom size + download/remove.
+      // Left next to the title: small preview, with the file type icon as a badge
+      // on the corner (PDF gets a page thumbnail, everything else only the icon).
+      var leadHtml = function (ext) {
+        return '<div class="olead">' +
+          (ext === 'pdf' ? '<span class="othumb" hidden></span>' : '<span class="ofallback">' + icon('notebook', 26) + '</span>') +
+          '<span class="obadge">' + icon(ext === 'pdf' ? 'pdf' : 'notebook', 13) + '</span></div>';
+      };
+      // Result row: left preview + type icon, right the (long, wrapping) title;
+      // below it size and actions as a bottom panel.
       var rowHtml = function (it, i) {
         var ext = extOf(it.name);
         var dlText = ext === 'pdf' ? 'PDF' : ext === 'rmdoc' ? 'RMDoc' : ext.toUpperCase();
         var dlTitle = ext === 'pdf' ? t('downloadPdf') : ext === 'rmdoc' ? t('downloadRmdoc') : t('download') + ' ' + dlText;
         var rmTitle = t('remove') + ': ' + baseOf(it.name);
         return '<li data-i="' + i + '" data-ext="' + esc(ext) + '" data-state="idle"><div class="orow">' +
+          leadHtml(ext) +
+          '<div class="obody">' +
           '<div class="opanel opanel--top">' +
-          '<span class="oico">' + icon(ext === 'pdf' ? 'pdf' : 'notebook', 24) + '</span>' +
           '<div class="oname"><input type="text" class="ark-input" value="' + esc(baseOf(it.name)) + '" aria-label="' + esc(t('renameField')) + '" spellcheck="false" autocomplete="off"></div>' +
           '</div>' +
-          (ext === 'pdf' ? '<div class="othumb" hidden></div>' : '') +
           '<div class="opanel opanel--bot">' +
           '<span class="osize rmx-muted responsive-body-sm">' + esc(fmtSize(it.blob.size)) + '</span>' +
           '<span class="rmx-flex"></span>' +
           pill('dl', 'importIcon', dlText, dlTitle, ext === 'pdf' ? 'pdf' : ext === 'rmdoc' ? 'rmdoc' : 'plain') +
           '<button type="button" class="rmx-iconbtn rmx-iconbtn--danger" data-o="rm" aria-label="' + esc(rmTitle) + '" title="' + esc(rmTitle) + '">' + icon('trash', 20) + '</button>' +
-          '</div></div>' +
+          '</div></div></div>' +
           (it.folderPath && it.folderPath.length ? '<div class="opath responsive-body-sm rmx-muted">' + icon('folderFull', 16) + '<span>' + esc(it.folderPath.join(' / ')) + '</span></div>' : '') +
           '<div class="state responsive-body-sm"></div></li>';
       };

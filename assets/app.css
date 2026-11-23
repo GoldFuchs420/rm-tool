@@ -68,7 +68,18 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-filters .datehint { grid-column: 2; margin-top: -2px; color: var(--ark-text-muted); }
 .rmx-filters .rmx-choice { margin-top: 4px; }
 .rmx-daterow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: nowrap; }
+.rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+/* Icon-only date presets: calendar with a small counter-clockwise arrow
+   (the arrow gets a page-colored halo so both shapes stay legible). */
+.rmx-preset { padding-left: .5rem; padding-right: .5rem; }
+.rmx-calpreset { position: relative; display: inline-flex; width: 18px; height: 18px; }
+.rmx-calpreset .rmx-ccw {
+  position: absolute; right: -5px; bottom: -5px; width: 11px; height: 11px;
+  filter: drop-shadow(0 0 2px var(--rmx-page));
+}
+.rmx-calpreset .rmx-ccw path { fill: none; stroke: currentColor; stroke-width: 22; stroke-linejoin: round; }
+/* Deselect = negative (outline) version of the select-all checks */
+.rmx-ico--ghost path { fill: none; stroke: currentColor; stroke-width: 14; stroke-linejoin: round; }
 .rmx-presets .ark-button { flex: 1 1 auto; min-width: 0; }
 .rmx-presets .ark-button svg { flex: none; }
 
@@ -112,11 +123,11 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-table td { padding: 12px 8px; vertical-align: top; text-align: left; }
 /* Left column, 1st row: checkbox + type icon (left of the title), below that
    the thumbnail (constant size, flexible free space below) */
-.rmx-table td.c-side { width: 96px; padding-left: 16px; } /* left padding so the selection frame never touches checkbox/thumbnail */
+.rmx-table td.c-side { width: 114px; padding-left: 16px; } /* left padding so the selection frame never touches checkbox/thumbnail */
 .rmx-table .c-side1 { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .rmx-table td.c-side .c-icon { flex: none; display: flex; }
 .rmx-table td.c-side .c-check { flex: none; display: flex; }
-.rmx-table td.c-side .c-type { display: flex; justify-content: flex-start; height: 64px; margin-top: 6px; }
+.rmx-table td.c-side .c-type { display: flex; justify-content: flex-start; height: 78px; margin-top: 6px; }
 /* Right column: title (variable height), below pages/date/buttons */
 .rmx-table td.c-main { overflow: hidden; padding-left: 16px; } /* clear distance between the two panels */
 .rmx-table td p { margin: 0; }
@@ -154,7 +165,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-pill--upload { color: var(--ark-interaction-primary-default); }
 
 /* thumbnails (canvas, drawn directly) */
-.rmx-thumb { display: block; margin: 0; width: auto; height: 76px; max-width: 68px; object-fit: contain; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px var(--rmx-line); }
+.rmx-thumb { display: block; margin: 0; width: auto; height: 92px; max-width: 82px; object-fit: contain; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px var(--rmx-line); }
 .rmx-thumb--ph { width: 46px; background: var(--rmx-surface); box-shadow: none; animation: rmx-pulse 1.4s ease-in-out infinite; }
 @keyframes rmx-pulse { 50% { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { .rmx-thumb--ph { animation: none; } }
@@ -231,6 +242,20 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
    Import-Ergebniszeilen (.rmx-outs) sind zwei Panels: oben Typ-Icon + Name, darunter
    die kleine Vorschau (wie in der Dateiliste) sowie getrennt Größe + Aktionen;
    Kopier-Zeilen (.rmx-copies) bleiben eine flexible Zeile. */
+.olead {
+  position: relative; flex: none; width: 92px; max-width: 92px;
+  display: flex; align-items: flex-start; justify-content: flex-start;
+}
+.olead .ofallback, .olead .othumb { display: flex; align-items: flex-start; }
+.olead .ofallback { align-items: center; justify-content: center; width: 82px; height: 92px;
+  color: var(--ark-text-muted); background: var(--rmx-surface); border-radius: 2px; box-shadow: 0 0 0 1px var(--rmx-line); }
+.obadge {
+  position: absolute; right: -6px; bottom: -6px; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; color: var(--rmx-pdf); box-shadow: 0 0 0 1px var(--rmx-line);
+}
+.obadge svg { display: block; }
+.obody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
 .rmx-copies .orow > svg { flex: none; }
 .rmx-outs .orow { display: block; }
@@ -238,9 +263,10 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-outs .opanel .oico { flex: none; display: flex; color: var(--ark-text-default); }
 .rmx-outs .opanel .oname { flex: 1 1 auto; min-width: 0; }
 .rmx-outs .opanel .oname .ark-input { width: 100%; }
-.rmx-outs .othumb { height: 64px; margin: 8px 0 0 0; display: flex; align-items: center; }
+.rmx-outs .othumb { height: 92px; margin: 0; display: flex; align-items: flex-start; }
 .rmx-outs .othumb canvas { box-shadow: 0 0 0 1px var(--rmx-line); border-radius: 2px; background: #fff; }
-.rmx-outs .opanel--bot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rmx-line); flex-wrap: wrap; }
+.rmx-outs .orow { display: flex; gap: 12px; align-items: flex-start; }
+.rmx-outs .opanel--bot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rmx-line); flex-wrap: wrap; row-gap: 4px; }
 .rmx-outs .opanel--bot .rmx-flex { flex: 1 1 auto; }
 .rmx-iconbtn--danger { color: var(--ark-interaction-danger-default); }
 .rmx-iconbtn--danger:hover:not(:disabled) { background: #da08101a; }
@@ -258,7 +284,14 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-dl dt { margin: 0 0 2px; }
 .rmx-dl dd { margin: 0; overflow-wrap: anywhere; }
 .rmx-starinl { display: inline-block; vertical-align: -2px; }
-.rmx-dpv { flex: none; display: flex; align-items: center; justify-content: center; min-height: 12rem; border-radius: 4px; background: var(--rmx-surface); cursor: zoom-in; overflow: hidden; }
+.rmx-dpv { position: relative; flex: none; display: flex; align-items: center; justify-content: center; min-height: 12rem; border-radius: 4px; background: var(--rmx-surface); cursor: zoom-in; overflow: hidden; }
+.rmx-dpv-eye {
+  position: absolute; right: 8px; bottom: 8px; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; color: var(--ark-text-muted); box-shadow: 0 0 0 1px var(--rmx-line);
+  pointer-events: none;
+}
+.rmx-dpv.is-failed .rmx-dpv-eye { display: none; }
 .rmx-dpv canvas { display: block; max-width: 100%; max-height: 22rem; width: auto; height: auto; box-shadow: 0 1px 4px rgb(0 0 0 / .2); background: #fff; }
 .rmx-dpv.is-failed { padding: 16px; text-align: center; cursor: default; font-size: .875rem; }
 .rmx-pv-body { min-height: 40vh; }
@@ -307,19 +340,19 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 
   /* file list: side column (check/icon/thumbnail) left, title+meta right */
   .rmx-table, .rmx-table tbody { display: block; }
-  .rmx-table tr { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "side main"; column-gap: 8px; align-items: start; padding: 10px 0; }
+  .rmx-table tr { display: grid; grid-template-columns: minmax(44px, auto) minmax(0, 1fr); grid-template-areas: "side main"; column-gap: 10px; align-items: start; padding: 10px 8px 10px 12px; }
+  .rmx-toolbar, .rmx-selbar, .rmx-viewbar, .rmx-presets { flex-wrap: wrap; }
   .rmx-table td, .rmx-table td.c-side, .rmx-table td.c-main { display: block; width: auto; padding: 0; text-align: left; }
   .rmx-table td.c-side { grid-area: side; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .rmx-table td.c-side .c-side1, .rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon, .rmx-table td.c-side .c-type { display: inline-flex; margin: 0; }
   .rmx-table td.c-main { grid-area: main; overflow: visible; }
-  .rmx-thumb { height: 64px; max-width: 60px; }
+  .rmx-thumb { height: 78px; max-width: 72px; }
   .rmx-acts { justify-content: flex-start; flex-wrap: wrap; margin-left: -4px; }
   .rmx-table td p { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
   .rmx-table .nm { flex-wrap: wrap; row-gap: 2px; }
   .rmx-path { white-space: normal; }
   .rmx-iconbtn { width: 34px; height: 34px; }
-  .rmx-thumbs-on .rmx-table tr { padding: 8px 0; }
-  .rmx-thumb { margin: 0; height: 64px; max-width: 60px; }
+  .rmx-thumbs-on .rmx-table tr { padding: 8px 8px 8px 12px; }
 
   /* dialogs */
   .rmx-dialog { width: 90vw; }
@@ -379,6 +412,9 @@ body.rmx-nosrv .rmx-footer { display: none; }
 .ark-input:not(:disabled):not([readonly]):focus { outline: none; box-shadow: inset 0 0 0 2px var(--ark-interaction-focus-default, #99c3ff); }
 .ark-input:disabled { background: var(--rmx-surface, #ede8de); color: var(--ark-text-muted); box-shadow: none; cursor: not-allowed; }
 .ark-input[readonly] { background: transparent; box-shadow: inset 0 0 0 1px var(--ark-divider-muted); cursor: default; }
+/* Dezente Standard-Outlines fuer Felder, Fokus bleibt ein klarer Ring. */
+.ark-input:not(:disabled):not([readonly]) { box-shadow: inset 0 0 0 1px var(--ark-divider-muted); }
+.ark-select > select { box-shadow: inset 0 0 0 1px var(--ark-divider-muted); }
 
 /* Dateiansicht (Tabellenzeilen): deutlich weniger Zeilenhöhe. */
 .rmx-table td { padding: 12px 8px; }

@@ -15,7 +15,23 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
 }
 .rmx-popup-section--send { border-bottom: none; }
 
-.rmx-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+/* Expander: Kopfzeile mit Caret, Body floppt mit details um */
+.rmx-xrow { display: flex; align-items: flex-start; gap: 8px; }
+.rmx-xcheck { display: inline-flex; align-items: center; flex: none; padding-top: 1px; }
+.rmx-xtitle { flex: 1 1 auto; font-weight: 500; }
+.rmx-xhead {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  list-style: none; min-height: 24px;
+}
+.rmx-xhead::-webkit-details-marker { display: none; }
+.rmx-caret { width: 14px; height: 14px; flex: none; color: var(--ark-text-muted); transition: transform .15s ease; }
+details:not([open]) > .rmx-xhead .rmx-caret { transform: rotate(-90deg); }
+.rmx-xbody { margin-top: 8px; }
+
+/* Status-Expander vor dem Senden-Button */
+.rmx-popup-status .rmx-xhead { list-style: none; }
+.rmx-status-spin { width: 14px; height: 14px; border-width: 2px; }
+.rmx-dialog .ark-switch--input, .rmx-popup-group .ark-switch--input { cursor: pointer; }
 
 .rmx-field-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 .rmx-field-row input[type="range"] { flex: 1 1 auto; }
@@ -63,21 +79,18 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
   display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ark-interaction-primary-default);
 }
 .image-tile.selected .select-badge { background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); }
-.send-one-btn {
-  position: absolute; bottom: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%;
-  background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground);
-  border: 2px solid var(--rmx-page); font-size: 12px; line-height: 1; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.3);
-}
-.send-one-btn:hover { background: var(--ark-interaction-primary-hover); }
-.send-one-btn:disabled { opacity: .4; cursor: default; }
-
 .results-list { list-style: none; margin: 10px 0 0 0; padding: 0; font-size: .8125rem; font-family: reMarkableSansStatic; }
-.results-list li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.results-list li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+.results-list .rrow-label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.results-list .rrow-glyph, .results-list .rmx-row-spin { flex: none; }
+.results-list .rmx-row-spin { width: 14px; height: 14px; border-width: 2px; }
 .results-list li.ok { color: #2e9e4f; }
 .results-list li.fail { color: var(--ark-interaction-danger-default, #da0810); }
-.results-list li:not(.ok):not(.fail) { color: #c98a12; }
+.results-list li.pending, .results-list li.partial { color: #c98a12; }
+.results-list li.pending .rrow-label, .results-list li.partial .rrow-label { color: var(--ark-text-default); }
+.results-list li .rrow-glyph .rmx-ico { display: block; }
 
 /* Kein Server erreichbar: nur das Serverpanel zeigen (gleiche gemeinsame
    Komponente wie im Dateimanager, inkl. integrativer Login-Karte). */
-body.rmx-nosrv section:not(#serverPanel) { display: none; }
+body.rmx-nosrv section:not(#serverPanel),
+body.rmx-nosrv #statusBox { display: none; }
