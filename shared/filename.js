@@ -9,7 +9,7 @@
  */
 (function (global) {
   "use strict";
-  var RMXShared = (global.RMXShared = global.RMXShared || {});
+  const RMXShared = (global.RMXShared = global.RMXShared || {});
 
   // Entfernt Zeichen, die in Dateinamen Probleme machen (Windows-
   // reservierte Zeichen \ / : * ? " < > | sowie Steuerzeichen), fasst
@@ -36,9 +36,9 @@
 
   // "2026-11-23"-Präfix für Dateinamen (leer bei ungültigem Datum).
   RMXShared.ymd = function (value) {
-    var d = value instanceof Date ? value : new Date(value);
+    const d = value instanceof Date ? value : new Date(value);
     if (isNaN(d.getTime())) return "";
-    var p = function (n) { return String(n).padStart(2, "0"); };
+    const p = function (n) { return String(n).padStart(2, "0"); };
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   };
 })(typeof window !== "undefined" ? window : this);

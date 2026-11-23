@@ -14,14 +14,14 @@
  */
 (function (global) {
   "use strict";
-  var RMXServers = (global.RMXServers = global.RMXServers || {});
+  const RMXServers = (global.RMXServers = global.RMXServers || {});
 
   RMXServers.mount = function (root, opts) {
     opts = opts || {};
-    var onChange = opts.onChange || function () {};
+    const onChange = opts.onChange || function () {};
 
-    var servers = [];
-    var editMode = false;
+    let servers = [];
+    let editMode = false;
 
     root.innerHTML =
       '<div class="rmx-srv-head">' +
@@ -34,11 +34,11 @@
       '<button type="submit" class="rmx-srv-add-btn">+</button>' +
       "</form>";
 
-    var elSummary = root.querySelector("[data-rmx-srv-summary]");
-    var elToggle = root.querySelector("[data-rmx-srv-toggle]");
-    var elList = root.querySelector("[data-rmx-srv-list]");
-    var elAddForm = root.querySelector("[data-rmx-srv-addform]");
-    var elAddInput = root.querySelector("[data-rmx-srv-addinput]");
+    const elSummary = root.querySelector("[data-rmx-srv-summary]");
+    const elToggle = root.querySelector("[data-rmx-srv-toggle]");
+    const elList = root.querySelector("[data-rmx-srv-list]");
+    const elAddForm = root.querySelector("[data-rmx-srv-addform]");
+    const elAddInput = root.querySelector("[data-rmx-srv-addinput]");
     elAddInput.placeholder = T("srvAddPh", "z. B. https://10.11.99.1");
 
     function esc(s) {
@@ -50,14 +50,14 @@
     /* Shared texts in 5 languages (assets/js/i18n.js); German as a fallback so
        this file also works standalone (e.g. before i18n.js has run). */
     function T(key, fallback, vars) {
-      var v = window.RMX && RMX.t ? RMX.t(key) : "";
-      var out = v && v !== key ? v : fallback;
+      const v = window.RMX && RMX.t ? RMX.t(key) : "";
+      let out = v && v !== key ? v : fallback;
       if (vars) out = out.replace(/\{(\w+)\}/g, function (m, n) { return vars[n] !== undefined ? vars[n] : m; });
       return out;
     }
 
     async function loadServers() {
-      var data = await chrome.storage.local.get("servers");
+      const data = await chrome.storage.local.get("servers");
       servers = data.servers && data.servers.length ? data.servers : [
         { id: crypto.randomUUID(), url: "https://10.11.99.1", user: "", pass: "", hasCreds: false }
       ];
@@ -68,7 +68,7 @@
        gelaufen ist (sonst zeigten Popup/Dateimanager Senden bzw. Listen
        kurz sofort an, solange die Server gerade erst geprüft werden). */
     function plainServers() {
-      return servers.map(function (s) { var c = Object.assign({}, s); delete c._status; return c; });
+      return servers.map(function (s) { const c = Object.assign({}, s); delete c._status; return c; });
     }
     async function saveServers() {
       await chrome.storage.local.set({ servers: plainServers() });
@@ -84,7 +84,7 @@
       if (!s) return null;
       return "Basic " + btoa((s.user || "") + ":" + (s.pass || ""));
     };
-    var authHeaderFor = RMXServers.authHeaderFor;
+    const authHeaderFor = RMXServers.authHeaderFor;
     function readyServers() {
       return servers.filter(function (s) { return s._status === "online"; });
     }
@@ -93,15 +93,15 @@
        WWW-Authenticate-Header (z. B. Digest/NTLM → Basic-Login kann nie
        gelingen), code = HTTP-Status, netError = "timeout"/"network". */
     async function probe(s) {
-      var ctrl = new AbortController();
-      var timer = setTimeout(function () { ctrl.abort(); }, 8000);
+      const ctrl = new AbortController();
+      const timer = setTimeout(function () { ctrl.abort(); }, 8000);
       try {
-        var headers = { Authorization: authHeaderFor(s) };
-        var res = await fetch(s.url + "/documents/", { method: "GET", headers: headers, signal: ctrl.signal, cache: "no-store", credentials: "omit" });
+        const headers = { Authorization: authHeaderFor(s) };
+        const res = await fetch(s.url + "/documents/", { method: "GET", headers: headers, signal: ctrl.signal, cache: "no-store", credentials: "omit" });
         clearTimeout(timer);
-        var scheme = null;
+        let scheme = null;
         try {
-          var chall = (res.headers.get("WWW-Authenticate") || "").trim();
+          const chall = (res.headers.get("WWW-Authenticate") || "").trim();
           if (chall) scheme = chall.split(/\s+/)[0];
         } catch (e2) { /* Header evtl. nicht lesbar */ }
         if (res.ok) return { status: "online", scheme: scheme };
@@ -119,8 +119,8 @@
     // zu "Cannot set properties of undefined" führen, falls ein älterer
     // Discovery-Lauf noch läuft, wenn servers sich bereits geändert hat.
     async function runDiscovery() {
-      var list = servers;
-      for (var i = 0; i < list.length; i++) list[i]._status = "checking";
+      const list = servers;
+      for (let i = 0; i < list.length; i++) list[i]._status = "checking";
       render();
       await Promise.all(list.map(async function (s) { s._status = (await probe(s)).status; }));
       render();
@@ -128,7 +128,7 @@
     }
 
     function buildLoginCard(s) {
-      var card = document.createElement("div");
+      const card = document.createElement("div");
       card.className = "rmx-srv-login";
       card.innerHTML =
         '<p class="rmx-srv-login__title">🔒 ' + esc(T("srvLoginTitle", "Basic-Auth für {url}", { url: s.url })) + "</p>" +
@@ -138,16 +138,16 @@
         '<button type="button" class="rmx-srv-login__submit" data-submit>' + esc(T("srvLogin", "Anmelden")) + '</button>' +
         '<span class="rmx-srv-login__err hidden" data-err>' + esc(T("srvLoginFail", "Anmeldung fehlgeschlagen.")) + '</span>' +
         "</div>";
-      var userInput = card.querySelector("[data-u]");
-      var passInput = card.querySelector("[data-p]");
-      var submitBtn = card.querySelector("[data-submit]");
-      var errEl = card.querySelector("[data-err]");
+      const userInput = card.querySelector("[data-u]");
+      const passInput = card.querySelector("[data-p]");
+      const submitBtn = card.querySelector("[data-submit]");
+      const errEl = card.querySelector("[data-err]");
       async function submit() {
         submitBtn.disabled = true;
         submitBtn.textContent = T("srvChecking", "Prüft …");
         errEl.classList.add("hidden");
-        var candidate = Object.assign({}, s, { user: userInput.value, pass: passInput.value, hasCreds: true });
-        var r = await probe(candidate);
+        const candidate = Object.assign({}, s, { user: userInput.value, pass: passInput.value, hasCreds: true });
+        const r = await probe(candidate);
         if (r.status === "online") {
           s.user = userInput.value; s.pass = passInput.value; s.hasCreds = true; s._status = "online";
           await saveServers();
@@ -172,7 +172,7 @@
     }
 
     function buildCopyBtn(s) {
-      var btn = document.createElement("button");
+      const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "rmx-srv-btn";
       btn.title = T("srvCopyAddr", "Adresse kopieren");
@@ -189,7 +189,7 @@
     }
 
     function buildOpenBtn(s) {
-      var btn = document.createElement("button");
+      const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "rmx-srv-btn";
       btn.title = T("srvOpenTab", "In neuem Tab \u00f6ffnen");
@@ -202,23 +202,23 @@
     function render() {
       /* Wenn kein Server online ist, alle zeigen (auch offline), damit die
          Login-Karte und das Hinzufügen jederzeit erreichbar bleiben. */
-      var noneOnline = !servers.some(function (s) { return s._status === "online"; });
-      var visible = (editMode || noneOnline) ? servers : servers.filter(function (s) { return s._status !== "offline"; });
-      var frag = document.createDocumentFragment();
+      const noneOnline = !servers.some(function (s) { return s._status === "online"; });
+      const visible = (editMode || noneOnline) ? servers : servers.filter(function (s) { return s._status !== "offline"; });
+      const frag = document.createDocumentFragment();
 
       visible.forEach(function (s) {
-        var row = document.createElement("li");
-        var rowDiv = document.createElement("div");
+        const row = document.createElement("li");
+        const rowDiv = document.createElement("div");
         rowDiv.className = "rmx-srv-row";
 
-        var dot = document.createElement("span");
+        const dot = document.createElement("span");
         dot.className = "rmx-srv-dot rmx-srv-dot--" + (s._status || "checking");
 
-        var url = document.createElement("span");
+        const url = document.createElement("span");
         url.className = "rmx-srv-url";
         url.textContent = s.url;
 
-        var label = document.createElement("span");
+        const label = document.createElement("span");
         label.className = "rmx-srv-state";
         label.textContent = { online: T("srvOnline", "bereit"), auth: T("srvAuth", "Login nötig"), offline: T("srvOffline", "offline"), checking: "…" }[s._status || "checking"];
 
@@ -226,7 +226,7 @@
         rowDiv.append(buildCopyBtn(s), buildOpenBtn(s));
 
         if (editMode) {
-          var del = document.createElement("button");
+          const del = document.createElement("button");
           del.type = "button";
           del.className = "rmx-srv-rm";
           del.title = T("remove", "Entfernen");
@@ -246,7 +246,7 @@
       });
 
       if (!visible.length) {
-        var empty = document.createElement("li");
+        const empty = document.createElement("li");
         empty.className = "rmx-srv-empty";
         empty.textContent = editMode ? T("srvEmptyEdit", "Keine Server hinterlegt.") : T("srvEmptyHint", "Kein Server erreichbar. ⚙ zeigt alle an.");
         frag.appendChild(empty);
@@ -256,7 +256,7 @@
       elList.appendChild(frag);
       elAddForm.classList.toggle("hidden", !editMode);
 
-      var online = servers.filter(function (s) { return s._status === "online"; }).length;
+      const online = servers.filter(function (s) { return s._status === "online"; }).length;
       elSummary.textContent = servers.length && online ? T("srvSummary", "{o}/{n} erreichbar", { o: online, n: servers.length }) : "";
       elToggle.classList.toggle("active", editMode);
     }
@@ -267,7 +267,7 @@
     });
     elAddForm.addEventListener("submit", async function (e) {
       e.preventDefault();
-      var val = (elAddInput.value || "").trim();
+      let val = (elAddInput.value || "").trim();
       if (!val) return;
       if (!/^https?:\/\//i.test(val)) val = "https://" + val;
       val = val.replace(/\/+$/, "");

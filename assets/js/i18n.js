@@ -4,13 +4,12 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
+  const R = (window.RMX = window.RMX || {});
 
   R.langs = [['de', 'Deutsch'], ['en', 'English'], ['it', 'Italiano'], ['es', 'Español'], ['fr', 'Français']];
-  var T = {
+  const T = {
     importShort: ["Import", "Import", "Importa", "Importar", "Importer"],
     exportShort: ["Export", "Export", "Esporta", "Exportar", "Exporter"],
-    urlShort: ["URL", "URL", "URL", "URL", "URL"],
     myFiles: ["Meine Dateien", "My files", "I miei file", "Mis archivos", "Mes fichiers"],
     import: ["Importieren", "Import", "Importa", "Importar", "Importer"],
     export: ["Exportieren", "Export", "Esporta", "Exportar", "Exporter"],
@@ -82,7 +81,6 @@
     filters: ["Filter", "Filters", "Filtri", "Filtros", "Filtres"],
     filtersReset: ["Zurücksetzen", "Reset", "Reimposta", "Restablecer", "Réinitialiser"],
     fType: ["Typ", "Type", "Tipo", "Tipo", "Type"],
-    fTypeAll: ["Alle Typen", "All types", "Tutti i tipi", "Todos los tipos", "Tous les types"],
     fFav: ["Nur Favoriten", "Favorites only", "Solo preferiti", "Solo favoritos", "Favoris uniquement"],
     fFrom: ["Geändert ab", "Modified from", "Modificato dal", "Modificado desde", "Modifié depuis"],
     fTo: ["Geändert bis", "Modified until", "Modificato fino al", "Modificado hasta", "Modifié jusqu'au"],
@@ -115,8 +113,6 @@
     dContains: ["Enthält", "Contains", "Contiene", "Contiene", "Contient"],
     dDocs: ["{n} Dokumente", "{n} documents", "{n} documenti", "{n} documentos", "{n} documents"],
     dFolders: ["{n} Ordner", "{n} folders", "{n} cartelle", "{n} carpetas", "{n} dossiers"],
-    select: ["Auswählen", "Select", "Seleziona", "Seleccionar", "Sélectionner"],
-    deselect: ["Abwählen", "Deselect", "Deseleziona", "Deseleccionar", "Désélectionner"],
     previewLoading: ["Vorschau wird erstellt. Das Gerät rendert das Dokument, das kann einen Moment dauern.", "Creating preview. The device renders the document, this can take a moment.", "Creazione dell'anteprima. Il dispositivo genera il documento, può richiedere un momento.", "Creando la vista previa. El dispositivo genera el documento; puede tardar un momento.", "Création de l'aperçu. L'appareil génère le document, cela peut prendre un moment."],
     previewFailed: ["Vorschau fehlgeschlagen: {msg}", "Preview failed: {msg}", "Anteprima non riuscita: {msg}", "Error en la vista previa: {msg}", "Échec de l'aperçu : {msg}"],
     nameTemplate: ["Dateinamen", "File names", "Nomi dei file", "Nombres de archivo", "Noms des fichiers"],
@@ -127,17 +123,13 @@
     moveUp: ["Nach oben", "Move up", "Sposta su", "Subir", "Monter"],
     moveDown: ["Nach unten", "Move down", "Sposta giù", "Bajar", "Descendre"],
     remove: ["Entfernen", "Remove", "Rimuovi", "Quitar", "Retirer"],
-    rmdocUnavailable: ["RMDoc ist für dieses Dokument nicht verfügbar.", "RMDoc is not available for this document.", "RMDoc non disponibile per questo documento.", "RMDoc no disponible para este documento.", "RMDoc non disponible pour ce document."],
     textFormat: ["Seitenformat für Text und HTML", "Page size for text and HTML", "Formato pagina per testo e HTML", "Tamaño de página para texto y HTML", "Format de page pour texte et HTML"],
     pageRmShort: ["reMarkable", "reMarkable", "reMarkable", "reMarkable", "reMarkable"],
     pageA4: ["A4", "A4", "A4", "A4", "A4"],
     fontSize: ["Schriftgröße", "Font size", "Dimensione del carattere", "Tamaño de fuente", "Taille de police"],
     fontNormal: ["Normal", "Normal", "Normale", "Normal", "Normale"],
     fontLarge: ["Groß", "Large", "Grande", "Grande", "Grande"],
-    makePreview: ["Vorschau erstellen", "Create preview", "Crea anteprima", "Crear vista previa", "Créer l'aperçu"],
-    uploadNow: ["Hochladen", "Upload", "Carica", "Subir", "Envoyer"],
     uploadAll: ["Alle hochladen", "Upload all", "Carica tutto", "Subir todo", "Tout envoyer"],
-    back: ["Zurück", "Back", "Indietro", "Atrás", "Retour"],
     uploadedAs: ["Hochgeladen als „{name}“", "Uploaded as \"{name}\"", "Caricato come “{name}”", "Subido como «{name}»", "Envoyé sous « {name} »"],
     results: ["Ergebnis", "Result", "Risultato", "Resultado", "Résultat"],
     renameField: ["Name", "Name", "Nome", "Nombre", "Nom"],
@@ -154,27 +146,10 @@
     createFoldersHint: ["Die Geräteschnittstelle kennt kein „Ordner anlegen“. Der Versuch nutzt eine speziell gebaute .rmdoc-Datei und ist ungetestet.", "The device interface has no \"create folder\". The attempt uses a specially built .rmdoc file and is untested.", "L'interfaccia del dispositivo non prevede “crea cartella”. Il tentativo usa un file .rmdoc speciale ed è non testato.", "La interfaz del dispositivo no permite «crear carpeta». El intento usa un archivo .rmdoc especial y no está probado.", "L'interface de l'appareil ne permet pas de « créer un dossier ». La tentative utilise un fichier .rmdoc spécial et n'est pas testée."],
     createFailed: ["Das Gerät hat den Ordner nicht angelegt.", "The device did not create the folder.", "Il dispositivo non ha creato la cartella.", "El dispositivo no creó la carpeta.", "L'appareil n'a pas créé le dossier."],
     createJunk: ["Das Gerät hat „{name}“ als Dokument statt als Ordner angelegt (bitte manuell löschen).", "The device created \"{name}\" as a document instead of a folder (please delete it manually).", "Il dispositivo ha creato “{name}” come documento invece di una cartella (eliminalo manualmente).", "El dispositivo creó «{name}» como documento en lugar de carpeta (elimínalo manualmente).", "L'appareil a créé « {name} » comme document au lieu d'un dossier (à supprimer manuellement)."],
-    urlBtn: ["URL importieren", "Import URL", "Importa URL", "Importar URL", "Importer une URL"],
 
-    urlTitle: ["Webseite importieren", "Import web page", "Importa pagina web", "Importar página web", "Importer une page web"],
-    urlIntro: ["Gib den Link zu einer Webseite mit Lesemodus ein oder direkt zu einer PDF-, EPUB- oder JPG-Datei. Die Art wird automatisch erkannt. Webseiten werden über einen Reader-Dienst im Lesemodus gerendert.", "Enter the link to a web page with a reader mode, or directly to a PDF, EPUB or JPG file. The type is detected automatically. Web pages are rendered in reader mode through a reader service.", "Inserisci il link a una pagina web con modalità lettura oppure direttamente a un file PDF, EPUB o JPG. Il tipo viene riconosciuto automaticamente. Le pagine web vengono rese in modalità lettura tramite un servizio reader.", "Introduce el enlace de una página web con modo lectura o directamente de un archivo PDF, EPUB o JPG. El tipo se detecta automáticamente. Las páginas web se procesan en modo lectura mediante un servicio de lectura.", "Saisissez le lien d'une page web avec mode lecture ou directement d'un fichier PDF, EPUB ou JPG. Le type est détecté automatiquement. Les pages web sont rendues en mode lecture via un service de lecture."],
-    urlLabel: ["Adresse (URL)", "Address (URL)", "Indirizzo (URL)", "Dirección (URL)", "Adresse (URL)"],
-    urlLoad: ["Seite laden", "Load page", "Carica pagina", "Cargar página", "Charger la page"],
-    advanced: ["Erweitert", "Advanced", "Avanzate", "Avanzado", "Avancé"],
-    urlReader: ["Reader-URL-Vorlage", "Reader URL template", "Modello URL del reader", "Plantilla de URL del lector", "Modèle d'URL du lecteur"],
-    urlReaderHint: ["Die Adresse wird an diesen Dienst gesendet. {url} wird durch die Adresse ersetzt.", "The address is sent to this service. {url} is replaced by the address.", "L'indirizzo viene inviato a questo servizio. {url} viene sostituito dall'indirizzo.", "La dirección se envía a este servicio. {url} se sustituye por la dirección.", "L'adresse est envoyée à ce service. {url} est remplacé par l'adresse."],
-    urlLoading: ["Seite wird geladen …", "Loading page …", "Caricamento della pagina …", "Cargando la página …", "Chargement de la page …"],
-    urlInvalid: ["Das ist keine gültige Webadresse.", "This is not a valid web address.", "Questo non è un indirizzo web valido.", "Esta no es una dirección web válida.", "Ce n'est pas une adresse web valide."],
-    urlHttp: ["Der Dienst antwortete mit HTTP {status}. Die Seite bietet vermutlich keinen Lesemodus oder ist nicht öffentlich erreichbar.", "The service answered with HTTP {status}. The page probably offers no reader mode or is not publicly reachable.", "Il servizio ha risposto con HTTP {status}. La pagina probabilmente non offre la modalità lettura o non è accessibile pubblicamente.", "El servicio respondió con HTTP {status}. Probablemente la página no ofrece modo lectura o no es de acceso público.", "Le service a répondu par HTTP {status}. La page n'offre probablement pas de mode lecture ou n'est pas accessible publiquement."],
-    urlReaderNetwork: ["Der Reader-Dienst ist nicht erreichbar. Prüfe die Internetverbindung des Browsers; eventuell blockiert ein Werbe- oder Datenschutz-Blocker die Anfrage.", "The reader service cannot be reached. Check the browser's internet connection; an ad or privacy blocker may be blocking the request.", "Il servizio reader non è raggiungibile. Controlla la connessione a Internet del browser; un blocco pubblicità o privacy potrebbe bloccare la richiesta.", "No se puede acceder al servicio de lectura. Comprueba la conexión a Internet del navegador; un bloqueador de anuncios o de privacidad podría bloquear la petición.", "Le service de lecture est inaccessible. Vérifiez la connexion Internet du navigateur ; un bloqueur de publicités ou de traceurs peut bloquer la requête."],
-    urlFileBlocked: ["Die Datei konnte nicht direkt geladen werden (meist verbietet der Server den Zugriff von anderen Seiten, CORS). Lade sie herunter und füge sie über „Importieren“ hinzu.", "The file could not be loaded directly (usually the server forbids access from other sites, CORS). Download it and add it with \"Import\".", "Impossibile caricare direttamente il file (di solito il server vieta l'accesso da altri siti, CORS). Scaricalo e aggiungilo con “Importa”.", "No se pudo cargar el archivo directamente (normalmente el servidor no permite el acceso desde otros sitios, CORS). Descárgalo y añádelo con «Importar».", "Le fichier n'a pas pu être chargé directement (le serveur interdit en général l'accès depuis d'autres sites, CORS). Téléchargez-le et ajoutez-le avec « Importer »."],
-    urlEmpty: ["Diese Seite stellt keinen Lesemodus bereit: Der Reader hat keinen lesbaren Inhalt geliefert. Es funktionieren nur Seiten mit Lesemodus sowie direkte Links auf PDF, EPUB und JPG.", "This page offers no reader mode: the reader returned no readable content. Only pages with a reader mode and direct links to PDF, EPUB and JPG work.", "Questa pagina non offre la modalità lettura: il reader non ha restituito contenuto leggibile. Funzionano solo pagine con modalità lettura e link diretti a PDF, EPUB e JPG.", "Esta página no ofrece modo lectura: el lector no devolvió contenido legible. Solo funcionan las páginas con modo lectura y los enlaces directos a PDF, EPUB y JPG.", "Cette page n'offre pas de mode lecture : le lecteur n'a renvoyé aucun contenu lisible. Seules les pages avec mode lecture et les liens directs vers PDF, EPUB et JPG fonctionnent."],
-    urlRender: ["Das PDF konnte nicht erstellt werden: {msg}", "The PDF could not be created: {msg}", "Impossibile creare il PDF: {msg}", "No se pudo crear el PDF: {msg}", "Le PDF n'a pas pu être créé : {msg}"],
-    urlDone: ["PDF erstellt. Prüfe die Vorschau und lade sie dann hoch.", "PDF created. Check the preview, then upload it.", "PDF creato. Controlla l'anteprima, poi caricalo.", "PDF creado. Revisa la vista previa y luego súbelo.", "PDF créé. Vérifiez l'aperçu, puis envoyez-le."],
     exportAsPdf: ["Als PDF exportieren", "Export as PDF", "Esporta come PDF", "Exportar como PDF", "Exporter en PDF"],
     exportAsRmdoc: ["Als RMDoc exportieren", "Export as RMDoc", "Esporta come RMDoc", "Exportar como RMDoc", "Exporter en RMDoc"],
     exportAsArchive: ["Als Archiv exportieren ({type})", "Export as archive ({type})", "Esporta come archivio ({type})", "Exportar como archivo ({type})", "Exporter en archive ({type})"],
-    urlDoneEpub: ["Datei geladen. Für EPUB gibt es keine PDF-Vorschau, du kannst sie direkt hochladen.", "File loaded. There is no PDF preview for EPUB, you can upload it directly.", "File caricato. Per gli EPUB non c'è anteprima PDF, puoi caricarlo direttamente.", "Archivo cargado. Los EPUB no tienen vista previa en PDF; puedes subirlo directamente.", "Fichier chargé. Il n'y a pas d'aperçu PDF pour les EPUB, vous pouvez l'envoyer directement."],
     oneImagePerPdf: ["Einzelmodus", "Single mode", "Modalità singola", "Modo individual", "Mode individuel"],
     oneImagePerPdfHint: ["Jedes Bild als eigenes PDF", "Each image as its own PDF", "Ogni immagine come PDF separato", "Cada imagen como PDF independiente", "Chaque image comme PDF distinct"],
     pageAsPdfHead: ["Seite als PDF", "Page as PDF", "Pagina come PDF", "Página como PDF", "Page en PDF"],
@@ -186,7 +161,6 @@
     imgNoneLoaded: ["Keines der Bilder konnte geladen werden.", "None of the images could be loaded.", "Nessuna immagine è stata caricata.", "Ninguna de las imágenes se pudo cargar.", "Aucune des images n'a pu être chargée."],
     sendBtnLabel: ["Senden", "Send", "Invia", "Enviar", "Envoyer"],
     openManager: ["Dateiverwaltung \u00f6ffnen", "Open file manager", "Apri gestore file", "Abrir gestor de archivos", "Ouvrir le gestionnaire de fichiers"],
-    loading: ["Lade \u2026", "Loading \u2026", "Caricamento \u2026", "Cargando \u2026", "Chargement \u2026"],
     stNotWebpage: ["Aktueller Tab ist keine Webseite.", "The current tab is not a web page.", "La scheda attiva non \u00e8 una pagina web.", "La pesta\u00f1a actual no es una página web.", "L'onglet actif n'est pas une page web."],
     stLoadingPage: ["Lade Seite \u2026", "Loading page \u2026", "Caricamento pagina \u2026", "Cargando página \u2026", "Chargement de la page \u2026"],
     stLoadingPdf: ["Lade PDF \u2026", "Loading PDF \u2026", "Caricamento PDF \u2026", "Cargando PDF \u2026", "Chargement du PDF \u2026"],
@@ -217,7 +191,6 @@
     srvLoginFail: ["Anmeldung fehlgeschlagen.", "Login failed.", "Accesso non riuscito.", "Inicio de sesión fallido.", "\u00c9chec de la connexion."],
     srvChecking: ["Prüft \u2026", "Checking \u2026", "Verifica \u2026", "Comprobando \u2026", "Vérification \u2026"],
     srvAddPh: ["z. B. https://10.11.99.1", "e.g. https://10.11.99.1", "es. https://10.11.99.1", "p. ej. https://10.11.99.1", "p. ex. https://10.11.99.1"],
-    statusHead: ["Status", "Status", "Stato", "Estado", "Statut"],
     statusSummary: ["{done} von {n} Dateien", "{done} of {n} files", "{done} di {n} file", "{done} de {n} archivos", "{done} sur {n} fichiers"],
     imgSomeLoaded: ["{n} von {m} Bildern geladen", "{n} of {m} images loaded", "{n} di {m} immagini caricate", "{n} de {m} imágenes cargadas", "{n} sur {m} images chargées"],
     stAllFiltered: ["Alle Bilder liegen unter der gew\u00e4hlten Breite.", "All images are below the chosen width.", "Tutte le immagini sono sotto la larghezza scelta.", "Todas las im\u00e1genes est\u00e1n por debajo del ancho elegido.", "Toutes les images sont en dessous de la largeur choisie."],
@@ -229,12 +202,12 @@
     fDateReset: ["Zeitraum zur\u00fccksetzen", "Reset date range", "Azzera intervallo di date", "Restablecer rango de fechas", "R\u00e9initialiser la p\u00e9riode"],
   };
 
-  var codes = R.langs.map(function (l) { return l[0]; });
+  const codes = R.langs.map(function (l) { return l[0]; });
   function detect() {
-    var q = new URLSearchParams(location.search).get('lang');
+    const q = new URLSearchParams(location.search).get('lang');
     if (q && codes.indexOf(q) >= 0) return q;
-    try { var s = localStorage.getItem('rmx.lang'); if (s && codes.indexOf(s) >= 0) return s; } catch (e) { /* private mode */ }
-    var n = String(navigator.language || 'en').toLowerCase().slice(0, 2);
+    try { const s = localStorage.getItem('rmx.lang'); if (s && codes.indexOf(s) >= 0) return s; } catch (e) { /* private mode */ }
+    const n = String(navigator.language || 'en').toLowerCase().slice(0, 2);
     return codes.indexOf(n) >= 0 ? n : 'en';
   }
 
@@ -246,9 +219,9 @@
     document.documentElement.lang = code;
   };
   R.t = function (key, vars) {
-    var row = T[key];
+    const row = T[key];
     if (!row) return key;
-    var s = row[codes.indexOf(R.lang)] || row[1];
+    let s = row[codes.indexOf(R.lang)] || row[1];
     if (vars) s = s.replace(/\{(\w+)\}/g, function (m, n) { return vars[n] !== undefined ? vars[n] : m; });
     return s;
   };

@@ -16,7 +16,7 @@ let fontSize = 16;
 
 // Bilder
 let foundImages = [];
-let selectedSrcs = new Set();
+const selectedSrcs = new Set();
 let minEdgeMax = 0;   // groesste kleinste Bildkante in Pixel (Slider-Maximum)
 let sending = false;         // verhindert parallele Sende-Vorgänge
 

@@ -7,14 +7,14 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
-  var enc = new TextEncoder();
+  const R = (window.RMX = window.RMX || {});
+  const enc = new TextEncoder();
 
   /* ---------- helpers ---------- */
 
   /** Makes a single path segment safe for Windows, macOS and Linux. */
   function sanitizeSegment(name) {
-    var s = String(name == null ? '' : name)
+    let s = String(name == null ? '' : name)
       .replace(/[\u0000-\u001f\u007f\\\/:*?"<>|]/g, '_')
       .replace(/\s+/g, ' ')
       .replace(/^[\s.]+|[\s.]+$/g, '');
@@ -51,11 +51,11 @@
     return Math.floor(num).toString(8).padStart(len - 1, '0') + '\0';
   }
   function put(buf, off, str, max) {
-    var b = enc.encode(str);
+    const b = enc.encode(str);
     buf.set(b.length > max ? b.subarray(0, max) : b, off);
   }
   function header(name, size, mtime, type, mode) {
-    var buf = new Uint8Array(512);
+    const buf = new Uint8Array(512);
     put(buf, 0, name, 100);
     put(buf, 100, octal(mode, 8), 8);
     put(buf, 108, octal(0, 8), 8);
@@ -66,28 +66,28 @@
     buf[156] = type.charCodeAt(0);
     put(buf, 257, 'ustar\0', 6);
     put(buf, 263, '00', 2);
-    var sum = 0;
-    for (var i = 0; i < 512; i++) sum += buf[i];
+    let sum = 0;
+    for (let i = 0; i < 512; i++) sum += buf[i];
     put(buf, 148, sum.toString(8).padStart(6, '0') + '\0 ', 8);
     return buf;
   }
   function paxRecord(key, value) {
-    var body = ' ' + key + '=' + value + '\n';
-    var bl = enc.encode(body).length;
-    var len = bl;
+    const body = ' ' + key + '=' + value + '\n';
+    const bl = enc.encode(body).length;
+    let len = bl;
     for (;;) {
-      var next = bl + String(len).length;
+      const next = bl + String(len).length;
       if (next === len) break;
       len = next;
     }
     return enc.encode(len + body);
   }
   function asciiFallback(path) {
-    var s = path.replace(/[^\x20-\x7e]/g, '_');
+    const s = path.replace(/[^\x20-\x7e]/g, '_');
     return s.length > 100 ? s.slice(s.length - 100) : s;
   }
   function padTo512(size) {
-    var r = size % 512;
+    const r = size % 512;
     return r ? new Uint8Array(512 - r) : null;
   }
 
@@ -95,19 +95,19 @@
     this.parts = [];
   }
   TarWriter.prototype._entry = function (path, size, date, type, mode, data) {
-    var mtime = Math.floor((date ? date.getTime() : Date.now()) / 1000);
-    var needsPax = /[^\x20-\x7e]/.test(path) || enc.encode(path).length > 100;
+    const mtime = Math.floor((date ? date.getTime() : Date.now()) / 1000);
+    const needsPax = /[^\x20-\x7e]/.test(path) || enc.encode(path).length > 100;
     if (needsPax) {
-      var rec = paxRecord('path', path);
+      const rec = paxRecord('path', path);
       this.parts.push(header('PaxHeader/' + asciiFallback(path).slice(-80), rec.length, mtime, 'x', 0o644));
       this.parts.push(rec);
-      var pad = padTo512(rec.length);
+      const pad = padTo512(rec.length);
       if (pad) this.parts.push(pad);
     }
     this.parts.push(header(needsPax ? asciiFallback(path) : path, size, mtime, type, mode));
     if (data) {
       this.parts.push(data);
-      var p2 = padTo512(size);
+      const p2 = padTo512(size);
       if (p2) this.parts.push(p2);
     }
   };
@@ -119,30 +119,30 @@
   };
   TarWriter.prototype.finish = async function () {
     this.parts.push(new Uint8Array(1024)); // end-of-archive marker
-    var tar = new Blob(this.parts, { type: 'application/x-tar' });
+    const tar = new Blob(this.parts, { type: 'application/x-tar' });
     this.parts = [];
     if (typeof CompressionStream !== 'undefined' && tar.stream) {
-      var stream = tar.stream().pipeThrough(new CompressionStream('gzip'));
+      const stream = tar.stream().pipeThrough(new CompressionStream('gzip'));
       return await new Response(stream).blob();
     }
     await R.load.pako();
-    var bytes = new Uint8Array(await tar.arrayBuffer());
+    const bytes = new Uint8Array(await tar.arrayBuffer());
     return new Blob([window.pako.gzip(bytes)], { type: 'application/gzip' });
   };
   TarWriter.extension = 'tar.gz';
 
   /* ---------- reading (import) ---------- */
 
-  var ARCHIVE_RE = /\.(zip|tar|tar\.gz|tgz)$/i;
+  const ARCHIVE_RE = /\.(zip|tar|tar\.gz|tgz)$/i;
 
   function cstr(u8, off, len) {
-    var end = off;
+    let end = off;
     while (end < off + len && u8[end] !== 0) end++;
     return new TextDecoder().decode(u8.subarray(off, end));
   }
   function paxPath(data) {
-    var text = new TextDecoder().decode(data);
-    var m = /(?:^|\n)\d+ path=([^\n]*)/.exec(text);
+    const text = new TextDecoder().decode(data);
+    const m = /(?:^|\n)\d+ path=([^\n]*)/.exec(text);
     return m ? m[1] : null;
   }
   async function gunzip(blob) {
@@ -153,16 +153,16 @@
     return window.pako.ungzip(new Uint8Array(await blob.arrayBuffer())).buffer;
   }
   function untar(buf) {
-    var u8 = new Uint8Array(buf);
-    var out = [];
-    var off = 0, pax = null, longName = null;
+    const u8 = new Uint8Array(buf);
+    const out = [];
+    let off = 0, pax = null, longName = null;
     while (off + 512 <= u8.length) {
       if (u8[off] === 0) break; // end marker
-      var size = parseInt(cstr(u8, off + 124, 12).trim() || '0', 8) || 0;
-      var type = String.fromCharCode(u8[off + 156] || 48);
-      var prefix = cstr(u8, off + 345, 155);
-      var path = (prefix ? prefix + '/' : '') + cstr(u8, off, 100);
-      var data = u8.subarray(off + 512, off + 512 + size);
+      const size = parseInt(cstr(u8, off + 124, 12).trim() || '0', 8) || 0;
+      const type = String.fromCharCode(u8[off + 156] || 48);
+      const prefix = cstr(u8, off + 345, 155);
+      const path = (prefix ? prefix + '/' : '') + cstr(u8, off, 100);
+      const data = u8.subarray(off + 512, off + 512 + size);
       off += 512 + Math.ceil(size / 512) * 512;
       if (type === 'x') pax = paxPath(data);
       else if (type === 'L') longName = new TextDecoder().decode(data).replace(/\0+$/, '');
@@ -175,12 +175,12 @@
   }
   /** Entries of a zip / tar / tar.gz as [{path, blob}], metadata files and hidden files left out. */
   async function read(file) {
-    var n = file.name.toLowerCase();
-    var entries = [];
+    const n = file.name.toLowerCase();
+    let entries = [];
     if (/\.zip$/.test(n)) {
       await R.load.jszip();
-      var zip = await window.JSZip.loadAsync(file);
-      var jobs = [];
+      const zip = await window.JSZip.loadAsync(file);
+      const jobs = [];
       zip.forEach(function (path, e) { if (!e.dir) jobs.push(e.async('blob').then(function (b) { entries.push({ path: path, blob: b }); })); });
       await Promise.all(jobs);
     } else {

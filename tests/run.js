@@ -18,6 +18,8 @@
  * 14. Ungenutzte Dateien (vom Erweiterungspaket nicht referenziert)
  * 15. Doppelte HTML-IDs
  * 16. CSS-Klammerbalance
+ * 17. i18n-Sprachparitaet: Platzhalter ({n}, {name}, ...) und Sprachliste
+ * 18. Content-Security-Policy des Manifests (MV3-Defaults darf nicht gelockert werden)
  */
 "use strict";
 
@@ -146,10 +148,11 @@ check("Namespace enthält nur die drei Helfer", function () {
 /* ---------- 2. i18n-Tabelle laden (Objekt-Literal isoliert auswerten) ---------- */
 function loadI18nTable() {
   const src = read("assets/js/i18n.js");
-  const start = src.indexOf("var T = {");
-  assert(start >= 0, "var T = { nicht gefunden");
+  const m = src.match(/\b(?:var|let|const)\s+T\s*=\s*\{/);
+  assert(m, "Tabellenstart ((var|let|const) T = {) nicht gefunden");
+  const start = m.index, skip = m[0].length - 1; /* Slice startet am { */
   let depth = 0, inStr = null, esc = false, end = -1;
-  for (let i = start + "var T = ".length; i < src.length; i++) {
+  for (let i = start + skip; i < src.length; i++) {
     const c = src[i];
     if (inStr) {
       if (esc) esc = false;
@@ -165,7 +168,7 @@ function loadI18nTable() {
     }
   }
   assert(end > 0, "Tabellenende nicht gefunden");
-  return vm.runInNewContext("(" + src.slice(start + "var T = ".length, end + 1) + ")", {}, { filename: "i18n.T" });
+  return vm.runInNewContext("(" + src.slice(start + skip, end + 1) + ")", {}, { filename: "i18n.T" });
 }
 
 const T = loadI18nTable();
@@ -174,7 +177,7 @@ const LANGS = 5;
 console.log("\n[2] assets/js/i18n.js Tabellenintegrität");
 
 check("Tabelle nicht leer", function () {
-  assert(Object.keys(T).length >= 200, "nur " + Object.keys(T).length + " Schlüssel");
+  assert(Object.keys(T).length >= 180, "nur " + Object.keys(T).length + " Schlüssel");
 });
 
 check("jeder Eintrag hat genau " + LANGS + " Übersetzungen", function () {
@@ -268,9 +271,20 @@ check("jede referenzierte i18n-Übersetzung existiert in der Tabelle", function 
   }).join("; "));
 });
 
+/* Ungenutzte Schluessel wrapper-robust zaehlen: Schluessel gelten auch dann als
+   genutzt, wenn sie als Wort irgendwo im Code stehen (setArtStatus("stScanning", ...)
+   oder label(k) -> t(k + 'Short')). Nur so entsteht keine toten-Schluessel-Fehlliste. */
+const refCorpus = [...jsFiles, "shared/filename.js", ...htmlFiles]
+  .map(function (f) { return read(f); }).join("\n");
+const keyHit = function (k) {
+  /* Sonderfall label(k) -> t(k + 'Short'): kurze Variante gilt als genutzt,
+     wenn ihr Basis-Schluessel (ohne Suffix) referenziert wird. */
+  if (k.slice(-5) === "Short" && keyHit(k.slice(0, -5))) return true;
+  return new RegExp("(^|[^A-Za-z0-9_$])" + k + "([^A-Za-z0-9_$]|$)").test(refCorpus);
+};
+const unusedKeys = Object.keys(T).filter(function (k) { return !keyHit(k); });
 console.log("      ungenutzte Tabellenschlüssel: " +
-  Object.keys(T).filter(function (k) { return !allRefs.has(k); }).length +
-  " (dynamische Aufrufe und Fallbacks sind erlaubt)");
+  (unusedKeys.length ? unusedKeys.join(", ") : "0") + " (dynamische Aufrufe und Fallbacks sind erlaubt)");
 
 /* ---------- 4. Dateireferenzen in HTML und manifest ---------- */
 console.log("\n[4] Dateireferenzen");
@@ -335,7 +349,7 @@ check("manifest.json ist gültiges MV3-Manifest", function () {
 console.log("\n[6] Syntax (node --check)");
 
 check("alle eigenen JS-Dateien haben gültige Syntax", function () {
-  const files = [...jsFiles, "shared/filename.js", "assets/js/i18n.js", __filename];
+  const files = [...jsFiles, "shared/filename.js", "assets/js/i18n.js", "tools/bump-version.js", __filename];
   const broken = [];
   files.forEach(function (f) {
     if (!exists(f)) return; // schon oben gemeldet
@@ -660,7 +674,8 @@ console.log("\n[14] Ungenutzte Dateien");
 check("jede Paketdatei wird vom Code, HTML, CSS oder manifest referenziert", function () {
   /* Corpus = alle Paketdateien ausser Tests, README und Lizenztexten.
      Referenzquelle ist auch manifest.json selbst (Icons, Popup, Worker). */
-  const NONCODE = [/^tests\//, /^README\.md$/, /^assets\/vendor\/licenses\//, /THIRD_PARTY_NOTICES\.txt$/];
+  /* tools/ und tests/ sind Entwicklungs-Werkzeuge, kein Teil des Erweiterungspakets. */
+  const NONCODE = [/^tests\//, /^tools\//, /^README\.md$/, /^assets\/vendor\/licenses\//, /THIRD_PARTY_NOTICES\.txt$/];
   const refs = [];
   function walk(dir) {
     fs.readdirSync(path.join(ROOT, dir === "" ? "." : dir), { withFileTypes: true }).forEach(function (e) {
@@ -705,6 +720,55 @@ cssFiles.forEach(function (f) {
     const o = (src.match(/\{/g) || []).length, c = (src.match(/\}/g) || []).length;
     assert(o === c, o + " \\{ gegen " + c + " \\}");
   });
+});
+
+/* ---------- 17. i18n-Sprachparitaet ---------- */
+console.log("\n[17] i18n-Sprachparitaet");
+
+check("Platzhalter ({n}, {name}, ...) stimmen in allen Sprachen ueberein", function () {
+  const ph = function (s) { return (s.match(/\{[A-Za-z0-9_]+\}/g) || []).sort().join("|"); };
+  const bad = [];
+  Object.keys(T).forEach(function (k) {
+    const sets = T[k].map(ph);
+    const first = sets[0];
+    sets.forEach(function (v, i) {
+      if (v !== first) bad.push(k + " (Sprache " + i + ": " + (v || "keine") + " statt " + (first || "keine") + ")");
+    });
+  });
+  assert(bad.length === 0, "abweichend: " + bad.slice(0, 10).join("; "));
+});
+
+check("Sprachliste umfasst genau " + LANGS + " Sprachen ohne Dubletten", function () {
+  const src = read("assets/js/i18n.js");
+  const m = src.match(/R\.langs\s*=\s*(\[[^;]*\])\s*;/);
+  assert(m, "R.langs nicht gefunden");
+  const langs = vm.runInNewContext("(" + m[1] + ")", {}, { filename: "i18n.langs" });
+  assert(langs.length === LANGS, "nur " + langs.length + " Sprachen");
+  const codes = langs.map(function (l) { return l[0]; });
+  assert(new Set(codes).size === LANGS, "Dubletten: " + codes.join(","));
+});
+
+/* ---------- 18. Content-Security-Policy ---------- */
+console.log("\n[18] Content Security Policy");
+
+check("CSP der Extension-Pages erlaubt kein unsafe-eval/inline und keine Remote-Scripts", function () {
+  const man = JSON.parse(read("manifest.json"));
+  const csp = man.content_security_policy || {};
+  const known = ["extension_pages", "sandbox"];
+  const badSections = Object.keys(csp).filter(function (s) { return known.indexOf(s) < 0; });
+  assert(badSections.length === 0, "unbekannte CSP-Sektionen: " + badSections.join(", "));
+  /* Fehlt content_security_policy, gilt die strenge MV3-Vorgabe; geprueft wird,
+     dass sie nicht gelockert wird. */
+  const ep = csp.extension_pages || "script-src 'self'; object-src 'self'";
+  const directive = function (name) {
+    const m = ep.match(new RegExp(name + "([^;]*)"));
+    return m ? m[1] : null;
+  };
+  const src = directive("script-src") || directive("default-src");
+  assert(src !== null, "weder script-src noch default-src: " + ep);
+  assert(src.indexOf("'self'") >= 0, "ohne 'self': " + ep);
+  assert(src.indexOf("'unsafe-eval'") < 0 && src.indexOf("'unsafe-inline'") < 0, "unsichere Quelle: " + ep);
+  assert(!/https?:\/\//.test(src), "Remote-Scripts: " + ep);
 });
 
 /* ---------- Ergebnis ---------- */

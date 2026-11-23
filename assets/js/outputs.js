@@ -9,20 +9,20 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
+  const R = (window.RMX = window.RMX || {});
   R.features = R.features || [];
   R.features.push(function (app) {
-    var t = app.t, esc = app.esc, icon = app.icon, state = app.state;
-    var out = (app.outputs = {});
+    const t = app.t, esc = app.esc, icon = app.icon, state = app.state;
+    const out = (app.outputs = {});
 
-    var chev = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+    const chev = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
 
     /** HTML of the common fields. `p` is an id prefix, `current` the preselected folder. */
     out.fieldsHtml = function (p, current, withCreate) {
-      var folders = [{ id: 'root', label: t('myFiles') }];
+      const folders = [{ id: 'root', label: t('myFiles') }];
       app.allFolderIds().forEach(function (id) { folders.push({ id: id, label: app.pathLabel(id) }); });
       folders.sort(function (a, b) { return a.id === 'root' ? -1 : b.id === 'root' ? 1 : a.label.localeCompare(b.label, R.lang, { numeric: true }); });
-      var target = current === 'root' || state.items.has(current) ? current : 'root';
+      const target = current === 'root' || state.items.has(current) ? current : 'root';
       return '<div class="ark-field"><label for="' + p + '-target" class="responsive-body-md" style="font-weight:600">' + esc(t('target')) + '</label>' +
         '<div class="ark-select"><select id="' + p + '-target">' + folders.map(function (f) {
           return '<option value="' + esc(f.id) + '"' + (f.id === target ? ' selected' : '') + '>' + esc(f.label) + '</option>';
@@ -30,8 +30,8 @@
         (withCreate ? '<label class="rmx-choice" id="' + p + '-createrow" hidden><input type="checkbox" class="ark-input-checkbox" id="' + p + '-create"><span class="txt"><span class="responsive-body-md">' + esc(t('createFolders')) + '</span><small>' + esc(t('createFoldersHint')) + '</small></span></label>' : '');
     };
     out.fieldValues = function (p) {
-      var c = app.$('#' + p + '-create');
-      var d = app.$('#' + p + '-date'), a = app.$('#' + p + '-ascii');
+      const c = app.$('#' + p + '-create');
+      const d = app.$('#' + p + '-date'), a = app.$('#' + p + '-ascii');
       return { target: app.$('#' + p + '-target').value, create: !!(c && c.checked), datePrefix: !!(d && d.checked), ascii: !!(a && a.checked) };
     };
 
@@ -47,13 +47,13 @@
     /** Free name in the target folder: "Name", then "Name (1)", "Name (2)" ... (only copies are counted). */
     out.finalName = function (base, target, used) {
       base = cleanBase(base);
-      var existing = new Set();
+      const existing = new Set();
       app.children(target).forEach(function (x) { if (!app.isFolder(x)) existing.add(String(x.VissibleName).toLowerCase()); });
       used.forEach(function (u) { existing.add(u); });
-      var name = base;
+      let name = base;
       if (existing.has(name.toLowerCase())) {
-        var stem = base.replace(/ \(\d+\)$/, '');
-        var n = 1;
+        const stem = base.replace(/ \(\d+\)$/, '');
+        let n = 1;
         while (existing.has((stem + ' (' + n + ')').toLowerCase())) n++;
         name = stem + ' (' + n + ')';
       }
@@ -71,47 +71,48 @@
         app.choice('radio', 'tfont', 'large', t('fontLarge'), '', vals.tfont === 'large') + '</div></fieldset>';
     };
     out.readTextOptions = function (root, vals) {
-      ['tfmt', 'tfont'].forEach(function (n) { var el = root.querySelector('input[name="' + n + '"]:checked'); if (el) vals[n] = el.value; });
+      ['tfmt', 'tfont'].forEach(function (n) { const el = root.querySelector('input[name="' + n + '"]:checked'); if (el) vals[n] = el.value; });
       return { page: vals.tfmt, fontScale: vals.tfont === 'large' ? 1.23 : 1 };
     };
 
-    var extOf = function (n) { var m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
-    var baseOf = function (n) { return n.replace(/\.[^.]+$/, ''); };
-    var fmtSize = function (b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; };
-    var lc = function (x) { return String(x).toLowerCase(); };
+    const extOf = function (n) { const m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
+    const baseOf = function (n) { return n.replace(/\.[^.]+$/, ''); };
+    const fmtSize = function (b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; };
+    const lc = function (x) { return String(x).toLowerCase(); };
 
     /** Experimental: the device interface has no "new folder"; an .rmdoc with a folder metadata is tried. */
     async function createFolder(parentId, name, signal) {
       await R.load.jszip();
-      var id = R.uuid();
-      var zip = new window.JSZip();
+      const id = R.uuid();
+      const zip = new window.JSZip();
       zip.file(id + '.metadata', JSON.stringify({ visibleName: name, type: 'CollectionType', parent: parentId === 'root' ? '' : parentId, version: 0, lastModified: String(Date.now()), pinned: false, synced: false, deleted: false, modified: false, metadatamodified: false }));
       zip.file(id + '.content', '{}');
-      var blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
       await R.api.upload(new File([blob], name + '.rmdoc'), parentId, signal);
       await app.reloadFolder(parentId);
-      var kids = app.children(parentId);
-      var folder = kids.find(function (x) { return app.isFolder(x) && lc(x.VissibleName) === lc(name); });
+      const kids = app.children(parentId);
+      const folder = kids.find(function (x) { return app.isFolder(x) && lc(x.VissibleName) === lc(name); });
       if (folder) return { id: folder.ID };
       return { junk: kids.some(function (x) { return !app.isFolder(x) && lc(x.VissibleName) === lc(name); }) };
     }
 
     /** Walks `parts` below `root`; missing folders are created only if asked for (and possible). */
     async function resolveFolder(root, parts, create, signal, memo) {
-      var key = root + '/' + parts.join('/');
+      const key = root + '/' + parts.join('/');
       if (memo.cache.has(key)) return memo.cache.get(key);
-      var cur = root, notes = [];
-      for (var i = 0; i < parts.length; i++) {
-        var f = app.children(cur).find(function (x) { return app.isFolder(x) && lc(x.VissibleName) === lc(parts[i]); });
+      let cur = root;
+      const notes = [];
+      for (let i = 0; i < parts.length; i++) {
+        let f = app.children(cur).find(function (x) { return app.isFolder(x) && lc(x.VissibleName) === lc(parts[i]); });
         if (!f && create && !memo.noCreate) {
-          var made = await createFolder(cur, parts[i], signal);
+          const made = await createFolder(cur, parts[i], signal);
           if (made.id) f = app.state.items.get(made.id);
           else { memo.noCreate = true; notes.push(made.junk ? t('createJunk', { name: parts[i] }) : t('createFailed')); }
         }
         if (!f) { notes.push(t('foldersMissing', { path: parts.slice(i).join('/') })); break; }
         cur = f.ID;
       }
-      var res = { id: cur, notes: notes };
+      const res = { id: cur, notes: notes };
       memo.cache.set(key, res);
       return res;
     }
@@ -122,25 +123,25 @@
      */
     async function findIdentical(folderId, base, ext, blob, signal) {
       // names an existing document may have: as is, without "(2)", without a leading backup date
-      var names = [];
-      var push = function (n) { if (n && names.indexOf(n) < 0) names.push(n); };
-      var noNum = function (n) { return n.replace(/ \(\d+\)$/, ''); };
+      const names = [];
+      const push = function (n) { if (n && names.indexOf(n) < 0) names.push(n); };
+      const noNum = function (n) { return n.replace(/ \(\d+\)$/, ''); };
       push(base);
       push(noNum(base));
-      [base, noNum(base)].forEach(function (n) { var m = /^\d{4}-\d{2}-\d{2}[ _](.+)$/.exec(n); if (m) { push(m[1]); push(noNum(m[1])); } });
+      [base, noNum(base)].forEach(function (n) { const m = /^\d{4}-\d{2}-\d{2}[ _](.+)$/.exec(n); if (m) { push(m[1]); push(noNum(m[1])); } });
       // archives store sanitised names ("a/b: c" -> "a_b_ c"), so compare sanitised
-      var key = function (n) { return lc(R.archive.sanitizeSegment(n)); };
-      var docs = app.children(folderId).filter(function (d) { return !app.isFolder(d); }).map(function (d) { return { d: d, k: key(d.VissibleName) }; });
-      var firstStem = null;
-      var budget = 6; // existing documents that may be downloaded for the size comparison
-      for (var n = 0; n < names.length; n++) {
-        var stem = key(names[n]);
-        var cands = docs.filter(function (x) { return x.k === stem || (x.k.indexOf(stem + ' (') === 0 && /^ \(\d+\)$/.test(x.k.slice(stem.length))); });
+      const key = function (n) { return lc(R.archive.sanitizeSegment(n)); };
+      const docs = app.children(folderId).filter(function (d) { return !app.isFolder(d); }).map(function (d) { return { d: d, k: key(d.VissibleName) }; });
+      let firstStem = null;
+      let budget = 6; // existing documents that may be downloaded for the size comparison
+      for (let n = 0; n < names.length; n++) {
+        const stem = key(names[n]);
+        const cands = docs.filter(function (x) { return x.k === stem || (x.k.indexOf(stem + ' (') === 0 && /^ \(\d+\)$/.test(x.k.slice(stem.length))); });
         if (!cands.length) continue;
         if (firstStem === null) firstStem = noNum(cands[0].d.VissibleName);
         if (ext !== 'pdf' && ext !== 'rmdoc') break; // sizes of other formats cannot be compared
-        for (var c = 0; c < cands.length && budget > 0; c++, budget--) {
-          var existing = await R.api.download(cands[c].d.ID, ext, signal);
+        for (let c = 0; c < cands.length && budget > 0; c++, budget--) {
+          const existing = await R.api.download(cands[c].d.ID, ext, signal);
           if (existing.size === blob.size) return { same: cands[c].d };
         }
       }
@@ -149,26 +150,26 @@
     }
 
     out.createList = function (host, items, getCtx) {
-      var usedBy = {};   // folder id -> names taken during this run
-      var memo = { cache: new Map(), noCreate: false };
-      var abort = null;
-      var skipped = 0;
-      var pill = function (a, ico, text, title, cls) { return '<button type="button" class="rmx-pill rmx-pill--' + cls + '" data-o="' + a + '" aria-label="' + esc(title) + '" title="' + esc(title) + '">' + icon(ico, 16) + '<span>' + esc(text) + '</span></button>'; };
+      const usedBy = {};   // folder id -> names taken during this run
+      const memo = { cache: new Map(), noCreate: false };
+      let abort = null;
+      let skipped = 0;
+      const pill = function (a, ico, text, title, cls) { return '<button type="button" class="rmx-pill rmx-pill--' + cls + '" data-o="' + a + '" aria-label="' + esc(title) + '" title="' + esc(title) + '">' + icon(ico, 16) + '<span>' + esc(text) + '</span></button>'; };
       // Left next to the title: small preview; the eye badge sits inside the
       // tile and opens the PDF preview (same interaction as in the import list).
-      var leadHtml = function (ext) {
-        var pv = ext === 'pdf';
+      const leadHtml = function (ext) {
+        const pv = ext === 'pdf';
         return '<div class="olead' + (pv ? '" data-o="pv" role="button" tabindex="0" aria-label="' + esc(t('preview')) + '" title="' + esc(t('preview')) : '') + '">' +
           (pv ? '<span class="othumb" hidden></span>' : '<span class="ofallback">' + icon('notebook', 26) + '</span>') +
           '<span class="obadge">' + icon(pv ? 'eye' : 'notebook', 13) + '</span></div>';
       };
       // Result row: left preview + type icon, right the (long, wrapping) title;
       // below it size and actions as a bottom panel.
-      var rowHtml = function (it, i) {
-        var ext = extOf(it.name);
-        var dlText = ext === 'pdf' ? 'PDF' : ext === 'rmdoc' ? 'RMDoc' : ext.toUpperCase();
-        var dlTitle = ext === 'pdf' ? t('downloadPdf') : ext === 'rmdoc' ? t('downloadRmdoc') : t('download') + ' ' + dlText;
-        var rmTitle = t('remove') + ': ' + baseOf(it.name);
+      const rowHtml = function (it, i) {
+        const ext = extOf(it.name);
+        const dlText = ext === 'pdf' ? 'PDF' : ext === 'rmdoc' ? 'RMDoc' : ext.toUpperCase();
+        const dlTitle = ext === 'pdf' ? t('downloadPdf') : ext === 'rmdoc' ? t('downloadRmdoc') : t('download') + ' ' + dlText;
+        const rmTitle = t('remove') + ': ' + baseOf(it.name);
         return '<li data-i="' + i + '" data-ext="' + esc(ext) + '" data-state="idle"><div class="orow">' +
           leadHtml(ext) +
           '<div class="obody">' +
@@ -184,7 +185,7 @@
           (it.folderPath && it.folderPath.length ? '<div class="opath responsive-body-sm rmx-muted">' + icon('folderFull', 16) + '<span>' + esc(it.folderPath.join(' / ')) + '</span></div>' : '') +
           '<div class="state responsive-body-sm"></div></li>';
       };
-      var paintThumb = function (anchor, blob) {
+      const paintThumb = function (anchor, blob) {
         if (!anchor || !R.pdfview || !R.pdfview.firstPageCanvas) return;
         R.pdfview.firstPageCanvas(blob, 128).then(function (canvas) {
           canvas.className = 'rmx-thumb';
@@ -194,29 +195,29 @@
         }).catch(function () { /* no preview for this file */ });
       };
       host.innerHTML = '<ul class="rmx-files rmx-outs">' + items.map(rowHtml).join('') + '</ul>';
-      var listEl = host.querySelector('ul');
-      var li = function (i) { return host.querySelector('li[data-i="' + i + '"]'); };
+      const listEl = host.querySelector('ul');
+      const li = function (i) { return host.querySelector('li[data-i="' + i + '"]'); };
       items.forEach(function (it, i) {
         if (extOf(it.name) === 'pdf') paintThumb(li(i).querySelector('.othumb'), it.blob);
       });
-      var nameOf = function (i) {
-        var inp = li(i).querySelector('input');
+      const nameOf = function (i) {
+        const inp = li(i).querySelector('input');
         return cleanBase(inp.value) + '.' + extOf(items[i].name);
       };
-      var setState = function (i, st, text, ico) {
-        var el = li(i);
+      const setState = function (i, st, text, ico) {
+        const el = li(i);
         el.setAttribute('data-state', st);
         el.querySelector('.state').innerHTML = (ico ? icon(ico, 18) : (st === 'working' ? '<span class="rmx-spinner" style="width:16px;height:16px"></span>' : '')) + (text ? '<span>' + esc(text) + '</span>' : '');
       };
 
-      var ctrl = {
+      const ctrl = {
         get count() { return items.length; },
         removeItem: function (i) {
           items.splice(i, 1);
-          var doomed = host.querySelector('li[data-i="' + i + '"]');
+          const doomed = host.querySelector('li[data-i="' + i + '"]');
           if (doomed) doomed.remove();
           Array.prototype.forEach.call(host.querySelectorAll('li[data-i]'), function (el) {
-            var n = parseInt(el.getAttribute('data-i'), 10);
+            const n = parseInt(el.getAttribute('data-i'), 10);
             if (n > i) el.setAttribute('data-i', String(n - 1));
           });
         },
@@ -225,7 +226,7 @@
         nameOf: nameOf,
         addBatch: function (additions) {
           additions.forEach(function (o) {
-            var i = items.length;
+            const i = items.length;
             items.push(o);
             if (listEl) {
               listEl.insertAdjacentHTML('beforeend', rowHtml(o, i));
@@ -234,28 +235,28 @@
           });
         },
         async uploadOne(i) {
-          var ctx = getCtx();
-          var item = items[i];
+          const ctx = getCtx();
+          const item = items[i];
           if (item._uploaded) return true;
           if (!abort || abort.signal.aborted) abort = new AbortController();
-          var signal = abort.signal;
+          const signal = abort.signal;
           try {
             setState(i, 'working', t('uploading'));
             // 1) target folder (archives keep their folder structure)
-            var folder = ctx.target, notes = [];
+            let folder = ctx.target, notes = [];
             if (item.folderPath && item.folderPath.length) {
-              var r = await resolveFolder(ctx.target, item.folderPath, ctx.create, signal, memo);
+              const r = await resolveFolder(ctx.target, item.folderPath, ctx.create, signal, memo);
               folder = r.id; notes = r.notes;
             }
             await app.reloadFolder(folder);
-            var ext = extOf(item.name);
-            var base = baseOf(nameOf(i));
+            const ext = extOf(item.name);
+            let base = baseOf(nameOf(i));
             // naming options like in the export dialog
             if (ctx.ascii) base = app.asciiName(base);
             if (ctx.datePrefix) base = app.ymd(new Date()) + ' ' + base;
             // 2) archive entries: identical documents are skipped, different ones are numbered
             if (item.fromArchive) {
-              var found = await findIdentical(folder, cleanBase(base), ext, item.blob, signal);
+              const found = await findIdentical(folder, cleanBase(base), ext, item.blob, signal);
               if (found.same) {
                 item._uploaded = true; skipped++;
                 setState(i, 'done', t('skippedSame', { name: found.same.VissibleName }), 'check');
@@ -263,10 +264,10 @@
               }
               if (found.stem) base = found.stem;
             }
-            var used = usedBy[folder] || (usedBy[folder] = new Set());
-            var name = out.finalName(base, folder, used);
-            var type = ext === 'pdf' ? 'application/pdf' : (item.blob.type || 'application/octet-stream');
-            var data = ext === 'rmdoc' ? await R.rmdoc.rename(item.blob, name) : item.blob;
+            const used = usedBy[folder] || (usedBy[folder] = new Set());
+            const name = out.finalName(base, folder, used);
+            const type = ext === 'pdf' ? 'application/pdf' : (item.blob.type || 'application/octet-stream');
+            const data = ext === 'rmdoc' ? await R.rmdoc.rename(item.blob, name) : item.blob;
             await R.api.upload(new File([data], name + '.' + ext, { type: type }), folder, signal);
             item._uploaded = true;
             setState(i, 'done', t('uploadedAs', { name: name }) + (notes.length ? ' · ' + notes.join(' ') : ''), 'check');
@@ -278,8 +279,8 @@
           }
         },
         async uploadAll() {
-          var ok = 0;
-          for (var i = 0; i < items.length; i++) {
+          let ok = 0;
+          for (let i = 0; i < items.length; i++) {
             if (abort && abort.signal.aborted) break;
             if (await ctrl.uploadOne(i)) ok++;
           }
@@ -289,20 +290,20 @@
       };
 
       host.addEventListener('click', function (e) {
-        var b = e.target.closest('[data-o]');
+        const b = e.target.closest('[data-o]');
         if (!b) return;
-        var i = parseInt(b.closest('li').getAttribute('data-i'), 10);
-        var a = b.getAttribute('data-o');
+        const i = parseInt(b.closest('li').getAttribute('data-i'), 10);
+        const a = b.getAttribute('data-o');
         if (a === 'dl') app.saveBlob(items[i].blob, nameOf(i));
         else if (a === 'pv') app.previewBlob(items[i].blob, nameOf(i));
         else if (a === 'rm') ctrl.removeItem(i);
       });
       host.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
-        var pv = e.target.closest ? e.target.closest('[data-o="pv"]') : null;
+        const pv = e.target.closest ? e.target.closest('[data-o="pv"]') : null;
         if (!pv) return;
         e.preventDefault();
-        var i = parseInt(pv.closest('li').getAttribute('data-i'), 10);
+        const i = parseInt(pv.closest('li').getAttribute('data-i'), 10);
         app.previewBlob(items[i].blob, nameOf(i));
       });
       return ctrl;

@@ -5,26 +5,26 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
+  const R = (window.RMX = window.RMX || {});
 
   async function rename(blob, name) {
     await R.load.jszip();
-    var zip;
+    let zip;
     try { zip = await window.JSZip.loadAsync(blob); } catch (e) { return blob; } // not a zip: upload unchanged
-    var metaPath = Object.keys(zip.files).find(function (n) { return /^[^/]+\.metadata$/.test(n); });
+    const metaPath = Object.keys(zip.files).find(function (n) { return /^[^/]+\.metadata$/.test(n); });
     if (!metaPath) return blob;
-    var meta;
+    let meta;
     try { meta = JSON.parse(await zip.file(metaPath).async('string')); } catch (e) { return blob; }
     if (meta.visibleName === name) return blob; // already right: upload the original file untouched
     meta.visibleName = name;
-    var oldId = metaPath.slice(0, -'.metadata'.length);
-    var newId = R.uuid();
-    var out = new window.JSZip();
-    var jobs = [];
+    const oldId = metaPath.slice(0, -'.metadata'.length);
+    const newId = R.uuid();
+    const out = new window.JSZip();
+    const jobs = [];
     zip.forEach(function (path, entry) {
-      var target = path.indexOf(oldId) === 0 ? newId + path.slice(oldId.length) : path;
+      const target = path.indexOf(oldId) === 0 ? newId + path.slice(oldId.length) : path;
       if (entry.dir) { out.file(target, null, { dir: true, date: entry.date }); return; }
-      var data = path === metaPath ? Promise.resolve(JSON.stringify(meta)) : entry.async('uint8array');
+      const data = path === metaPath ? Promise.resolve(JSON.stringify(meta)) : entry.async('uint8array');
       jobs.push(data.then(function (d) { out.file(target, d, { binary: path !== metaPath, date: entry.date, createFolders: false }); }));
     });
     await Promise.all(jobs);
