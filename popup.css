@@ -107,6 +107,7 @@ details[open] > .rmx-xhead .rmx-xswitch-thumb { transform: translateX(11px); }
 .results-list li .rrow-glyph .rmx-ico { display: block; }
 
 /* Kein Server erreichbar: nur das Serverpanel zeigen (gleiche gemeinsame
-   Komponente wie im Dateimanager, inkl. integrativer Login-Karte). */
-body.rmx-nosrv section:not(#serverPanel),
-body.rmx-nosrv #statusBox { display: none; }
+   Komponente wie im Dateimanager, inkl. integrativer Login-Karte). Die
+   Gruppen-Expander sind <details>, daher ueber die gemeinsame Sektions-
+   Klasse ausblenden und die Klasse frueh genug setzen (siehe popup.js). */
+body.rmx-nosrv .rmx-popup-section:not(#serverPanel) { display: none; }

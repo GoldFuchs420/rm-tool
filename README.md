@@ -626,6 +626,19 @@ Weitere UX-Runde nach Feedback:
   außerhalb.
 - **Filter-Reset**: Trichter mit X statt nacktem X.
 
+## Runde 8b: Popup zeigt nur das Serverpanel, bis ein Server online ist
+
+- Im Popup blieben die Gruppen-Expander („Seite als PDF“, „Bilder“)
+  sichtbar, obwohl die Ausblendung greifen sollte: die Regel versteckte
+  nur `<section>`-Elemente, die beiden Gruppen sind aber `<details>`.
+  Die Ausblendung läuft jetzt über die gemeinsame Sektions-Klasse
+  (`.rmx-popup-section`) und gilt damit für Gruppen, Status-Expander und
+  Senden-Button einheitlich.
+- Die Klasse wird zudem schon beim Start gesetzt, bevor der
+  Erreichbarkeits-Check läuft — es blitze sonst kurz der volle Popup-
+  Inhalt auf. Sobald ein Server erreichbar ist, erscheinen alle
+  Elemente wie gehabt.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
