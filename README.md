@@ -230,10 +230,15 @@ Zwei Dinge wurden früher doppelt (für Popup und Dateimanager getrennt)
 implementiert und sind jetzt **ein einziger Code-Pfad**, von beiden
 Seiten identisch genutzt:
 
-- **`shared/filename.js`** — `RMXShared.sanitizeFilename(name, fallback)`.
-  Entfernt dateisystem-kritische Zeichen, fasst Leerraum zusammen, kürzt
-  auf 120 Zeichen. Genutzt von `popup.js` (Artikel-/Bildnamen) und
-  `assets/js/outputs.js` (Umbenennen-Feld im Import-Dialog).
+- **`shared/filename.js`** — `RMXShared.sanitizeFilename(name, fallback)`
+  (entfernt dateisystem-kritische Zeichen, fasst Leerraum zusammen,
+  kürzt auf 120 Zeichen; genutzt von `popup.js` für Artikel-/Bildnamen
+  und `assets/js/outputs.js` für das Umbenennen-Feld im Import-Dialog),
+  dazu `RMXShared.asciiName(x)` (Umlaute → ae/oe/ue/ss, Akzente über
+  NFD entfernt, Rest → `_`; Export-Namensoption) und
+  `RMXShared.ymd(value)` (Datum → `JJJJ-MM-TT`, leer bei ungültigem
+  Datum) — drei Helfer für beide Seiten, `app.js` verweist nur noch
+  darauf statt eigene Kopien zu pflegen.
 - **`shared/servers.js` + `shared/servers.css`** — die komplette
   Server-Verwaltung (Liste, Erreichbarkeits-Check, Basic-Auth-Login,
   Hinzufügen/Entfernen, Ein-/Ausblenden nicht erreichbarer Server) als
@@ -367,6 +372,11 @@ Beim tatsächlichen Austausch sind jeweils die MIT- bzw. Apache-2.0-
 Lizenzbedingungen (Copyright- und Lizenzhinweis beilegen) einzuhalten
 und die Dateien unter `assets/vendor/licenses/` zu ergänzen.
 
+Die früher mitgelieferte, nie geladene Kopie `libs/jspdf.js` (echte
+jsPDF-Quelle, wegen ES-Modul-Syntax im MV3-Kontext nicht nutzbar) ist
+inzwischen **aus dem Projekt entfernt**; das Global `window.jspdf`,
+das `popup.js` verwendet, stammt ausschließlich von `libs/pdfkit.js`.
+
 ---
 
 ## UI-Überarbeitung (Dateimanager): Liste, Buttons, Dialoge
@@ -427,6 +437,47 @@ für Dialog-Buttons):
   Auswahlfelder 3rem→2.5rem, mittlere/große Buttons rücken näher an die
   kleine Variante heran (2rem bleibt unverändert die Grenze nach unten),
   Schalter (Switches) leicht verkleinert.
+
+## Code-Optimierung: Mehrsprachigkeit, wiederverwendbare Helfer, Testsuite
+
+Durchgängiger Aufräum-Durchgang über den gesamten Code:
+
+- **Vollständige Mehrsprachigkeit** — die letzten hartkodierten
+  deutschen Texte wurden auf die fünf Sprachen (de/en/it/es/fr) umge-
+  stellt: sämtliche Statusmeldungen des Popups (Artikel-/Bilder-Scan,
+  Upload-Ergebnisse, Fehlertexte), die komplette Server-Komponente
+  `shared/servers.js` (Login-Karte, Status, Kopieren/Öffnen-Tipps,
+  Leer-Zustände) und die statischen Popup-Texte via `data-i18n`/
+  `data-i18n-title`. Die Helfer haben robuste deutsche Fallbacks,
+  falls `i18n.js` einmal nicht geladen sein sollte.
+- **Wiederverwendbare Helfer ausgelagert** — `asciiName()` und `ymd()`
+  existierten doppelt (popup.js/app.js bzw. app.js); sie liegen jetzt
+  in `shared/filename.js` neben `sanitizeFilename()`, und `app.js`
+  nutzt nur noch Verweise darauf.
+- **Tote Codezeilen entfernt** — ungenutztes `libs/jspdf.js`
+  (181 KB, nicht ladbar) aus dem Projekt; ungenutzte Variable
+  `imagesScanned` aus `popup.js`; verwaiste CSS-Regeln aus
+  `assets/app.css` (`.rmx-note*`, `.rmx-adv*`, `.obtns`) samt
+  Doppeldefinition von `.rmx-copies .orow` entfernt und einen
+  veralteten Kommentar korrigiert.
+- **Testsuite neu** — `tests/run.js` (31 automatisierte Prüfungen,
+  ohne Abhängigkeiten), läuft mit `node tests/run.js`:
+  * `shared/filename.js`: alle drei Helfer inkl. Grenzfälle
+    (Sonderzeichen, Steuerzeichen, 120-Zeichen-Grenze, Fallback,
+    Umlaut-Mapping, NFD-Akzente, ungültiges Datum),
+  * i18n-Integrität: jeder der 200+ Schlüssel ist
+    für alle 5 Sprachen übersetzt, keine leeren Texte, keine
+    doppelten Schlüssel,
+  * Referenzauflösung: jeder im JS/HTML genutzte `t("...")`-bzw.
+    `data-i18n`-Schlüssel existiert in der Tabelle,
+  * Dateireferenzen: alle `src`/`href` in beiden HTML-Seiten, alle
+    `R.load`-Pfade und alle Icon-Pfade aus `manifest.json` existieren,
+  * `manifest.json` ist gültiges MV3-Manifest,
+  * `node --check`-Syntaxprüfung aller eigenen JS-Dateien,
+  * keine Referenz mehr auf die entfernte `libs/jspdf.js`; die aktive
+    `libs/pdfkit.js` wird weiterhin geladen.
+
+---
 
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
