@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<title>reMarkable Toolkit</title>
+<link rel="stylesheet" href="/assets/index.css" />
+<link rel="stylesheet" href="/assets/app.css" />
+<link rel="stylesheet" href="shared/servers.css" />
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="rmx-popup-header">
+    <p class="responsive-heading-sm" style="margin:0">reMarkable Toolkit</p>
+    <button id="openManager" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" title="Dateiverwaltung öffnen" aria-label="Dateiverwaltung öffnen">🗂</button>
+  </header>
+
+  <section id="serverPanel" class="rmx-popup-section"></section>
+
+  <section class="rmx-popup-section">
+    <div class="rmx-switchrow">
+      <span class="ark-switch">
+        <input type="checkbox" role="switch" class="ark-switch--input" id="includeArticle" checked>
+        <span class="ark-switch--track"><span class="ark-switch--thumb"></span></span>
+      </span>
+      <label for="includeArticle" class="txt" style="cursor:pointer">
+        <span class="responsive-body-md">Artikel als PDF senden</span>
+      </label>
+    </div>
+    <p id="articleStatus" class="responsive-body-sm rmx-muted">Lade…</p>
+    <div class="rmx-field-row">
+      <label for="fontSlider" class="responsive-body-sm rmx-muted">Schriftgröße</label>
+      <input id="fontSlider" type="range" min="10" max="28" value="16" step="1" />
+      <span id="fontSizeValue" class="rmx-value-badge">16</span>
+    </div>
+  </section>
+
+  <section class="rmx-popup-section">
+    <div class="rmx-section-head">
+      <p class="responsive-body-md" style="margin:0;font-weight:600">Bilder</p>
+      <button id="rescanBtn" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" title="Seite erneut durchsuchen" aria-label="Seite erneut durchsuchen">↻</button>
+    </div>
+    <p id="imageStatus" class="responsive-body-sm rmx-muted">—</p>
+    <div id="imageStrip" class="image-strip"></div>
+    <div class="rmx-select-row">
+      <button id="selectAllBtn" type="button" class="ark-link responsive-body-sm">Alle auswählen</button>
+      <button id="selectNoneBtn" type="button" class="ark-link responsive-body-sm">Auswahl aufheben</button>
+    </div>
+  </section>
+
+  <section class="rmx-popup-section rmx-popup-section--send">
+    <button id="sendBtn" type="button" class="ark-button ark-button--primary ark-button-large" disabled style="width:100%">Senden</button>
+    <ul id="results" class="results-list"></ul>
+  </section>
+
+  <script src="shared/filename.js"></script>
+  <script src="shared/servers.js"></script>
+  <script src="libs/pdfkit.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

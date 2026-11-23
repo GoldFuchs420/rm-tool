@@ -1,0 +1,50 @@
+Third-party software shipped with this web interface
+====================================================
+
+All libraries are bundled unmodified and are loaded from this device
+(no CDN, no internet connection required). The full license texts are in
+./licenses/ .
+
+1. pdf-lib 1.17.1            assets/vendor/pdf-lib.min.js
+   Copyright (c) 2019 Andrew Dillon        License: MIT
+   https://github.com/Hopding/pdf-lib
+   Used to convert JPG / PNG / SVG (rasterised) images into PDF before upload.
+   pdf-lib.min.js includes these components:
+     - @pdf-lib/standard-fonts 1.0.0 - Copyright (c) 2018 Andrew Dillon - MIT
+     - @pdf-lib/upng 1.0.1           - Copyright (c) 2017 Photopea - MIT
+     - pako 1.0.11                   - (MIT AND Zlib)
+     - tslib 1.14.1                  - Copyright (c) Microsoft Corporation - 0BSD
+
+2. JSZip 3.10.1              assets/vendor/jszip.min.js
+   Copyright (c) 2009-2016 Stuart Knightley, David Duponchel,
+   Franz Buchinger, Antonio Afonso
+   License: MIT or GPL-3.0-or-later (used here under the MIT license)
+   https://stuk.github.io/jszip/
+   Used to create ZIP archives for the export.
+
+3. pako 1.0.11               assets/vendor/pako.min.js
+   Copyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn
+   License: MIT AND Zlib
+   https://github.com/nodeca/pako
+   Used as fallback for tar.gz compression in browsers without
+   CompressionStream.
+
+4. marked 18.0.2            assets/vendor/marked.min.js
+   Copyright (c) 2018+, MarkedJS; Copyright (c) 2011-2018, Christopher Jeffrey
+   License: MIT
+   https://github.com/markedjs/marked
+   Used to turn Markdown files into PDF (parsing only; layout is own code).
+
+5. PDF.js 5.6.205 (legacy build)   assets/vendor/pdfjs/pdf.min.js, pdf.worker.min.js
+   Copyright (c) Mozilla Foundation and contributors
+   License: Apache-2.0 (assets/vendor/licenses/pdfjs.LICENSE)
+   https://github.com/mozilla/pdf.js
+   Used for the PDF preview and for thumbnails. Unmodified; the files carry
+   a .js instead of .mjs extension so that simple web servers deliver them as JavaScript.
+   Loaded on demand only, not at page start.
+
+Own code (assets/js/*.js, assets/app.css, index.html):
+   TAR writer, API client, UI. Design tokens, fonts and base stylesheet
+   (assets/index.css, reMarkableSans/Serif.woff2, rm_logo.svg) are taken
+   unchanged from the original reMarkable web interface and remain
+   (c) reMarkable AS.
