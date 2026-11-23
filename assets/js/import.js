@@ -1,7 +1,8 @@
 /*
  * Import dialog: PDF / EPUB / RMDOC are uploaded as they are, everything else is
  * converted to PDF first (images, Markdown, text, HTML, web pages by URL).
- * Flow: collect files -> [create preview | upload] -> review results -> upload.
+ * Flow: add files -> previews are created automatically -> remove or rename
+ * entries if needed -> upload the whole list at once.
  */
 (function () {
   'use strict';
@@ -61,10 +62,13 @@
         vals.mergeName = '';
         buildShell();
         dlg.showModal();
+      } else {
+        if (mode === 'working') return;
+        if (mode === 'results') { if (ctrl) ctrl.abort(); ctrl = null; mode = 'setup'; $('#im-summary').hidden = true; }
       }
-      if (mode === 'results' || mode === 'working') return;
       await addFiles(files);
       renderMain();
+      if (items.length && mode === 'setup') run();
     };
 
     function buildShell() {
@@ -128,12 +132,11 @@
 
     function renderFoot() {
       var f = $('#im-foot');
-      var dis = items.length ? '' : ' disabled';
-      f.innerHTML = mode === 'setup'
-        ? app.btn(t('makePreview'), 'data-im="preview"' + dis) + app.btn(t('uploadNow'), 'data-im="upload"' + dis, 'primary')
-        : mode === 'working'
-          ? app.btn(t('cancel'), 'data-im="stop"')
-          : app.btn(t('back'), 'data-im="back"') + app.btn(t('uploadAll'), 'data-im="uploadall"', 'primary');
+      f.innerHTML = mode === 'working'
+        ? app.btn(t('cancel'), 'data-im="stop"')
+        : mode === 'results'
+          ? app.btn(t('uploadAll'), 'data-im="uploadall"', 'primary')
+          : '';
     }
 
     /* ---------- build / upload ---------- */
@@ -184,20 +187,19 @@
       return outs;
     }
 
-    async function run(autoUpload) {
+    async function run() {
       mode = 'working';
       abort = new AbortController();
       renderFoot();
       var outs = await build();
-      if (abort.signal.aborted) { mode = 'setup'; renderMain(); return; }
-      if (!outs.length) { mode = 'setup'; renderFoot(); return; }
+      if (abort.signal.aborted) { dlg.close(); return; }
+      if (!outs.length) { mode = 'setup'; renderMain(); return; }
       mode = 'results';
       var main = $('#im-main');
       main.innerHTML = '<h3 class="responsive-body-md" style="font-weight:600;margin:0">' + esc(t('results')) + '</h3><div id="im-results"></div>' +
         (fails.length ? '<ul class="rmx-errlist">' + fails.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' : '');
       ctrl = app.outputs.createList($('#im-results'), outs, function () { return app.outputs.fieldValues('im'); });
       renderFoot();
-      if (autoUpload) await uploadAll();
     }
     async function uploadAll() {
       var sum = $('#im-summary');
@@ -225,12 +227,9 @@
       if (!b) return;
       switch (b.getAttribute('data-im')) {
         case 'close': if (ctrl) ctrl.abort(); if (abort) abort.abort(); dlg.close(); break;
-        case 'stop': if (abort) abort.abort(); break;
+        case 'stop': if (ctrl) ctrl.abort(); if (abort) abort.abort(); dlg.close(); break;
         case 'add': $('#import-input').click(); break;
-        case 'preview': run(false); break;
-        case 'upload': run(true); break;
         case 'uploadall': uploadAll(); break;
-        case 'back': if (ctrl) ctrl.abort(); mode = 'setup'; ctrl = null; $('#im-summary').hidden = true; renderMain(); break;
       }
     });
     dlg.addEventListener('change', function (e) {

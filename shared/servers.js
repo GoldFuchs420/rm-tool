@@ -100,8 +100,8 @@
       card.className = "rmx-srv-login";
       card.innerHTML =
         '<p class="rmx-srv-login__title">🔒 Basic-Auth für ' + esc(s.url) + "</p>" +
-        '<input type="text" class="rmx-srv-login__input" placeholder="Benutzername" autocomplete="username" data-u />' +
-        '<input type="password" class="rmx-srv-login__input" placeholder="Passwort" autocomplete="current-password" data-p />' +
+        '<input type="text" class="rmx-srv-login__input ark-input" placeholder="Benutzername" autocomplete="username" data-u />' +
+        '<input type="password" class="rmx-srv-login__input ark-input" placeholder="Passwort" autocomplete="current-password" data-p />' +
         '<div class="rmx-srv-login__row">' +
         '<button type="button" class="rmx-srv-login__submit" data-submit>Anmelden</button>' +
         '<span class="rmx-srv-login__err hidden" data-err>Anmeldung fehlgeschlagen.</span>' +
@@ -132,6 +132,34 @@
       return card;
     }
 
+    function buildCopyBtn(s) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "rmx-srv-btn";
+      btn.title = "Adresse kopieren";
+      btn.setAttribute("aria-label", "Adresse kopieren: " + s.url);
+      btn.textContent = "\u2750";
+      btn.addEventListener("click", function () {
+        navigator.clipboard.writeText(s.url).then(function () {
+          btn.textContent = "\u2713";
+          btn.classList.add("ok");
+          setTimeout(function () { btn.textContent = "\u2750"; btn.classList.remove("ok"); }, 1200);
+        });
+      });
+      return btn;
+    }
+
+    function buildOpenBtn(s) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "rmx-srv-btn";
+      btn.title = "In neuem Tab \u00f6ffnen";
+      btn.setAttribute("aria-label", "In neuem Tab \u00f6ffnen: " + s.url);
+      btn.textContent = "\u2197";
+      btn.addEventListener("click", function () { window.open(s.url, "_blank", "noopener"); });
+      return btn;
+    }
+
     function render() {
       var visible = editMode ? servers : servers.filter(function (s) { return s._status !== "offline"; });
       var frag = document.createDocumentFragment();
@@ -153,6 +181,7 @@
         label.textContent = { online: "bereit", auth: "Login nötig", offline: "offline", checking: "…" }[s._status || "checking"];
 
         rowDiv.append(dot, url, label);
+        rowDiv.append(buildCopyBtn(s), buildOpenBtn(s));
 
         if (editMode) {
           var del = document.createElement("button");

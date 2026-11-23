@@ -103,18 +103,23 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-table tr { border-bottom: 1px solid var(--rmx-line); cursor: pointer; user-select: none; transition: background-color .15s; }
 .rmx-table tr:hover { background: var(--rmx-hover); }
 .rmx-table tr[data-selected="true"] { background: var(--rmx-surface); }
-.rmx-table td { padding: 22px 8px; vertical-align: middle; text-align: left; }
-.rmx-table td.c-check, .rmx-table td.c-icon { width: 56px; padding-left: 8px; padding-right: 0; }
-.rmx-table td.c-name { overflow: hidden; }
-.rmx-table td.c-type { width: 140px; text-align: center; }
-.rmx-table td.c-date { width: 160px; text-align: right; padding-right: 16px; white-space: nowrap; }
-.rmx-table td.c-act { width: 284px; padding: 0 8px 0 0; text-align: right; }
-.rmx-table td p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rmx-table td { padding: 12px 8px; vertical-align: top; text-align: left; }
+/* Left column: checkbox, type icon, thumbnail (constant size, flexible free space below) */
+.rmx-table td.c-side { width: 86px; }
+.rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon { display: flex; justify-content: center; }
+.rmx-table td.c-side .c-icon { margin-top: 4px; }
+.rmx-table td.c-side .c-type { display: flex; justify-content: center; height: 64px; margin-top: 6px; }
+/* Right column: title (variable height), below pages/date/buttons */
+.rmx-table td.c-main { overflow: hidden; }
+.rmx-table td p { margin: 0; }
 .rmx-table td svg { display: block; }
-.rmx-thumbs-on .rmx-table td { padding-top: 10px; padding-bottom: 10px; }
-.rmx-table .nm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rmx-table .nm { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.rmx-table .nm p { white-space: normal; overflow-wrap: anywhere; }
 .rmx-star { display: inline-flex; flex: none; }
 .rmx-pg { flex: none; font-size: .8125rem; }
+.rmx-meta { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.rmx-meta .rmx-flex { flex: 1 1 auto; }
+.rmx-date { flex: none; font-size: .8125rem; white-space: nowrap; }
 .rmx-path { display: block; margin-top: 2px; font-size: .8125rem; color: var(--ark-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rmx-empty { padding: 56px 0; text-align: center; }
 .rmx-more { display: flex; justify-content: center; padding: 24px 0; }
@@ -144,13 +149,16 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 @keyframes rmx-pulse { 50% { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { .rmx-thumb--ph { animation: none; } }
 
-/* ---------- colour-coded export buttons: PDF red, rmdoc black, archive silver ---------- */
-.ark-button.rmx-btn--pdf { background: var(--rmx-pdf); color: #fff; box-shadow: none; }
-.ark-button.rmx-btn--rmdoc { background: var(--rmx-rmdoc); color: #fff; box-shadow: none; }
-.ark-button.rmx-btn--archive { background: var(--rmx-archive); color: #211e1c; box-shadow: none; }
-.ark-button.rmx-btn--pdf:hover:not(:disabled) { background: var(--rmx-pdf-hover); }
-.ark-button.rmx-btn--rmdoc:hover:not(:disabled) { background: var(--rmx-rmdoc-hover); }
-.ark-button.rmx-btn--archive:hover:not(:disabled) { background: var(--rmx-archive-hover); }
+/* ---------- colour-coded buttons (like the pills in the file list) ---------- */
+/* Rectangular, outline in the color of the text: PDF red, RMDoc black,
+   archive neutral, upload interaction blue. */
+.ark-button.rmx-btn { background: #fff; color: var(--ark-text-default); box-shadow: inset 0 0 0 1px currentColor; gap: 8px; }
+.ark-button.rmx-btn > span, .ark-button.rmx-btn svg { flex: none; }
+.ark-button.rmx-btn--pdf { color: var(--rmx-pdf); }
+.ark-button.rmx-btn--rmdoc { color: var(--rmx-rmdoc); }
+.ark-button.rmx-btn--archive { color: var(--ark-text-default); }
+.ark-button.rmx-btn--upload { color: var(--ark-interaction-primary-default); }
+.ark-button.rmx-btn:hover:not(:disabled) { background: var(--rmx-surface); }
 .ark-button[class*="rmx-btn--"]:disabled { opacity: .4; cursor: not-allowed; }
 .rmx-choice[data-choice="format:pdf"] .txt > span:first-child::before,
 .rmx-choice[data-choice="format:rmdoc"] .txt > span:first-child::before,
@@ -223,8 +231,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-outs .oname { display: flex; align-items: center; gap: 4px; flex: 1 1 160px; min-width: 120px; }
 .rmx-outs .oname .ark-input { min-width: 0; flex: 1 1 auto; height: 2.5rem; }
 .rmx-outs .obtns { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
-.rmx-pill--preview { color: #000; background: #fff; border-color: #ddd; }
-.rmx-pill--preview:hover:not(:disabled) { background: #f3f3f3; }
 .rmx-outs .opath { display: flex; align-items: center; gap: 6px; padding: 4px 0 0 32px; overflow-wrap: anywhere; }
 .rmx-outs .opath svg { flex: none; }
 .rmx-outs .state, .rmx-copies .state { padding: 6px 0 0 32px; flex: none; }
@@ -284,15 +290,14 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-tile__link { padding: 6px; gap: 6px; }
   .rmx-tile__link > svg { width: 26px; height: 26px; }
 
-  /* file list: every row is a small card, names may use as many lines as they need */
+  /* file list: side column (check/icon/thumbnail) left, title+meta right */
   .rmx-table, .rmx-table tbody { display: block; }
-  .rmx-table tr { display: grid; grid-template-columns: 40px 26px minmax(0, 1fr) auto; grid-template-areas: "chk ico name name" "chk ico type date" "chk ico act act"; column-gap: 6px; row-gap: 4px; align-items: start; padding: 10px 0; }
-  .rmx-table td, .rmx-table td.c-check, .rmx-table td.c-icon, .rmx-table td.c-type, .rmx-table td.c-date, .rmx-table td.c-act { display: block; width: auto; padding: 0; text-align: left; }
-  .rmx-table td.c-check { grid-area: chk; } .rmx-table td.c-icon { grid-area: ico; padding-top: 4px; }
-  .rmx-table td.c-name { grid-area: name; overflow: visible; }
-  .rmx-table td.c-type { grid-area: type; } .rmx-table td.c-type p { font-size: .8125rem; color: var(--ark-text-muted); }
-  .rmx-table td.c-date { grid-area: date; text-align: right; } .rmx-table td.c-date p { font-size: .8125rem; color: var(--ark-text-muted); }
-  .rmx-table td.c-act { grid-area: act; }
+  .rmx-table tr { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "side main"; column-gap: 8px; align-items: start; padding: 10px 0; }
+  .rmx-table td, .rmx-table td.c-side, .rmx-table td.c-main { display: block; width: auto; padding: 0; text-align: left; }
+  .rmx-table td.c-side { grid-area: side; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon, .rmx-table td.c-side .c-type { display: inline-flex; margin: 0; }
+  .rmx-table td.c-main { grid-area: main; overflow: visible; }
+  .rmx-thumb { height: 56px; }
   .rmx-acts { justify-content: flex-start; flex-wrap: wrap; margin-left: -4px; }
   .rmx-table td p { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
   .rmx-table .nm { flex-wrap: wrap; row-gap: 2px; }
@@ -349,6 +354,12 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
    automatisch überall gleich (Dateiliste, Ordner-Kacheln, Dialoge). */
 .ark-input-checkbox { height: 1.5rem; width: 1.5rem; }
 .ark-input-checkbox:after { width: 1.1875rem; height: 1.1875rem; }
+
+/* Eingabefelder: aktiv (Fokus) dezent hervorgehoben, gesperrt und
+   schreibgeschützt klar unterscheidbar, alles in gedämpften Farben. */
+.ark-input:not(:disabled):not([readonly]):focus { outline: none; box-shadow: inset 0 0 0 2px var(--ark-interaction-focus-default, #99c3ff); }
+.ark-input:disabled { background: var(--rmx-surface, #ede8de); color: var(--ark-text-muted); box-shadow: none; cursor: not-allowed; }
+.ark-input[readonly] { background: transparent; box-shadow: inset 0 0 0 1px var(--ark-divider-muted); cursor: default; }
 
 /* Dateiansicht (Tabellenzeilen): deutlich weniger Zeilenhöhe. */
 .rmx-table td { padding: 12px 8px; }

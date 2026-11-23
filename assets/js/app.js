@@ -437,35 +437,43 @@
     return icon(empty ? 'folderEmpty' : 'folderFull', 24);
   }
   function docIcon(it) { return icon(String(it.fileType).toLowerCase() === 'pdf' ? 'pdf' : 'notebook', 24); }
+  function rmxBtnIcon(kind) {
+    return kind === 'upload' ? 'exportIcon' : kind === 'preview' ? 'eye' : 'importIcon';
+  }
+  function rmxBtnInner(kind, label) {
+    return icon(rmxBtnIcon(kind), 18) + '<span>' + esc(label) + '</span>';
+  }
 
+  function stripExt(name) {
+    return String(name).replace(/\.(pdf|epub|rm(doc|code)?|notebook)$/i, '');
+  }
   function nameCell(it, showPath) {
+    var doc = !isFolder(it);
     var star = it.Bookmarked ? '<span class="rmx-star" title="' + esc(t('bookmarked')) + '">' + icon('starFill', 16) + '</span>' : '';
-    var pg = !isFolder(it) && it.CurrentPage > 0 ? '<span class="rmx-pg rmx-muted">' + esc(t('pageShort', { n: it.CurrentPage + 1 })) + '</span>' : '';
-    return '<div class="nm"><p class="responsive-body-sm">' + esc(it.VissibleName) + '</p>' + star + pg + '</div>' +
+    var title = doc ? stripExt(it.VissibleName) : it.VissibleName;
+    var pg = doc && it.CurrentPage > 0 ? '<span class="rmx-pg rmx-muted">' + esc(t('pageShort', { n: it.CurrentPage + 1 })) + '</span>' : '';
+    var date = doc ? '<span class="rmx-date rmx-muted">' + esc(ago(it.ModifiedClient)) + '</span>' : '';
+    return '<div class="nm"><p class="responsive-body-sm">' + esc(title) + '</p>' + star + '</div>' +
+      (doc ? '<div class="rmx-meta">' + pg + date + '<span class="rmx-flex"></span><span class="rmx-acts">' + actBtns(it) + '</span></div>' : '') +
       (showPath ? '<small class="rmx-path">' + esc(pathLabel(pk(it))) + '</small>' : '');
   }
-  function actCell(it) {
+  function actBtns(it) {
     var doc = !isFolder(it);
-    var id = esc(it.ID), nm = esc(it.VissibleName);
+    var id = esc(it.ID), nm = esc(stripExt(it.VissibleName));
     var pill = function (fmt, label, title) {
       return '<button type="button" class="rmx-pill rmx-pill--' + fmt + '" data-dl="' + id + '" data-fmt="' + fmt + '" data-key="dl' + fmt + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon('importIcon', 16) + '<span>' + label + '</span></button>';
     };
     var ib = function (attr, key, ico, title) {
       return '<button type="button" class="rmx-iconbtn" ' + attr + '="' + id + '" data-key="' + key + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon(ico, 22) + '</button>';
     };
-    // Kein eigener Vorschau-Button mehr hier: Die Detailansicht (Info-
-    // Button) lädt die Vorschau bereits automatisch beim Öffnen.
-    return '<td class="c-act"><div class="rmx-acts">' +
-      (doc ? pill('pdf', 'PDF', t('downloadPdf')) + pill('rmdoc', 'RMDoc', t('downloadRmdoc')) : '') +
-      ib('data-info', 'info', 'infoIcon', t('info')) + '</div></td>';
+    return (doc ? pill('pdf', 'PDF', t('downloadPdf')) + pill('rmdoc', 'RMDoc', t('downloadRmdoc')) : '') +
+      ib('data-info', 'info', 'infoIcon', t('info'));
   }
   function docRow(it, showPath) {
     var st = docStat(it.ID);
     return '<tr data-row="' + esc(it.ID) + '" data-selected="' + (st.sel === 1) + '">' +
-      '<td class="c-check">' + checkboxHtml(it.ID, it.VissibleName, st, 'chk:' + it.ID) + '</td>' +
-      '<td class="c-icon">' + docIcon(it) + '</td><td class="c-name">' + nameCell(it, showPath) + '</td>' +
-      '<td class="c-type">' + (state.thumbs && app.thumbHtml ? app.thumbHtml(it) : '<p class="responsive-body-sm">' + esc(typeLabel(it)) + '</p>') + '</td>' +
-      '<td class="c-date"><p class="responsive-body-sm">' + esc(ago(it.ModifiedClient)) + '</p></td>' + actCell(it) + '</tr>';
+      '<td class="c-side"><span class="c-check">' + checkboxHtml(it.ID, it.VissibleName, st, 'chk:' + it.ID) + '</span><span class="c-icon">' + docIcon(it) + '</span><span class="c-type">' + (state.thumbs && app.thumbHtml ? app.thumbHtml(it) : '') + '</span></td>' +
+      '<td class="c-main">' + nameCell(it, showPath) + '</td></tr>';
   }
   function favoritesHtml(favs) {
     if (!favs.length) return '';
@@ -532,8 +540,8 @@
     }
     var rows = res.slice(0, RESULT_CAP).map(function (it) {
       if (!isFolder(it)) return docRow(it, true);
-      return '<tr class="is-folder" data-goto="' + esc(it.ID) + '"><td class="c-check"></td><td class="c-icon">' + folderIcon(it) + '</td>' +
-        '<td class="c-name">' + nameCell(it, true) + '</td><td class="c-type"><p class="responsive-body-sm">' + esc(t('typeFolder')) + '</p></td><td class="c-date"></td>' + actCell(it) + '</tr>';
+      return '<tr class="is-folder" data-goto="' + esc(it.ID) + '"><td class="c-side"><span class="c-check"></span><span class="c-icon">' + folderIcon(it) + '</span></td>' +
+        '<td class="c-main">' + nameCell(it, true) + '</td></tr>';
     });
     return '<table class="rmx-table"><tbody>' + rows.join('') + '</tbody></table>' +
       (res.length > RESULT_CAP ? '<p class="responsive-body-sm rmx-muted" style="margin-top:16px">' + esc(t('resultsLimited', { n: RESULT_CAP })) + '</p>' : '');
@@ -959,8 +967,8 @@
       $('#ex-name').value = one || (today() + ' remarkable-backup');
     }
     var kind = arch === 'single' ? fmt : 'archive';
-    $('#ex-start').className = 'ark-button ark-button-large rmx-btn--' + kind;
-    $('#ex-start').textContent = exportLabel(arch, fmt);
+    $('#ex-start').className = 'ark-button ark-button-large rmx-btn rmx-btn--' + kind;
+    $('#ex-start').innerHTML = rmxBtnInner(kind, exportLabel(arch, fmt));
     $('#ex-name').disabled = arch === 'single';
     $('#ex-keep').disabled = arch === 'single';
     $('#ex-summary').textContent = t('dDocs', { n: plan.docs.length }) + (plan.dirs.length ? ' · ' + t('dFolders', { n: plan.dirs.length }) : '');
@@ -1051,8 +1059,9 @@
     var again = $('#ex-again');
     if (ex.blob) {
       again.hidden = false;
-      again.className = 'ark-button ark-button-large rmx-btn--' + (arch === 'single' ? fmt : 'archive');
-      again.textContent = t('downloadAgain') + ' (' + (arch === 'single' ? (fmt === 'pdf' ? 'PDF' : 'RMDoc') : arch === 'zip' ? 'ZIP' : 'TAR.GZ') + ')';
+      var k2 = arch === 'single' ? fmt : 'archive';
+      again.className = 'ark-button ark-button-large rmx-btn rmx-btn--' + k2;
+      again.innerHTML = rmxBtnInner(k2, t('downloadAgain') + ' (' + (arch === 'single' ? (fmt === 'pdf' ? 'PDF' : 'RMDoc') : arch === 'zip' ? 'ZIP' : 'TAR.GZ') + ')');
       again.focus();
     }
   }
@@ -1103,8 +1112,9 @@
       },
       btn: function (label, attrs, kind) {
         var k = kind || 'secondary';
-        var cls = /^(pdf|rmdoc|archive)$/.test(k) ? 'rmx-btn--' + k : 'ark-button--' + k; // colour-coded export buttons
-        return '<button type="button" class="ark-button ' + cls + ' ark-button-large" ' + attrs + '>' + esc(label) + '</button>';
+        var m = { pdf: 'pdf', rmdoc: 'rmdoc', archive: 'archive', primary: 'upload', upload: 'upload', preview: 'preview' };
+        if (!m[k]) return '<button type="button" class="ark-button ark-button--' + k + ' ark-button-large" ' + attrs + '>' + esc(label) + '</button>';
+        return '<button type="button" class="ark-button rmx-btn rmx-btn--' + m[k] + ' ark-button-large" ' + attrs + '>' + icon(rmxBtnIcon(m[k]), 18) + '<span>' + esc(label) + '</span></button>';
       }
     });
     (R.features || []).forEach(function (f) { f(app); });

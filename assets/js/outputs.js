@@ -1,7 +1,7 @@
 /*
  * Shared pieces for "import / convert" and "PDF tools":
  *   - target folder + name-conflict fields
- *   - result list with rename, preview, download and upload per file
+ *   - result list with rename, remove, download per file and upload all
  *   - upload naming: if a document with the same name already exists in the
  *     target folder, "yyyy-mm-dd name" (and "... 2", "... 3") is used, because the
  *     device interface can neither replace nor delete documents.
@@ -157,11 +157,10 @@
         return '<li data-i="' + i + '" data-ext="' + esc(ext) + '" data-state="idle"><div class="orow">' +
           '<span class="osize rmx-muted responsive-body-sm">' + esc(fmtSize(it.blob.size)) + '</span>' +
           icon(ext === 'pdf' ? 'pdf' : 'notebook', 24) +
-          '<div class="oname"><input type="text" class="ark-input" value="' + esc(baseOf(it.name)) + '" aria-label="' + esc(t('renameField')) + '" spellcheck="false" autocomplete="off"><span class="ext responsive-body-sm">.' + esc(ext) + '</span></div>' +
+          '<div class="oname"><input type="text" class="ark-input" value="' + esc(baseOf(it.name)) + '" aria-label="' + esc(t('renameField')) + '" spellcheck="false" autocomplete="off"></div>' +
           '<div class="obtns">' +
-          (ext === 'pdf' ? pill('prev', 'eye', t('preview'), t('preview'), 'preview') : '') +
           pill('dl', 'importIcon', dlText, dlTitle, ext === 'pdf' ? 'pdf' : ext === 'rmdoc' ? 'rmdoc' : 'plain') +
-          pill('up', 'exportIcon', t('uploadNow'), t('uploadNow'), 'upload') +
+          '<button type="button" class="rmx-iconbtn" data-o="rm" aria-label="' + esc(t('remove')) + ': ' + esc(baseOf(it.name)) + '" title="' + esc(t('remove')) + ': ' + esc(baseOf(it.name)) + '">' + icon('close', 20) + '</button>' +
           '</div></div>' +
           (it.folderPath && it.folderPath.length ? '<div class="opath responsive-body-sm rmx-muted">' + icon('folderFull', 16) + '<span>' + esc(it.folderPath.join(' / ')) + '</span></div>' : '') +
           '<div class="state responsive-body-sm"></div></li>';
@@ -179,7 +178,16 @@
       };
 
       var ctrl = {
-        count: items.length,
+        get count() { return items.length; },
+        removeItem: function (i) {
+          items.splice(i, 1);
+          var doomed = host.querySelector('li[data-i="' + i + '"]');
+          if (doomed) doomed.remove();
+          Array.prototype.forEach.call(host.querySelectorAll('li[data-i]'), function (el) {
+            var n = parseInt(el.getAttribute('data-i'), 10);
+            if (n > i) el.setAttribute('data-i', String(n - 1));
+          });
+        },
         get skipped() { return skipped; },
         abort: function () { if (abort) abort.abort(); },
         nameOf: nameOf,
@@ -206,7 +214,6 @@
               if (found.same) {
                 uploaded[i] = true; skipped++;
                 setState(i, 'done', t('skippedSame', { name: found.same.VissibleName }), 'check');
-                li(i).querySelector('[data-o="up"]').disabled = true;
                 return true;
               }
               if (found.stem) base = found.stem;
@@ -218,7 +225,6 @@
             await R.api.upload(new File([data], name + '.' + ext, { type: type }), folder, signal);
             uploaded[i] = true;
             setState(i, 'done', t('uploadedAs', { name: name }) + (notes.length ? ' · ' + notes.join(' ') : ''), 'check');
-            li(i).querySelector('[data-o="up"]').disabled = true;
             return true;
           } catch (e) {
             if (e.name === 'AbortError') setState(i, 'error', t('cancel'), 'warn');
@@ -243,8 +249,7 @@
         var i = parseInt(b.closest('li').getAttribute('data-i'), 10);
         var a = b.getAttribute('data-o');
         if (a === 'dl') app.saveBlob(items[i].blob, nameOf(i));
-        else if (a === 'up') ctrl.uploadOne(i);
-        else if (a === 'prev') app.previewBlob(items[i].blob, nameOf(i), { onUpload: function () { return ctrl.uploadOne(i); } });
+        else if (a === 'rm') ctrl.removeItem(i);
       });
       return ctrl;
     };

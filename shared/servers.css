@@ -33,6 +33,16 @@
   font-family: reMarkableSansStatic; font-size: .875rem; color: var(--ark-text-default);
 }
 .rmx-srv-state { font-family: reMarkableSansStatic; font-size: .75rem; color: var(--ark-text-muted); flex: none; }
+.rmx-srv-btn {
+  border: 0; background: none; color: var(--ark-text-muted); cursor: pointer;
+  width: 1.5rem; height: 1.5rem; border-radius: 4999.5rem; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-family: reMarkableSansStatic; font-size: .8125rem; line-height: 1;
+  padding: 0;
+}
+.rmx-srv-btn:hover { background: var(--ark-interaction-tertiary-hover); color: var(--ark-text-default); }
+.rmx-srv-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--ark-interaction-focus-default, #99c3ff); }
+.rmx-srv-btn.ok { color: #2e9e4f; }
 .rmx-srv-rm {
   border: 0; background: none; color: var(--ark-text-muted); cursor: pointer; font-size: .8125rem;
   padding: 2px 4px; flex: none; border-radius: 4px;
