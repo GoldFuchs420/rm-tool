@@ -214,6 +214,7 @@ $("onePerPdf").checked = onePerPdf;
 $("onePerPdf").addEventListener("change", () => {
   onePerPdf = $("onePerPdf").checked;
   try { localStorage.setItem("rmx.oneimg", onePerPdf ? "1" : "0"); } catch (e) { /* private mode */ }
+  updateSendButton();
 });
 
 /* ---- PDF-Erzeugung aus dem extrahierten Artikel (Kapitel-Umbruch,
