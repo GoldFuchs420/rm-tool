@@ -9,6 +9,15 @@
  *  5. manifest.json ist gültiges JSON mit erwarteten Feldern
  *  6. Syntax aller eigenen JS-Dateien (node --check)
  *  7. Keine Referenzen auf entfernte Dateien (libs/jspdf.js)
+ *  8. Ungenutzte Funktionen (Deklaration ohne jede Referenz = toter Code)
+ *  9. Doppelte Funktionsdeklarationen innerhalb einer Datei
+ * 10. Fehlende Funktionen (Aufruf ohne Deklaration, Global oder Built-in)
+ * 11. Ungenutzte CSS-Klassen in app.css, popup.css, servers.css
+ * 12. Fehlende CSS-Klassen (referenziert in HTML/JS, aber nicht definiert)
+ * 13. Fehlende Dateien (Referenzen aus HTML, CSS, JS und manifest.json)
+ * 14. Ungenutzte Dateien (vom Erweiterungspaket nicht referenziert)
+ * 15. Doppelte HTML-IDs
+ * 16. CSS-Klammerbalance
  */
 "use strict";
 
@@ -259,13 +268,6 @@ check("jede referenzierte i18n-Übersetzung existiert in der Tabelle", function 
   }).join("; "));
 });
 
-check("kein Schlüssel ist datengetrieben nur als Präfix definiert", function () {
-  // Heuristik: Schlüssel wie "stImgCount" müssen als Ganzes existieren; dynamisch
-  // zusammengesetzte Aufrufe ( t(prefix + x) ) tauchen hier gar nicht auf – die
-  // Prüfung stellt nur sicher, dass wir keine Präfix-Konstruktion übersehen.
-  assert(true);
-});
-
 console.log("      ungenutzte Tabellenschlüssel: " +
   Object.keys(T).filter(function (k) { return !allRefs.has(k); }).length +
   " (dynamische Aufrufe und Fallbacks sind erlaubt)");
@@ -366,6 +368,343 @@ check("keine Referenz auf die entfernte Datei libs/jspdf.js mehr (window.jspdf a
 check("libs/pdfkit.js existiert und wird geladen (bewusst aktiv)", function () {
   assert(exists("libs/pdfkit.js"), "pdfkit.js fehlt");
   assert(read("popup.html").indexOf('libs/pdfkit.js') >= 0, "popup.html lädt pdfkit.js nicht");
+});
+
+/* ---------- 8-16: Neue Checks (Funktionen, Klassen, Dateien) ---------- */
+
+/* Code-Skelett: Kommentare und String-Inhalte entfernen, Code-Struktur bleibt.
+   Verhindert Fehltreffer aus deutschem Kommentartext und generiertem HTML. */
+function codeSkeleton(src) {
+  let out = "", i = 0, n = src.length, mode = "code", interp = 0;
+  const lastSig = function () {
+    for (let k = out.length - 1; k >= 0; k--) {
+      const ch = out[k];
+      if (ch !== " " && ch !== "\n" && ch !== "\t" && ch !== "\r") return ch;
+    }
+    return "";
+  };
+  while (i < n) {
+    const c = src[i], d = src[i + 1];
+    if (mode === "code") {
+      if (c === "/" && d === "/") { mode = "line"; out += "  "; i += 2; continue; }
+      if (c === "/" && d === "*") { mode = "block"; out += "  "; i += 2; continue; }
+      if (c === "'") { mode = "sq"; out += " "; i++; continue; }
+      if (c === '"') { mode = "dq"; out += " "; i++; continue; }
+      if (c === "`") { mode = "tpl"; out += " "; i++; continue; }
+      if (c === "/") {
+        const p = lastSig();
+        const afterWord = (out.match(/([A-Za-z]+)\s*$/) || ["", ""])[1];
+        const isRegex = p === "" || "(,=:[!&|?{};+-*%<>~^".indexOf(p) >= 0 ||
+          ["return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "do", "else", "case", "yield", "await"].indexOf(afterWord) >= 0;
+        if (isRegex) {
+          let j = i + 1, inCls = false;
+          while (j < n) {
+            if (src[j] === "\\") { j += 2; continue; }
+            if (src[j] === "[") inCls = true;
+            else if (src[j] === "]") inCls = false;
+            else if (src[j] === "/" && !inCls) break;
+            else if (src[j] === "\n") break;
+            j++;
+          }
+          out += " ";
+          i = Math.min(n, j + 1);
+          while (i < n && /[a-z]/.test(src[i])) i++;
+          continue;
+        }
+        out += c; i++; continue;
+      }
+      if (interp > 0 && c === "{") { interp++; out += c; i++; continue; }
+      if (interp > 0 && c === "}") { interp--; out += c; i++; if (interp === 0) mode = "tpl"; continue; }
+      out += c; i++; continue;
+    }
+    if (mode === "line") { if (c === "\n") { mode = "code"; out += c; } else out += " "; i++; continue; }
+    if (mode === "block") { if (c === "*" && d === "/") { mode = "code"; out += "  "; i += 2; } else { out += c === "\n" ? "\n" : " "; i++; } continue; }
+    if (mode === "sq" || mode === "dq") {
+      if (c === "\\") { out += "  "; i += 2; continue; }
+      if ((mode === "sq" && c === "'") || (mode === "dq" && c === '"')) { mode = "code"; out += " "; i++; continue; }
+      out += c === "\n" ? "\n" : " "; i++; continue;
+    }
+    if (mode === "tpl") {
+      if (c === "\\") { out += "  "; i += 2; continue; }
+      if (c === "`") { mode = "code"; out += " "; i++; continue; }
+      if (c === "$" && d === "{") { mode = "code"; out += "  "; interp = 1; i += 2; continue; }
+      out += c === "\n" ? "\n" : " "; i++; continue;
+    }
+  }
+  return out;
+}
+
+const ownJs = [...jsFiles, "shared/filename.js", "assets/js/i18n.js"];
+const cssFiles = ["assets/app.css", "assets/index.css", "popup.css", "shared/servers.css"];
+const appCssFiles = ["assets/app.css", "popup.css", "shared/servers.css"];
+
+/* Deklarationsmuster: named functions, var/let/const = function/Pfeilfunktion,
+   Namensraum-Zuweisungen (R.foo = / RMX.foo = / window.foo =), Klassen. */
+const fnRe = /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g;
+const varFnRe = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?function\b/g;
+const arrowRe = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^(){}]*\)|[A-Za-z_$][\w$]*)\s*=>/g;
+const nsRe = /\b(?:R|RMX|window)\.([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function\b|\()/g;
+const classDeclRe = /\bclass\s+([A-Za-z_$][\w$]*)/g;
+
+/* [8]/[9]: Funktionsdeklarationen sammeln (auf dem Code-Skelett) */
+const decls = new Map(); // Name -> [Dateien]
+ownJs.forEach(function (f) {
+  const code = codeSkeleton(read(f));
+  const res = [fnRe, varFnRe, arrowRe, nsRe, classDeclRe];
+  let m;
+  res.forEach(function (re) {
+    re.lastIndex = 0;
+    while ((m = re.exec(code))) {
+      if (!decls.has(m[1])) decls.set(m[1], []);
+      decls.get(m[1]).push(f);
+    }
+  });
+});
+
+console.log("\n[8] Ungenutzte Funktionen (" + decls.size + " Deklarationen)");
+
+check("keine deklarierte Funktion ist ohne Referenz im Code", function () {
+  /* Nutzungszahl ueber maskierten Corpus: Deklarationsspannen werden geblankt,
+     jedes uebrig bleibende Vorkommen (auch R.name / RMX.name) zaehlt als Nutzung. */
+  function maskDecls(src) {
+    const spans = [];
+    [fnRe, varFnRe, arrowRe, nsRe, classDeclRe].forEach(function (re) {
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(src))) spans.push([m.index, m.index + m[0].length]);
+    });
+    spans.sort(function (a, b) { return a[0] - b[0]; });
+    let out = "", pos = 0;
+    spans.forEach(function (s) {
+      if (s[0] < pos) return;
+      out += src.slice(pos, s[0]) + " ".repeat(s[1] - s[0]);
+      pos = s[1];
+    });
+    return out + src.slice(pos);
+  }
+  const corpus = ownJs.concat(htmlFiles).map(function (f) { return maskDecls(read(f)); }).join("\n");
+  const unused = [];
+  decls.forEach(function (files, name) {
+    const re = new RegExp("(?<![A-Za-z0-9_$])" + name.replace(/\$/g, "\\$") + "(?![\\w$])", "g");
+    if ((corpus.match(re) || []).length === 0) unused.push(name + " (" + files[0] + ")");
+  });
+  assert(unused.length === 0, "ohne Referenz: " + unused.join(", "));
+});
+
+console.log("\n[9] Doppelte Funktionsdeklarationen");
+
+check("kein Funktionsname innerhalb einer Datei doppelt deklariert", function () {
+  const dupes = [];
+  decls.forEach(function (files, name) {
+    const seen = {};
+    files.forEach(function (f) { seen[f] = (seen[f] || 0) + 1; });
+    Object.keys(seen).forEach(function (f) {
+      if (seen[f] > 1) dupes.push(f + ": " + name + " x" + seen[f]);
+    });
+  });
+  assert(dupes.length === 0, "doppelt: " + dupes.join("; "));
+});
+
+console.log("\n[10] Fehlende Funktionen");
+
+check("jeder Funktionsaufruf hat eine Deklaration, Global oder Built-in", function () {
+  const KEYWORDS = new Set("if for while switch catch return function typeof new delete void in of do else try finally with await yield var let const class extends super this null true false case default break continue throw instanceof export import async".split(/\s+/));
+  const KNOWN = new Set(("document window console chrome Math JSON Date Promise Set Map WeakMap WeakSet Symbol Proxy Reflect " +
+    "URL URLSearchParams FormData Blob File FileReader Image Intl Error TypeError RangeError SyntaxError URIError " +
+    "Uint8Array Uint8ClampedArray Uint16Array Uint32Array Int8Array Int16Array Int32Array Float32Array Float64Array " +
+    "ArrayBuffer DataView SharedArrayBuffer Array Object String Number Boolean Function RegExp BigInt " +
+    "AbortController AbortSignal DOMParser XMLSerializer TextEncoder TextDecoder ReadableStream WritableStream " +
+    "fetch setTimeout clearTimeout setInterval clearInterval requestAnimationFrame cancelAnimationFrame " +
+    "isNaN isFinite parseFloat parseInt encodeURIComponent decodeURIComponent encodeURI decodeURI " +
+    "crypto atob btoa localStorage sessionStorage navigator location history alert confirm prompt " +
+    "structuredClone queueMicrotask CustomEvent Event MouseEvent PointerEvent KeyboardEvent FocusEvent InputEvent " +
+    "ResizeObserver IntersectionObserver MutationObserver BroadcastChannel MessageChannel Worker " +
+    "getComputedStyle matchMedia performance scroll scrollTo open close print CSS PDFLib JSZip pako marked jsPDF " +
+    "Readability DOMRect DOMTokenList CompressionStream DecompressionStream createImageBitmap " +
+    "Response Request Headers Notification OffscreenCanvas ImageBitmap undefined NaN Infinity globalThis self " +
+    "RMX RMXShared RMXServers R app").split(/\s+/));
+  decls.forEach(function (files, name) { KNOWN.add(name); });
+  const clean = ownJs.map(function (f) { return codeSkeleton(read(f)); }).join("\n");
+  /* Parameter-Namen erlauben (Callbacks wie resolve/reject, app, esc, ...) */
+  [/\bfunction\s*[A-Za-z_$]?[\w$]*\s*\(([^()]*)\)/g, /\(([^(){}]*)\)\s*=>/g].forEach(function (re) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(clean))) {
+      (m[1] || "").split(",").forEach(function (p) {
+        p = p.trim().replace(/^\.\.\./, "").split(/[=\s:]/)[0];
+        if (/^[A-Za-z_$][\w$]*$/.test(p)) KNOWN.add(p);
+      });
+    }
+  });
+  /* Alle var/let/const-Deklarationen zählen (Aliase wie var ymd = RMXShared.ymd) */
+  const varRe = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)/g;
+  let m;
+  while ((m = varRe.exec(clean))) KNOWN.add(m[1]);
+  const callRe = /(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g;
+  const missing = new Set();
+  while ((m = callRe.exec(clean))) {
+    if (!KEYWORDS.has(m[1]) && !KNOWN.has(m[1])) missing.add(m[1]);
+  }
+  assert(missing.size === 0, "ohne Deklaration aufgerufen: " + [...missing].join(", "));
+});
+
+/* [11]/[12]: CSS-Klassen sammeln */
+const cssAll = new Set();
+cssFiles.forEach(function (f) {
+  const src = read(f);
+  let m;
+  const selRe = /\.(-?[A-Za-z_][A-Za-z0-9_-]*)/g;
+  while ((m = selRe.exec(src))) cssAll.add(m[1]);
+});
+const usageText = ownJs.concat(htmlFiles).map(function (f) { return read(f); }).join("\n");
+
+/* Dynamisch zusammengesetzte Klassen: "rmx-btn--" + kind -> Basis "rmx-btn--"
+   gilt als Referenz aller Klassen mit diesem Praefix. */
+function classUsed(name) {
+  if (usageText.indexOf(name) >= 0) return true;
+  const i = name.lastIndexOf("--");
+  if (i > 0) return usageText.indexOf(name.slice(0, i + 2)) >= 0;
+  return false;
+}
+
+console.log("\n[11] Ungenutzte CSS-Klassen (" + appCssFiles.join(", ") + ")");
+
+check("keine Klasse ohne Referenz in HTML oder JS", function () {
+  /* assets/index.css ist das beigestellte Design-System (bewusst vollstaendig
+     beigelegt) und wird hier bewusst nicht geprueft. */
+  const defined = new Set();
+  appCssFiles.forEach(function (f) {
+    const src = read(f).replace(/\/\*[\s\S]*?\*\//g, "");
+    let m;
+    const selRe = /\.(-?[A-Za-z_][A-Za-z0-9_-]*)/g;
+    while ((m = selRe.exec(src))) defined.add(m[1]);
+  });
+  const unused = [...defined].filter(function (c) { return !classUsed(c); });
+  assert(unused.length === 0, "ungenutzt: " + unused.join(", "));
+});
+
+console.log("\n[12] Fehlende CSS-Klassen");
+
+check("jede in HTML/JS referenzierte Klasse ist im CSS definiert", function () {
+  /* Reine JS-Hooks ohne Styling und das native hidden-Attribut sind erlaubt. */
+  const SEMANTIC = new Set(["rmx-xpander", "rmx-xpander--page", "rmx-headbadge", "ihost"]);
+  const tokens = new Set();
+  let m;
+  htmlFiles.forEach(function (f) {
+    const src = read(f);
+    const clsAttrRe = /class\s*=\s*"([^"]*)"/g;
+    while ((m = clsAttrRe.exec(src))) {
+      m[1].trim().split(/\s+/).forEach(function (c) { if (/^[A-Za-z_]/.test(c)) tokens.add(c); });
+    }
+  });
+  const jsRaw = ownJs.map(function (f) { return read(f); }).join("\n");
+  const clsListRe = /classList\.(?:add|remove|toggle|contains)\(\s*(['"])([^'"]+)\1/g;
+  while ((m = clsListRe.exec(jsRaw))) tokens.add(m[2]);
+  const qSelRe = /querySelector(?:All)?\(\s*(['"])[^'"]*?\.([A-Za-z_][A-Za-z0-9_-]*)/g;
+  while ((m = qSelRe.exec(jsRaw))) tokens.add(m[2]);
+  const cnAssignRe = /className\s*=\s*(['"])([^'"]+)\1/g;
+  while ((m = cnAssignRe.exec(jsRaw))) {
+    m[2].trim().split(/\s+/).forEach(function (c) { if (/^[A-Za-z_]/.test(c)) tokens.add(c); });
+  }
+  const missing = [...tokens].filter(function (c) {
+    if (cssAll.has(c) || SEMANTIC.has(c) || c === "hidden") return false;
+    if (/--$/.test(c)) return ![...cssAll].some(function (d) { return d.indexOf(c) === 0; });
+    return true;
+  });
+  assert(missing.length === 0, "referenziert, aber undefiniert: " + missing.join(", "));
+});
+
+console.log("\n[13] Fehlende Dateien (HTML, CSS, JS, manifest.json)");
+
+check("keine Referenz verweist auf eine fehlende Datei", function () {
+  const refs = new Set();
+  let m;
+  htmlFiles.forEach(function (f) {
+    const src = read(f);
+    const re = /(?:src|href)="([^"]+)"/g;
+    while ((m = re.exec(src))) {
+      const u = m[1].replace(/^\//, "");
+      if (/^(https?:|data:|mailto:|#)/.test(u)) continue;
+      refs.add(u);
+    }
+  });
+  cssFiles.forEach(function (f) {
+    const src = read(f);
+    const re = /url\(\s*['"]?([^'")]+)['"]?\s*\)/g;
+    while ((m = re.exec(src))) {
+      const u = m[1].replace(/^\//, "");
+      if (/^(https?:|data:|#)/.test(u)) continue;
+      refs.add(u);
+    }
+  });
+  /* absolute Pfad-Strings ("/assets/...") und relative ("libs/readability.js") */
+  const absRe = /['"](\/[A-Za-z0-9_][A-Za-z0-9_\/.-]*\.(?:js|css|png|svg|woff2|json|html))['"]/g;
+  const relRe = /['"]([A-Za-z0-9_][A-Za-z0-9_-]*\/[A-Za-z0-9_\/.-]*\.(?:js|css|png|svg|woff2|json|html))['"]/g;
+  ownJs.forEach(function (f) {
+    const src = read(f);
+    while ((m = absRe.exec(src))) refs.add(m[1].replace(/^\//, ""));
+    while ((m = relRe.exec(src))) refs.add(m[1]);
+  });
+  const man = JSON.parse(read("manifest.json"));
+  [man.icons, man.action && man.action.default_icon].forEach(function (grp) {
+    if (grp) Object.keys(grp).forEach(function (k) { refs.add(grp[k]); });
+  });
+  if (man.action && man.action.default_popup) refs.add(man.action.default_popup);
+  if (man.background && man.background.service_worker) refs.add(man.background.service_worker);
+  const missing = [...refs].filter(function (u) { return !exists(u); });
+  assert(missing.length === 0, "fehlt: " + missing.join(", "));
+});
+
+console.log("\n[14] Ungenutzte Dateien");
+
+check("jede Paketdatei wird vom Code, HTML, CSS oder manifest referenziert", function () {
+  /* Corpus = alle Paketdateien ausser Tests, README und Lizenztexten.
+     Referenzquelle ist auch manifest.json selbst (Icons, Popup, Worker). */
+  const NONCODE = [/^tests\//, /^README\.md$/, /^assets\/vendor\/licenses\//, /THIRD_PARTY_NOTICES\.txt$/];
+  const refs = [];
+  function walk(dir) {
+    fs.readdirSync(path.join(ROOT, dir === "" ? "." : dir), { withFileTypes: true }).forEach(function (e) {
+      if (e.name.charAt(0) === ".") return;
+      const rel = dir === "" ? e.name : dir + "/" + e.name;
+      if (e.isDirectory()) walk(rel);
+      else refs.push(rel);
+    });
+  }
+  walk("");
+  const corpus = refs.filter(function (f) { return !NONCODE.some(function (r) { return r.test(f); }); }).map(function (f) { return read(f); }).join("\n");
+  const unused = refs.filter(function (f) {
+    /* manifest.json wird implizit von Chrome geladen, nicht referenziert. */
+    if (NONCODE.some(function (r) { return r.test(f); }) || f === "manifest.json") return false;
+    const base = f.split("/").pop();
+    return corpus.indexOf(f) < 0 && corpus.indexOf(base) < 0;
+  });
+  assert(unused.length === 0, "ohne Referenz im Paket: " + unused.join(", "));
+});
+
+console.log("\n[15] Doppelte HTML-IDs");
+
+htmlFiles.forEach(function (f) {
+  check("keine doppelte id in " + f, function () {
+    const src = read(f);
+    const seen = {}, dup = [];
+    let m;
+    const idRe = /id\s*=\s*"([^"]+)"/g;
+    while ((m = idRe.exec(src))) {
+      if (seen[m[1]] && dup.indexOf(m[1]) < 0) dup.push(m[1]);
+      seen[m[1]] = 1;
+    }
+    assert(dup.length === 0, "doppelt: " + dup.join(", "));
+  });
+});
+
+console.log("\n[16] CSS-Klammerbalance");
+
+cssFiles.forEach(function (f) {
+  check("{ und } in " + f + " ausgeglichen", function () {
+    const src = read(f).replace(/\/\*[\s\S]*?\*\//g, "");
+    const o = (src.match(/\{/g) || []).length, c = (src.match(/\}/g) || []).length;
+    assert(o === c, o + " \\{ gegen " + c + " \\}");
+  });
 });
 
 /* ---------- Ergebnis ---------- */
