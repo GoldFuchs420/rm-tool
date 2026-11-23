@@ -581,6 +581,36 @@ Weitere UX-Runde nach Feedback:
   öffnet keinen nativen Dialog mehr, der Server geht wie im Popup auf
   Gelb („Login nötig") mit der Inline-Anmeldekarte.
 
+## Runde 8: Bildernamen, Login-Diagnose, Import-Auge, Feinschliff
+
+- **Bilder beim Upload benannt**: Alt-Text ist der Dokumentname; ohne
+  Alt-Text heißen die Dateien „Bilder von {Seitentitel} - 1`, - 2, …
+  (mehrsprachig, fortlaufende Nummer auch bei doppelten Namen).
+- **Login-Diagnose (Dateimanager & Popup)**: der Erreichbarkeits-Check
+  liest jetzt den `WWW-Authenticate`-Header. Erwartet der Server ein
+  anderes Verfahren als Basic (z. B. Digest/NTLM), meldet die
+  Anmeldekarte das direkt und übersetzt; sonst erscheinen der
+  HTTP-Fehlcode bzw. „Keine Verbindung.` statt eines generischen
+  Fehltexts. Der Check-Timeout steigt von 3,5 s auf 8 s, damit langsame
+  Proxys nicht fälschlich als offline gelten.
+- **Import-Upload-Liste**: hochladbare Dateien (PDF) haben wieder das
+  **Auge**, und zwar **innerhalb** der kleinen Vorschaukachel – ein
+  Klick (oder Enter/Leertaste) öffnet die Vorschau wie in den Details.
+- **Braun**: Fokus-Ring der Radio-Buttons und die Outline der
+  Sprachauswahl sind jetzt ebenfalls reMarkable-Braun; das Auge sitzt
+  sauber innerhalb der Kachel statt auf der Kante.
+- **Filter**: halbordinates Innen-Padding aller Eingabe- und Auswahlfelder.
+- **Dateiliste**: die Buttons stehen unten rechts, auch wenn die
+  Vorschau höher ist als der rechte Spaltenteil (mobil normal im
+  Textfluss).
+- **Popup**: kleiner Abstand am unteren Rand; der Senden-Button lädt
+  mit den übrigen Elementen, sobald ein Server erreichbar ist, und ist
+  nur ausgegraut, wenn nichts zu senden ist.
+- **Verifiziert**: Testsuite (31 Gruppen) grün; die Login-Kette
+  (Probe → gelbe Karte → Anmelden → grün + gespeicherte Daten) wurde
+  zusätzlich gegen echte lokale HTTP-Server (Basic, Digest, HTTP-503)
+  automatisiert geprüft.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.

@@ -154,12 +154,13 @@
       var abort = null;
       var skipped = 0;
       var pill = function (a, ico, text, title, cls) { return '<button type="button" class="rmx-pill rmx-pill--' + cls + '" data-o="' + a + '" aria-label="' + esc(title) + '" title="' + esc(title) + '">' + icon(ico, 16) + '<span>' + esc(text) + '</span></button>'; };
-      // Left next to the title: small preview, with the file type icon as a badge
-      // on the corner (PDF gets a page thumbnail, everything else only the icon).
+      // Left next to the title: small preview; the eye badge sits inside the
+      // tile and opens the PDF preview (same interaction as in the import list).
       var leadHtml = function (ext) {
-        return '<div class="olead">' +
-          (ext === 'pdf' ? '<span class="othumb" hidden></span>' : '<span class="ofallback">' + icon('notebook', 26) + '</span>') +
-          '<span class="obadge">' + icon(ext === 'pdf' ? 'pdf' : 'notebook', 13) + '</span></div>';
+        var pv = ext === 'pdf';
+        return '<div class="olead' + (pv ? '" data-o="pv" role="button" tabindex="0" aria-label="' + esc(t('preview')) + '" title="' + esc(t('preview')) : '') + '">' +
+          (pv ? '<span class="othumb" hidden></span>' : '<span class="ofallback">' + icon('notebook', 26) + '</span>') +
+          '<span class="obadge">' + icon(pv ? 'eye' : 'notebook', 13) + '</span></div>';
       };
       // Result row: left preview + type icon, right the (long, wrapping) title;
       // below it size and actions as a bottom panel.
@@ -293,7 +294,16 @@
         var i = parseInt(b.closest('li').getAttribute('data-i'), 10);
         var a = b.getAttribute('data-o');
         if (a === 'dl') app.saveBlob(items[i].blob, nameOf(i));
+        else if (a === 'pv') app.previewBlob(items[i].blob, nameOf(i));
         else if (a === 'rm') ctrl.removeItem(i);
+      });
+      host.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var pv = e.target.closest ? e.target.closest('[data-o="pv"]') : null;
+        if (!pv) return;
+        e.preventDefault();
+        var i = parseInt(pv.closest('li').getAttribute('data-i'), 10);
+        app.previewBlob(items[i].blob, nameOf(i));
       });
       return ctrl;
     };

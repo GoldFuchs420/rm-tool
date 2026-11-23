@@ -3,7 +3,7 @@
    shared/servers.css (siehe popup.html) – hier nur noch das, was für
    das kleine Popup-Fenster zusätzlich nötig ist. */
 
-body { width: 360px; max-height: 600px; overflow-y: auto; }
+body { width: 360px; max-height: 600px; overflow-y: auto; padding-bottom: 10px; }
 
 .rmx-popup-header {
   display: flex; align-items: center; justify-content: space-between;
