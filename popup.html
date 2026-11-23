@@ -48,13 +48,23 @@
       <p id="imageStatus" class="responsive-body-sm rmx-muted">—</p>
       <div id="imageStrip" class="image-strip"></div>
       <div id="minEdgeRow" class="rmx-field-row rmx-minedge-row" hidden>
-        <label for="minEdgeSlider" class="responsive-body-sm rmx-muted" data-i18n="minEdge">Minimale Kantenlänge</label>
-        <input id="minEdgeSlider" type="range" min="0" max="0" value="0" step="1" />
-        <span id="minEdgeValue" class="rmx-value-badge">0 px</span>
+        <label class="responsive-body-sm rmx-muted" data-i18n="minEdge">Breite</label>
+        <span id="minEdgeMin" class="rmx-value-badge">0 px</span>
+        <div class="rmx-range2" id="edgeRange">
+          <input id="minEdgeSlider" type="range" min="0" max="0" value="0" step="1" aria-label="Minimum" />
+          <input id="maxEdgeSlider" type="range" min="0" max="0" value="0" step="1" aria-label="Maximum" />
+        </div>
+        <span id="minEdgeMaxVal" class="rmx-value-badge">0 px</span>
       </div>
-      <div class="rmx-select-row">
-        <button id="selectAllBtn" type="button" class="ark-link responsive-body-sm" data-i18n="selectAll">Alles auswählen</button>
-        <button id="selectNoneBtn" type="button" class="ark-link responsive-body-sm" data-i18n="clearSelection">Auswahl aufheben</button>
+      <div class="rmx-select-row rmx-selbar">
+        <button id="selectAllBtn" type="button" class="ark-button ark-button--secondary ark-button-small" data-i18n-title="selectAll">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM72,168a8,8,0,0,1-5.66-2.34l-24-24a8,8,0,0,1,11.32-11.32L72,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32l-64,64A8,8,0,0,1,72,168Zm141.66-66.34-64,64a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,11.32-11.32L144,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+          <p class="responsive-body-sm" data-i18n="selectAll">Alles auswählen</p>
+        </button>
+        <button id="selectNoneBtn" type="button" class="ark-button ark-button--secondary ark-button-small" data-i18n-title="clearSelection">
+          <svg class="rmx-ico--ghost" aria-hidden="true" width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM72,168a8,8,0,0,1-5.66-2.34l-24-24a8,8,0,0,1,11.32-11.32L72,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32l-64,64A8,8,0,0,1,72,168Zm141.66-66.34-64,64a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,11.32-11.32L144,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+          <p class="responsive-body-sm" data-i18n="clearSelection">Auswahl aufheben</p>
+        </button>
       </div>
       <div class="rmx-switchrow">
         <span class="ark-switch">
@@ -79,7 +89,7 @@
     <ul id="results" class="results-list"></ul>
   </details>
 
-  <section class="rmx-popup-section rmx-popup-section--send">
+  <section id="sendPanel" class="rmx-popup-section rmx-popup-section--send">
     <button id="sendBtn" type="button" class="ark-button ark-button--primary ark-button-large" disabled style="width:100%">Senden</button>
   </section>
 
