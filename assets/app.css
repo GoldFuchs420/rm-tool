@@ -51,9 +51,9 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-hdr-tools { display: flex; align-items: center; gap: 12px; }
 .rmx-lang { width: 5.5rem; }
 .rmx-lang > select { height: 2.5rem; padding-left: .75rem; font-size: 1rem; }
-.rmx-main { min-height: calc(100vh - 128px); padding: 75px 100px 0; background: var(--rmx-page); }
+.rmx-main { min-height: calc(100vh - 128px); padding: 70px 100px 0; background: var(--rmx-page); }
 .rmx-container { max-width: 64rem; margin: 0 auto; padding: 12px 0 64px; display: flex; flex-direction: column; gap: 20px; }
-.rmx-footer { min-height: 128px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 24px; padding: 16px 40px; background: var(--rmx-surface); }
+.rmx-footer { min-height: 64px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 24px; padding: 16px 40px; background: var(--rmx-surface); }
 
 .rmx-titlebar { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding-top: 12px; }
 .rmx-crumbs { width: 100%; min-width: 0; }
@@ -256,6 +256,8 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-namefield .ark-input { flex: 1 1 auto; min-width: 0; width: auto; }
 .rmx-addrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .rmx-summary { padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
+.rmx-summary { margin-top: -8px; } /* sehr knapp unter dem Dateinamen */
+#dlg-export .rmx-dialog__body { gap: 12px; }
 .rmx-run { display: flex; flex-direction: column; gap: 12px; }
 .rmx-run .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rmx-progress { height: 4px; border-radius: 2px; background: #211e1c26; overflow: hidden; }
@@ -353,7 +355,9 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 @media (max-width: 640px) {
   .rmx-header { height: 56px; padding: 0 16px; }
   .rmx-logo img { width: 96px; height: auto; }
-  .rmx-main { padding: 64px 5vw 0; min-height: calc(100vh - 100px); } /* content = 90 % of the width */
+  .rmx-main { padding: 60px 5vw 0; min-height: calc(100vh - 100px); } /* content = 90 % of the width */
+  .rmx-srv-panel-wrap { margin-bottom: -7px; }
+  .rmx-actions .ark-button + .ark-button { margin-left: -.5rem; }
   .rmx-container { gap: 14px; padding-bottom: 40px; }
   .rmx-footer { padding: 16px; gap: 6px 16px; }
 
@@ -432,6 +436,9 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
  * Wrapper direkt in #serverPanel gemountet (siehe popup.css).
  * --------------------------------------------------------------------- */
 .rmx-srv-panel-wrap { min-width: 0; }
+/* halber Container-Abstand zur Titelzeile */
+.rmx-srv-panel-wrap { margin-bottom: -10px; }
+.rmx-actions .ark-button + .ark-button { margin-left: -.75rem; } /* Import/Export enger */
 
 /* No server available: only the server panel (with login option) is shown,
    the file lists cannot be loaded at all. Applies to the file manager. */

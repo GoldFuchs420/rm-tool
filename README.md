@@ -716,6 +716,24 @@ Weitere UX-Runde nach Feedback:
   Serverleiste neu übersetzt (Redraw-Hook der gemeinsamen
   Server-Komponente, `RMX.serversRedraw`).
 
+## Runde 10b: Kompaktere Abstände, Popup-Kopffarbe, Platzhalter-Schaltung
+
+- **Popup-Bilderbereich:** Mehr Abstand über der Breiten-Zeile
+  (Min-/Max-Werte); Kopffarbe des Popups entspricht jetzt der
+  Kopf-Hintergrundfarbe des Dateimanagers.
+- **Datum-Platzhalter sitzt wasserdicht:** Wird ein Datum gesetzt — egal
+  ob per Tastatur, Kalender-Widget oder Preset-Buttons — verschwindet
+  der Platzhalter sofort (jetzt zusätzlich per `hidden`-Attribut am
+  Hinweistext); beim Leeren erscheint er wieder, auch nach
+  Kalender-Reset.
+- **Dateimanager kompakter:** Abstand Header → Serverleiste,
+  Serverleiste → „Meine Dateien“ und zwischen Import-/Export-Buttons
+  jeweils halbiert; die Fußzeile ist genau so hoch (64 px) wie der
+  Header.
+- **Export-Dialog:** Abstand zwischen den Sektionen halbiert; zwischen
+  Dateiname und der Anzahl-Zeile (Dateien/Ordner) ist er stark
+  reduziert (~80 %).
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
