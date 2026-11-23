@@ -65,6 +65,13 @@ Konfiguration.
   Einzel-Versand, unabhängig von der übrigen Auswahl.
 - Schriftgröße wird **pro Website (Hostname)** gespeichert — besuchst du
   dieselbe Seite später wieder, ist dein letzter Wert schon vorausgewählt.
+- **Zwei getrennte, kompakte Gruppierungen**: „Seite als PDF“ (Schalter,
+  Status, Schriftgröße) und „Bilder“ (Streifen, Auswahl, Upload-Modus)
+  sind eigene Umrandungen im Popup.
+- **Bilder werden standardmäßig als ein zusammenhängendes PDF** (eine
+  Seite je Bild) hochgeladen; der Schalter **„Ein Bild pro PDF“** (in 5
+  Sprachen, Wahl wird gespeichert) schaltet um, dass jedes Bild als
+  eigenes PDF gesendet wird.
 - Server-Verwaltung (Liste, Erreichbarkeits-Check, Login bei Basic-Auth,
   Hinzufügen/Entfernen) ist jetzt eine **gemeinsame Komponente**
   (`shared/servers.js`), die exakt so auch im Dateimanager erscheint.
@@ -93,12 +100,21 @@ eingebettet als vollwertige Extension-Seite:
   Jede Adresse hat einen Kopieren-Button (Zwischenablage) und einen
   Button zum Öffnen in einem neuen Browser-Tab.
 - **Dateiliste**: Checkbox und Dateityp-Icon stehen in der ersten Zeile
-  **links vom Titel**, darunter das Vorschaubild (mit flexiblem Raum
-  darunter); Titelhöhe ist variabel, die Dateiendung entfällt (der Typ
-  ist am Icon erkennbar). Die **PDF/RMDoc/Details-Buttons bekommen eine
-  eigene Zeile** unter Titel und Metadaten, statt neben dem
-  Seiten-Indikator umzubrechen. Ausgewählte Dateien erhalten zur Hintergrundtönung einen
+  **links vom Titel**, darunter das vergrößerte Vorschaubild (feste
+  Maximalbreite, etwas breiter als Checkbox plus Icon, klarer Abstand
+  zur Titelspalte); Titelhöhe ist variabel, die Dateiendung entfällt
+  (der Typ ist am Icon erkennbar). Die **PDF/RMDoc/Details-Buttons
+  bekommen eine eigene, rechtsbündige Zeile** unter Titel und
+  Metadaten, statt neben dem Seiten-Indikator umzubrechen; der
+  Auswahlrahmen berührt Checkbox und Vorschaubild nicht mehr.
+  Ausgewählte Dateien erhalten zur Hintergrundtönung einen
   deutlichen **Rahmen** (reMarkable-Primärfarbe).
+- **Auswahl-Werkzeugleiste**: „Alles auswählen“, „Auswahl aufheben“ und
+  „Kopieren“ stehen in einer Zeile (auf Mobil daneben) und tragen Icons.
+- **Filter**: Bezeichnung links, Element rechts (zweispaltig je Feld);
+  die Datumsfelder zeigen das erwartete Format als sichtbaren Hinweis,
+  die drei Schnellfilter („−30 Tage“ etc.) stehen nebeneinander und
+  tragen je ein Kalender-Icon.
 - **Entfernt**: der ursprüngliche "URL importieren"-Button (externer
   Lesedienst) sowie der zwischenzeitlich hinzugefügte "Von Webseite
   importieren"-Button (Tab-Auswahl-Dialog) — auf deinen Wunsch entfernt,
@@ -170,6 +186,8 @@ Neuer Ablauf beim Import (`assets/js/import.js`, `assets/js/outputs.js`):
   "Vorschau erstellen" und "Zurück" sind entfallen, ebenso der direkte
   Einzel-Upload. Nur noch "Alle hochladen" (ein Klick für die ganze
   Liste) und während der Umwandlung "Abbrechen" bleiben übrig.
+  Der Dialog zeigt jetzt **immer** die Liste mit dem
+  "Dateien hinzufügen"-Button, auch wenn er leer geöffnet wird.
 - **Mini-Vorschau wie in der Dateiliste**: Aus PDF-Ergebnissen wird die
   erste Seite verkleinert unter Titel und Typ-Icon angezeigt (Bilder/
   Texte zeigen keine Vorschaubild-Zeile).

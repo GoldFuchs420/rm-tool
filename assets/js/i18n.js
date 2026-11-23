@@ -182,7 +182,16 @@
     exportAsPdf: ["Als PDF exportieren", "Export as PDF", "Esporta come PDF", "Exportar como PDF", "Exporter en PDF"],
     exportAsRmdoc: ["Als RMDoc exportieren", "Export as RMDoc", "Esporta come RMDoc", "Exportar como RMDoc", "Exporter en RMDoc"],
     exportAsArchive: ["Als Archiv exportieren ({type})", "Export as archive ({type})", "Esporta come archivio ({type})", "Exportar como archivo ({type})", "Exporter en archive ({type})"],
-    urlDoneEpub: ["Datei geladen. Für EPUB gibt es keine PDF-Vorschau, du kannst sie direkt hochladen.", "File loaded. There is no PDF preview for EPUB, you can upload it directly.", "File caricato. Per gli EPUB non c'è anteprima PDF, puoi caricarlo direttamente.", "Archivo cargado. Los EPUB no tienen vista previa en PDF; puedes subirlo directamente.", "Fichier chargé. Il n'y a pas d'aperçu PDF pour les EPUB, vous pouvez l'envoyer directement."]
+    urlDoneEpub: ["Datei geladen. Für EPUB gibt es keine PDF-Vorschau, du kannst sie direkt hochladen.", "File loaded. There is no PDF preview for EPUB, you can upload it directly.", "File caricato. Per gli EPUB non c'è anteprima PDF, puoi caricarlo direttamente.", "Archivo cargado. Los EPUB no tienen vista previa en PDF; puedes subirlo directamente.", "Fichier chargé. Il n'y a pas d'aperçu PDF pour les EPUB, vous pouvez l'envoyer directement."],
+    fDateHint: ["Format: JJJJ-MM-TT", "Format: YYYY-MM-DD", "Formato: AAAA-MM-GG", "Formato: AAAA-MM-DD", "Format : AAAA-MM-JJ"],
+    oneImagePerPdf: ["Ein Bild pro PDF", "One image per PDF", "Un'immagine per PDF", "Una imagen por PDF", "Une image par PDF"],
+    oneImagePerPdfHint: ["Aus: alle gewählten Bilder in einem PDF", "Off: all selected images in one PDF", "Disattivato: tutte le immagini scelte in un PDF", "Desactivado: todas las imágenes elegidas en un PDF", "Désactivé : toutes les images choisies dans un PDF"],
+    pageAsPdfHead: ["Seite als PDF", "Page as PDF", "Pagina come PDF", "Página como PDF", "Page en PDF"],
+    imagesHead: ["Bilder", "Images", "Immagini", "Imágenes", "Images"],
+    imageHead: ["Bild", "Image", "Immagine", "Imagen", "Image"],
+    sendOneTitle: ["Nur dieses Bild sofort senden", "Send only this image now", "Invia solo questa immagine ora", "Enviar solo esta imagen ahora", "Envoyer seulement cette image maintenant"],
+    imgNoneLoaded: ["Keines der Bilder konnte geladen werden.", "None of the images could be loaded.", "Nessuna immagine è stata caricata.", "Ninguna de las imágenes se pudo cargar.", "Aucune des images n'a pu être chargée."],
+    sendBtnLabel: ["Senden", "Send", "Invia", "Enviar", "Envoyer"]
   };
 
   var codes = R.langs.map(function (l) { return l[0]; });

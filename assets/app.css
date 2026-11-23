@@ -63,14 +63,23 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-search__field svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .7; }
 .rmx-search__field .ark-input { width: 100%; padding-left: 44px; box-sizing: border-box; }
 .rmx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; padding: 20px; margin-top: 8px; border-radius: 4px; background: var(--rmx-surface); }
+/* Bezeichnung links, Element rechts: zweispaltiges Layout je Feld */
+.rmx-filters .ark-field { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; align-items: center; }
+.rmx-filters .ark-field .rmx-choice { grid-column: 1 / -1; }
 .rmx-filters .ark-input, .rmx-filters .ark-select { width: 100%; box-sizing: border-box; }
+.rmx-filters input[type="date"] { background-clip: padding-box; cursor: pointer; }
+.rmx-filters .datehint { grid-column: 2; margin-top: -2px; color: var(--ark-text-muted); }
 .rmx-filters .rmx-choice { margin-top: 4px; }
 .rmx-daterow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: nowrap; }
+.rmx-presets .ark-button { flex: 1 1 auto; min-width: 0; }
+.rmx-presets .ark-button svg { flex: none; }
 
 .rmx-toolbar { display: flex; align-items: center; gap: 8px 20px; flex-wrap: wrap; min-height: 2rem; }
 .rmx-toolbar .spacer { flex: 1 1 0; }
-.rmx-selbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rmx-selbar { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+.rmx-selbar .ark-button { min-width: 0; }
+.rmx-selbar .ark-button p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rmx-selbar .ark-button:disabled { opacity: .4; cursor: not-allowed; } /* shows when a function cannot be used */
 .rmx-viewbar { display: flex; align-items: center; gap: 20px; }
 .rmx-thumbtoggle { align-items: center; }
@@ -106,13 +115,13 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-table td { padding: 12px 8px; vertical-align: top; text-align: left; }
 /* Left column, 1st row: checkbox + type icon (left of the title), below that
    the thumbnail (constant size, flexible free space below) */
-.rmx-table td.c-side { width: 86px; }
+.rmx-table td.c-side { width: 96px; padding-left: 16px; } /* left padding so the selection frame never touches checkbox/thumbnail */
 .rmx-table .c-side1 { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .rmx-table td.c-side .c-icon { flex: none; display: flex; }
 .rmx-table td.c-side .c-check { flex: none; display: flex; }
 .rmx-table td.c-side .c-type { display: flex; justify-content: flex-start; height: 64px; margin-top: 6px; }
 /* Right column: title (variable height), below pages/date/buttons */
-.rmx-table td.c-main { overflow: hidden; }
+.rmx-table td.c-main { overflow: hidden; padding-left: 16px; } /* clear distance between the two panels */
 .rmx-table td p { margin: 0; }
 .rmx-table td svg { display: block; }
 .rmx-table .nm { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
@@ -137,7 +146,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 /* labelled download buttons: PDF red, RMDoc black (the format is always spelled out) */
 .rmx-acts { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: 6px; }
 /* Own row within the file list row */
-.rmx-table .rmx-acts.far { justify-content: flex-start; margin-top: 6px; flex-wrap: wrap; }
+.rmx-table .rmx-acts.far { justify-content: flex-end; margin-top: 6px; flex-wrap: wrap; row-gap: 2px; }
 .rmx-pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid currentColor; border-radius: 99px; background: none; font: inherit; font-size: .8125rem; line-height: 1; white-space: nowrap; cursor: pointer; color: var(--ark-text-default); transition: background-color .2s; }
 .rmx-pill svg { width: 16px; height: 16px; flex: none; }
 .rmx-pill:hover:not(:disabled) { background: var(--rmx-surface); }
@@ -148,7 +157,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-pill--upload { color: var(--ark-interaction-primary-default); }
 
 /* thumbnails (canvas, drawn directly) */
-.rmx-thumb { display: block; margin: 0 auto; width: auto; height: 64px; max-width: 84px; object-fit: contain; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px var(--rmx-line); }
+.rmx-thumb { display: block; margin: 0; width: auto; height: 76px; max-width: 68px; object-fit: contain; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px var(--rmx-line); }
 .rmx-thumb--ph { width: 46px; background: var(--rmx-surface); box-shadow: none; animation: rmx-pulse 1.4s ease-in-out infinite; }
 @keyframes rmx-pulse { 50% { opacity: .5; } }
 @media (prefers-reduced-motion: reduce) { .rmx-thumb--ph { animation: none; } }
@@ -297,11 +306,10 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-toolbar { gap: 8px; }
   .rmx-toolbar .spacer { display: none; }
   .rmx-resultcount { width: 100%; }
-  .rmx-selbar { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; }
-  .rmx-selbar .ark-button { justify-content: center; width: 100%; }
+  .rmx-selbar { width: 100%; }
+  .rmx-selbar .ark-button { flex: 1 1 auto; justify-content: center; }
   .rmx-sort .rmx-sort__dir { flex: none; }
   .rmx-sort > .ark-button:first-child { flex: 1 1 auto; min-width: 0; }
-  .rmx-selbar [data-act="copy"] { grid-column: 1 / -1; }
   .rmx-viewbar { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; align-items: center; }
   .rmx-sort { width: 100%; justify-content: flex-end; }
   .rmx-tiles { grid-template-columns: 1fr; gap: 8px; } /* same width as the file rows */
@@ -315,14 +323,14 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-table td.c-side { grid-area: side; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .rmx-table td.c-side .c-side1, .rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon, .rmx-table td.c-side .c-type { display: inline-flex; margin: 0; }
   .rmx-table td.c-main { grid-area: main; overflow: visible; }
-  .rmx-thumb { height: 56px; }
+  .rmx-thumb { height: 64px; max-width: 60px; }
   .rmx-acts { justify-content: flex-start; flex-wrap: wrap; margin-left: -4px; }
   .rmx-table td p { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
   .rmx-table .nm { flex-wrap: wrap; row-gap: 2px; }
   .rmx-path { white-space: normal; }
   .rmx-iconbtn { width: 34px; height: 34px; }
   .rmx-thumbs-on .rmx-table tr { padding: 8px 0; }
-  .rmx-thumb { margin: 0; height: 56px; }
+  .rmx-thumb { margin: 0; height: 64px; max-width: 60px; }
 
   /* dialogs */
   .rmx-dialog { width: 90vw; }
@@ -333,8 +341,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-dialog__foot.rmx-foot--list { flex-direction: column; }
   .rmx-dialog__foot .ark-button { justify-content: center; width: 100%; }
   .rmx-inline { flex-direction: column; gap: 0; }
-  .rmx-presets { flex-direction: column; align-items: stretch; }
-  .rmx-presets .ark-button { justify-content: center; }
+  .rmx-presets .ark-button p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* Ergebnis-Zeilen: Flexbox-Basisregel (oben) bricht auf schmaler
      Breite von selbst sauber um, hier nur noch die Einrückung der
      Status-/Pfadzeile zurücksetzen und Pillen etwas kompakter machen. */

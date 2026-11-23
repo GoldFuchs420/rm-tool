@@ -48,7 +48,10 @@
     code: 'M69.12,94.35,28.27,128l40.85,33.65a8,8,0,1,1-10.24,12.3l-48-40a8,8,0,0,1,0-12.3l48-40a8,8,0,0,1,10.24,12.3Zm176,27.5-48-40a8,8,0,1,0-10.24,12.3L227.73,128l-40.85,33.65a8,8,0,1,0,10.24,12.3l48-40a8,8,0,0,0,0-12.3ZM162.73,32.48a8,8,0,0,0-10.25,4.79l-64,176a8,8,0,0,0,4.79,10.26A8.14,8.14,0,0,0,96,224a8,8,0,0,0,7.52-5.27l64-176A8,8,0,0,0,162.73,32.48Z',
     link: 'M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z',
     down: 'M205.66,149.66l-72,72a8,8,0,0,1-11.32,0l-72-72a8,8,0,0,1,11.32-11.32L120,196.69V40a8,8,0,0,1,16,0V196.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z',
-    trash: 'M224,56a8,8,0,0,1-8,8h-8V208a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V64H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,56ZM88,32h80a8,8,0,0,0,0-16H88a8,8,0,0,0,0,16Z'
+    trash: 'M224,56a8,8,0,0,1-8,8h-8V208a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V64H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,56ZM88,32h80a8,8,0,0,0,0-16H88a8,8,0,0,0,0,16Z',
+    checks: 'M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM72,168a8,8,0,0,1-5.66-2.34l-24-24a8,8,0,0,1,11.32-11.32L72,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32l-64,64A8,8,0,0,1,72,168Zm141.66-66.34-64,64a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,11.32-11.32L144,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z',
+    copySimple: 'M192,72V216a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V72a8,8,0,0,1,8-8H184A8,8,0,0,1,192,72Zm24-40H72a8,8,0,0,0,0,16H208V184a8,8,0,0,0,16,0V40A8,8,0,0,0,216,32Z',
+    calendarBlank: 'M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,48H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z'
   };
   function icon(name, size, extra) {
     var s = size || 24;
@@ -406,11 +409,11 @@
     var sortLabels = { lastModified: t('sortLastUpdated'), visibleName: t('sortAlpha'), fileType: t('sortType') };
     var pool = curResults ? curResults.filter(function (x) { return !isFolder(x); }).map(function (x) { return x.ID; }) : leaves(state.folder);
     var allSelected = !pool.length || pool.every(function (x) { return state.selected.has(x); });
-    var btn = function (act, label, disabled) {
-      return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="' + act + '" data-key="act:' + act + '"' + (disabled ? ' disabled' : '') + '><p class="responsive-body-sm">' + esc(label) + '</p></button>';
+    var btn = function (act, label, disabled, ico) {
+      return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="' + act + '" data-key="act:' + act + '"' + (disabled ? ' disabled' : '') + ' title="' + esc(label) + '" aria-label="' + esc(label) + '">' + icon(ico, 16) + '<p class="responsive-body-sm">' + esc(label) + '</p></button>';
     };
     var html = curResults ? '<span class="rmx-resultcount responsive-body-md" aria-live="polite">' + esc(t('resultsCount', { n: curResults.length })) + '</span>' : '';
-    html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected) + btn('clear', t('clearSelection'), !n) + btn('copy', t('copyBtn'), !nDocs) + '</div>' +
+    html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected, 'checks') + btn('clear', t('clearSelection'), !n, 'close') + btn('copy', t('copyBtn'), !nDocs, 'copySimple') + '</div>' +
       '<span class="spacer"></span><div class="rmx-viewbar">' +
       '<label class="rmx-choice rmx-thumbtoggle"><input type="checkbox" class="ark-input-checkbox" id="thumb-toggle" data-key="thumb:toggle"' + (state.thumbs ? ' checked' : '') + '><span class="txt"><span class="responsive-body-sm">' + esc(t('thumbnails')) + '</span></span></label>';
 
@@ -567,9 +570,9 @@
       '<div class="ark-field">' + sel('f-type', t('fType'), '<option value="">' + esc(t('fTypeAll')) + '</option>') + chk('f-fav', t('fFav')) + '</div>' +
       '<div class="ark-field">' + sel('f-folder', t('fFolder'), '') + chk('f-sub', t('fSub')) + '</div>' +
       '<div class="rmx-daterow">' +
-      '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input"></div>' +
-      '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input"></div>' +
-      '<div class="rmx-presets">' + ['7', '30', 'year'].map(function (p) { return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-preset="' + p + '"><p class="responsive-body-sm">' + esc(t(p === '7' ? 'fPreset7' : p === '30' ? 'fPreset30' : 'fPresetYear')) + '</p></button>'; }).join('') + '</div>' +
+      '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
+      '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
+      '<div class="rmx-presets">' + ['7', '30', 'year'].map(function (p) { return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-preset="' + p + '">' + icon('calendarBlank', 16) + '<p class="responsive-body-sm">' + esc(t(p === '7' ? 'fPreset7' : p === '30' ? 'fPreset30' : 'fPresetYear')) + '</p></button>'; }).join('') + '</div>' +
       '</div></div>';
   }
   function syncFilterFields() {
