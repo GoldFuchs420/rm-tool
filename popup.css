@@ -8,6 +8,7 @@ body { width: 360px; max-height: 600px; overflow-y: auto; padding-bottom: 10px; 
 .rmx-popup-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 14px; border-bottom: 1px solid var(--ark-divider-muted);
+  background: var(--rmx-surface); /* wie der Dateimanager-Kopf */
 }
 
 .rmx-popup-section {
@@ -27,7 +28,7 @@ body { width: 360px; max-height: 600px; overflow-y: auto; padding-bottom: 10px; 
 .rmx-popup-lang > svg { right: .3rem; top: 50%; margin-top: -5.5px; pointer-events: none; width: 11px; height: 11px; }
 
 /* Breite (Bilder-Filter): Doppelslider (min-max), Zahl in Pixel links/rechts */
-.rmx-minedge-row { margin-top: 10px; }
+.rmx-minedge-row { margin-top: 15px; }
 .rmx-minedge-row .rmx-value-badge { min-width: 3.25rem; font-variant-numeric: tabular-nums; }
 .rmx-range2 { position: relative; flex: 1 1 auto; height: 1.25rem; min-width: 0; }
 .rmx-range2::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 1px; background: var(--ark-divider-muted); }

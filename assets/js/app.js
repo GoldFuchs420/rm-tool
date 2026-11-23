@@ -589,7 +589,12 @@
       var el = $(id);
       if (!el) return;
       var wrap = el.closest('.rmx-datewrap');
-      if (wrap) wrap.setAttribute('data-empty', el.value ? '0' : '1');
+      if (wrap) {
+        var empty = !el.value;
+        wrap.setAttribute('data-empty', empty ? '1' : '0');
+        var hint = wrap.querySelector('.datehint');
+        if (hint) hint.hidden = !empty;
+      }
     });
   }
   function syncFilterFields() {
@@ -660,12 +665,12 @@
         var k = p.getAttribute('data-preset');
         d.setDate(d.getDate() - parseInt(k, 10));
         state.filter.from = ymd(d); state.filter.to = ymd(new Date());
-        syncFilterFields(); render();
+        syncFilterFields(); syncDateEmpty(); render();
       }
       var r = e.target.closest('[data-preset-reset]');
       if (r) {
         state.filter.from = ''; state.filter.to = '';
-        syncFilterFields(); render();
+        syncFilterFields(); syncDateEmpty(); render();
       }
     });
   }
@@ -919,7 +924,7 @@
       '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-medium" data-ex="close" aria-label="' + esc(t('close')) + '">' + icon('close', 24) + '</button></div>' +
       '<div class="rmx-dialog__body">' +
       '<p class="responsive-body-sm rmx-muted" style="margin:0">' + esc(t('exportIntro')) + '</p>' +
-      '<div id="ex-options" style="display:flex;flex-direction:column;gap:28px">' +
+      '<div id="ex-options" style="display:flex;flex-direction:column;gap:14px">' +
       '<div class="ark-field"><label for="ex-name" class="responsive-body-md" style="font-weight:600">' + esc(t('archiveName')) + '</label>' +
       '<div class="rmx-namefield"><input id="ex-name" class="ark-input" type="text" autocomplete="off" spellcheck="false" value=""></div></div>' +
       '<div class="rmx-summary responsive-body-sm" id="ex-summary" aria-live="polite"></div>' +
