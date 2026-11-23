@@ -1,0 +1,380 @@
+/*
+ * Extensions for the reMarkable web interface (search, favourites, dialogs, import / export).
+ * Builds on the original design tokens (--ark-*), fonts and ark-* components from index.css.
+ * Mobile first where it matters: everything below 640px is a single column.
+ */
+:root {
+  --rmx-page: #f9f6f1;      /* neutral-light-2 */
+  --rmx-hover: #f3efe7;     /* neutral-light-3 */
+  --rmx-surface: #ede8de;   /* neutral-light-4 */
+  --rmx-surface-2: #e7e1d5; /* neutral-light-5 */
+  --rmx-line: #211e1c4d;
+  /* export colours: muted, in tune with the paper palette */
+  --rmx-pdf: #a8473b;
+  --rmx-pdf-hover: #913b30;
+  --rmx-rmdoc: #2b2724;
+  --rmx-rmdoc-hover: #000;
+  --rmx-archive: #c4c1b9;
+  --rmx-archive-hover: #b3b0a7;
+}
+html { background: var(--rmx-page); }
+html:has(dialog[open]) { overflow: hidden; } /* only the modal dialog is operable */
+body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); font-family: reMarkableSansStatic, sans-serif; }
+[hidden] { display: none !important; } /* ark-button & co. set display themselves */
+.rmx-muted { color: var(--ark-text-muted); }
+
+/* ---------- frame ---------- */
+.rmx-header { position: fixed; z-index: 50; top: 0; left: 0; right: 0; height: 64px; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; background: var(--rmx-surface); }
+.rmx-logo { margin: 0; line-height: 0; }
+.rmx-logo img { width: 110px; height: 16.33px; }
+.rmx-hdr-tools { display: flex; align-items: center; gap: 12px; }
+.rmx-lang { width: 5.5rem; }
+.rmx-lang > select { height: 2.5rem; padding-left: .75rem; font-size: 1rem; }
+.rmx-main { min-height: calc(100vh - 128px); padding: 75px 100px 0; background: var(--rmx-page); }
+.rmx-container { max-width: 64rem; margin: 0 auto; padding: 12px 0 64px; display: flex; flex-direction: column; gap: 20px; }
+.rmx-footer { min-height: 128px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 24px; padding: 16px 40px; background: var(--rmx-surface); }
+
+.rmx-titlebar { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding-top: 12px; }
+.rmx-crumbs { width: 100%; min-width: 0; }
+.rmx-crumbs ol { align-items: center; flex-wrap: wrap; row-gap: 4px; }
+.rmx-crumbs li > a, .rmx-crumbs li > span { display: block; }
+.rmx-crumbs ol :is(svg, li:last-child) { opacity: 1; }
+.rmx-crumbs li:not(:last-child) > a { opacity: .6; }
+.rmx-crumbs li > svg { width: 1rem; height: 1rem; opacity: .6; flex: none; }
+.rmx-actions { display: flex; flex-wrap: wrap; margin-left: -.75rem; }
+.rmx-actions .ark-button { padding-left: .75rem; padding-right: .75rem; gap: .5rem; cursor: pointer; }
+.rmx-short { display: none; }
+.rmx-count { display: inline-block; min-width: 1.5rem; padding: 0 .4rem; border-radius: 99px; background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); font-size: .75rem; line-height: 1.5rem; text-align: center; }
+
+.rmx-banner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
+.rmx-banner:empty { display: none; }
+.rmx-banner .grow { flex: 1 1 auto; }
+.rmx-banner--error { box-shadow: inset 0 0 0 1px var(--ark-interaction-danger-default); }
+.rmx-note { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); font-size: .9375rem; line-height: 1.4; box-shadow: inset 3px 0 0 var(--rmx-archive-hover); }
+.rmx-note--ok { box-shadow: inset 3px 0 0 #6f8460; }
+.rmx-note--error { box-shadow: inset 3px 0 0 var(--rmx-pdf); }
+.rmx-spinner { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #211e1c26; border-top-color: var(--ark-text-default); animation: rmx-spin .8s linear infinite; flex: none; }
+@keyframes rmx-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rmx-spinner { animation-duration: 3s; } }
+
+/* ---------- search / filters / toolbar ---------- */
+.rmx-search { display: flex; gap: 8px; align-items: center; }
+.rmx-search__field { position: relative; flex: 1 1 auto; min-width: 0; }
+.rmx-search__field svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .7; }
+.rmx-search__field .ark-input { width: 100%; padding-left: 44px; box-sizing: border-box; }
+.rmx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; padding: 20px; margin-top: 8px; border-radius: 4px; background: var(--rmx-surface); }
+.rmx-filters .ark-input, .rmx-filters .ark-select { width: 100%; box-sizing: border-box; }
+.rmx-filters .rmx-choice { margin-top: 4px; }
+.rmx-daterow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.rmx-toolbar { display: flex; align-items: center; gap: 8px 20px; flex-wrap: wrap; min-height: 2rem; }
+.rmx-toolbar .spacer { flex: 1 1 0; }
+.rmx-selbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rmx-selbar .ark-button:disabled { opacity: .4; cursor: not-allowed; } /* shows when a function cannot be used */
+.rmx-viewbar { display: flex; align-items: center; gap: 20px; }
+.rmx-thumbtoggle { align-items: center; }
+.rmx-thumbtoggle .txt { padding-top: 0; }
+.rmx-sort { position: relative; display: flex; }
+.rmx-sort .ark-button svg { transition: transform .2s; }
+.rmx-sort[data-reverse="true"] .rmx-sort__dir svg { transform: scaleY(-1); }
+.rmx-menu { position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; min-width: 14rem; padding: 8px 0; border-radius: 4px; background: var(--rmx-page); box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1), 0 12px 24px rgb(0 0 0 / .08); }
+.rmx-menu button { display: block; width: 100%; padding: 12px 16px; text-align: left; background: none; border: 0; }
+.rmx-menu button:hover { background: var(--rmx-hover); }
+.rmx-menu button[aria-checked="true"] { font-weight: 600; }
+.rmx-menu button:focus-visible { outline: none; background: #99c3ff; color: #000; }
+
+/* ---------- folders, favourites, list ---------- */
+.rmx-tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.rmx-tile { display: flex; align-items: center; min-width: 0; border-radius: 4px; background: var(--rmx-surface); transition: background-color .3s; }
+.rmx-tile:hover { background: var(--rmx-surface-2); }
+.rmx-tile[data-selected="true"] { box-shadow: inset 0 0 0 1px var(--ark-interaction-primary-default); }
+.rmx-tile__link { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px; text-decoration: none; border-radius: 4px; }
+.rmx-tile__link:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-tile__link > svg { flex: none; width: 32px; height: 32px; }
+.rmx-tile__link p { margin: 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rmx-tile__link .rmx-star svg { width: 16px; height: 16px; }
+.rmx-tile .ark-input-checkbox { flex: none; margin-right: 8px; }
+.rmx-tile__spinner { margin-right: 14px; }
+
+.rmx-favs { margin-bottom: 8px; }
+.rmx-sec { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-weight: 600; }
+.rmx-table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 8px; }
+.rmx-table tr { border-bottom: 1px solid var(--rmx-line); cursor: pointer; user-select: none; transition: background-color .15s; }
+.rmx-table tr:hover { background: var(--rmx-hover); }
+.rmx-table tr[data-selected="true"] { background: var(--rmx-surface); }
+.rmx-table td { padding: 22px 8px; vertical-align: middle; text-align: left; }
+.rmx-table td.c-check, .rmx-table td.c-icon { width: 56px; padding-left: 8px; padding-right: 0; }
+.rmx-table td.c-name { overflow: hidden; }
+.rmx-table td.c-type { width: 140px; text-align: center; }
+.rmx-table td.c-date { width: 160px; text-align: right; padding-right: 16px; white-space: nowrap; }
+.rmx-table td.c-act { width: 284px; padding: 0 8px 0 0; text-align: right; }
+.rmx-table td p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rmx-table td svg { display: block; }
+.rmx-thumbs-on .rmx-table td { padding-top: 10px; padding-bottom: 10px; }
+.rmx-table .nm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.rmx-star { display: inline-flex; flex: none; }
+.rmx-pg { flex: none; font-size: .8125rem; }
+.rmx-path { display: block; margin-top: 2px; font-size: .8125rem; color: var(--ark-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rmx-empty { padding: 56px 0; text-align: center; }
+.rmx-more { display: flex; justify-content: center; padding: 24px 0; }
+
+.ark-input-checkbox:indeterminate:after { box-shadow: inset 0 0 0 1px var(--ark-interaction-primary-default); background-image: linear-gradient(var(--ark-interaction-primary-hover), var(--ark-interaction-primary-hover)); background-repeat: no-repeat; background-position: center; background-size: 50% 2px; }
+.ark-input-checkbox:disabled { cursor: not-allowed; opacity: .3; }
+
+.rmx-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 4999px; background: none; color: inherit; cursor: pointer; transition: background-color .3s; }
+.rmx-iconbtn:hover:not(:disabled) { background: var(--ark-interaction-tertiary-neutral-hover); }
+.rmx-iconbtn:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-iconbtn:disabled { opacity: .3; cursor: not-allowed; }
+
+/* labelled download buttons: PDF red, RMDoc black (the format is always spelled out) */
+.rmx-acts { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: 6px; }
+.rmx-pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid currentColor; border-radius: 99px; background: none; font: inherit; font-size: .8125rem; line-height: 1; white-space: nowrap; cursor: pointer; color: var(--ark-text-default); transition: background-color .2s; }
+.rmx-pill svg { width: 16px; height: 16px; flex: none; }
+.rmx-pill:hover:not(:disabled) { background: var(--rmx-surface); }
+.rmx-pill:focus-visible { outline: none; background: #99c3ff; color: #000; }
+.rmx-pill:disabled { opacity: .45; cursor: progress; }
+.rmx-pill--pdf { color: var(--rmx-pdf); }
+.rmx-pill--rmdoc { color: var(--rmx-rmdoc); }
+.rmx-pill--upload { color: var(--ark-interaction-primary-default); }
+
+/* thumbnails (canvas, drawn directly) */
+.rmx-thumb { display: block; margin: 0 auto; width: auto; height: 64px; max-width: 84px; object-fit: contain; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px var(--rmx-line); }
+.rmx-thumb--ph { width: 46px; background: var(--rmx-surface); box-shadow: none; animation: rmx-pulse 1.4s ease-in-out infinite; }
+@keyframes rmx-pulse { 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .rmx-thumb--ph { animation: none; } }
+
+/* ---------- colour-coded export buttons: PDF red, rmdoc black, archive silver ---------- */
+.ark-button.rmx-btn--pdf { background: var(--rmx-pdf); color: #fff; box-shadow: none; }
+.ark-button.rmx-btn--rmdoc { background: var(--rmx-rmdoc); color: #fff; box-shadow: none; }
+.ark-button.rmx-btn--archive { background: var(--rmx-archive); color: #211e1c; box-shadow: none; }
+.ark-button.rmx-btn--pdf:hover:not(:disabled) { background: var(--rmx-pdf-hover); }
+.ark-button.rmx-btn--rmdoc:hover:not(:disabled) { background: var(--rmx-rmdoc-hover); }
+.ark-button.rmx-btn--archive:hover:not(:disabled) { background: var(--rmx-archive-hover); }
+.ark-button[class*="rmx-btn--"]:disabled { opacity: .4; cursor: not-allowed; }
+.rmx-choice[data-choice="format:pdf"] .txt > span:first-child::before,
+.rmx-choice[data-choice="format:rmdoc"] .txt > span:first-child::before,
+.rmx-choice[data-choice^="archive:"] .txt > span:first-child::before { content: ""; display: inline-block; width: .6rem; height: .6rem; margin-right: .5rem; border-radius: 50%; background: var(--rmx-archive-hover); }
+.rmx-choice[data-choice="format:pdf"] .txt > span:first-child::before { background: var(--rmx-pdf); }
+.rmx-choice[data-choice="format:rmdoc"] .txt > span:first-child::before { background: var(--rmx-rmdoc); }
+.rmx-choice[data-choice="archive:single"] .txt > span:first-child::before { display: none; }
+
+/* ---------- dialogs: at most 90 % of the window, the page behind stays greyed out and inert ---------- */
+.rmx-dialog { border: 0; padding: 0; border-radius: 10px; background: var(--rmx-page); color: var(--ark-text-default); width: 90vw; max-width: 720px; max-height: 90vh; max-height: 90dvh; box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1), 0 24px 48px rgb(0 0 0 / .18); }
+.rmx-dialog::backdrop { background: rgba(0, 0, 0, .5); }
+.rmx-dialog[open] { display: flex; flex-direction: column; }
+.rmx-dialog.rmx-dialog--wide { max-width: min(1000px, 90vw); }
+.rmx-dialog form { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.rmx-dialog__head { flex: none; padding: 28px 36px 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.rmx-dialog__head h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.rmx-dialog__body { padding: 8px 36px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; }
+.rmx-dialog__foot { flex: none; padding: 16px 36px 28px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.rmx-dialog .ark-field { display: flex; flex-direction: column; gap: 6px; }
+.rmx-dialog .ark-input, .rmx-dialog .ark-select { width: 100%; box-sizing: border-box; max-width: 100%; }
+.rmx-dialog .ark-select > select { max-width: 100%; }
+
+.rmx-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rmx-fieldset > legend { padding: 0; margin-bottom: 8px; font-weight: 600; }
+.rmx-choice { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 2px 0; }
+.rmx-choice input { flex: none; }
+.rmx-choice .txt { padding-top: 4px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rmx-choice .txt small { color: var(--ark-text-muted); font-size: .875rem; line-height: 1.35; }
+.rmx-choice[data-disabled="true"] { opacity: .4; cursor: not-allowed; }
+.rmx-choice input:disabled { cursor: not-allowed; }
+.rmx-inline { display: flex; gap: 4px 24px; flex-wrap: wrap; }
+.rmx-switchrow { display: flex; align-items: flex-start; gap: 16px; }
+.rmx-switchrow .ark-switch { flex: none; width: 3rem; height: 1.5rem; margin-top: 4px; }
+.rmx-switchrow .txt { display: flex; flex-direction: column; gap: 2px; }
+.rmx-switchrow .txt small { color: var(--ark-text-muted); font-size: .875rem; }
+.rmx-namefield { display: flex; align-items: center; gap: 8px; }
+.rmx-namefield .ark-input { flex: 1 1 auto; min-width: 0; width: auto; }
+.rmx-namefield .ext { flex: none; }
+.rmx-addrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.rmx-adv { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.rmx-adv summary { cursor: pointer; padding: 4px 0; }
+.rmx-summary { padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
+.rmx-run { display: flex; flex-direction: column; gap: 12px; }
+.rmx-run .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rmx-progress { height: 4px; border-radius: 2px; background: #211e1c26; overflow: hidden; }
+.rmx-progress > i { display: block; height: 100%; width: 0; background: var(--ark-interaction-primary-default); transition: width .2s; }
+.rmx-progress.is-indeterminate > i { width: 35%; animation: rmx-slide 1.2s ease-in-out infinite; }
+@keyframes rmx-slide { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .rmx-progress.is-indeterminate > i { animation: none; width: 100%; opacity: .5; } }
+.rmx-errlist { margin: 0; padding: 12px 16px; max-height: 9rem; overflow: auto; list-style: none; border-radius: 4px; background: var(--rmx-surface); font-size: .875rem; display: flex; flex-direction: column; gap: 4px; }
+.rmx-errlist li { overflow-wrap: anywhere; }
+
+/* file lists in dialogs (import, results, copy) */
+.rmx-files { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rmx-line); }
+.rmx-files li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rmx-line); min-width: 0; }
+.rmx-files li > svg { flex: none; }
+.rmx-files .fname { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.rmx-files .state { flex: none; font-size: .875rem; color: var(--ark-text-muted); display: flex; align-items: center; gap: 6px; }
+.rmx-files li[data-state="error"] .state { color: var(--rmx-pdf); }
+.rmx-outs li, .rmx-copies li { display: block; }
+/* Flexbox mit flex-wrap statt starrer Grid-/nth-child-Positionierung:
+   Größe (osize) steht als erstes Element ganz links, der Dateiname
+   (oname) wächst in die Mitte, die Buttons (obtns) werden per
+   margin-left:auto an den rechten Rand gedrückt. Reicht die Breite
+   nicht (mobil), brechen die Elemente dank flex-wrap einfach sauber in
+   eigene Zeilen um, statt sich zu überlappen. */
+.rmx-outs .orow, .rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
+.rmx-outs .orow > svg, .rmx-copies .orow > svg { flex: none; }
+.rmx-outs .osize { flex: none; min-width: 3rem; color: var(--ark-text-muted); }
+.rmx-outs .oname { display: flex; align-items: center; gap: 4px; flex: 1 1 160px; min-width: 120px; }
+.rmx-outs .oname .ark-input { min-width: 0; flex: 1 1 auto; height: 2.5rem; }
+.rmx-outs .obtns { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.rmx-pill--preview { color: #000; background: #fff; border-color: #ddd; }
+.rmx-pill--preview:hover:not(:disabled) { background: #f3f3f3; }
+.rmx-outs .opath { display: flex; align-items: center; gap: 6px; padding: 4px 0 0 32px; overflow-wrap: anywhere; }
+.rmx-outs .opath svg { flex: none; }
+.rmx-outs .state, .rmx-copies .state { padding: 6px 0 0 32px; flex: none; }
+.rmx-outs .state:empty { display: none; }
+.rmx-copies .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* details, preview */
+.rmx-dl { margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.rmx-dl dt { margin: 0 0 2px; }
+.rmx-dl dd { margin: 0; overflow-wrap: anywhere; }
+.rmx-starinl { display: inline-block; vertical-align: -2px; }
+.rmx-dpv { flex: none; display: flex; align-items: center; justify-content: center; min-height: 12rem; border-radius: 4px; background: var(--rmx-surface); cursor: zoom-in; overflow: hidden; }
+.rmx-dpv canvas { display: block; max-width: 100%; max-height: 22rem; width: auto; height: auto; box-shadow: 0 1px 4px rgb(0 0 0 / .2); background: #fff; }
+.rmx-dpv.is-failed { padding: 16px; text-align: center; cursor: default; font-size: .875rem; }
+.rmx-pv-body { min-height: 40vh; }
+.rmx-pv-status { display: flex; align-items: center; gap: 12px; padding: 24px 0; }
+.rmx-pv-pages { height: min(68vh, 900px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: 4px; background: var(--rmx-surface); contain: content; }
+.rmx-pv-page { position: relative; width: 100%; max-width: 760px; margin: 0 auto; flex: none; background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / .18); }
+.rmx-pv-page canvas { display: block; width: 100%; height: auto; }
+
+/* toasts, drop zone */
+.rmx-toasts { position: fixed; z-index: 200; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: calc(100% - 32px); max-width: 560px; }
+.rmx-toast { padding: 12px 20px; border-radius: 4px; background: var(--ark-interaction-primary-neutral-default); color: var(--ark-interaction-primary-neutral-foreground); box-shadow: 0 4px 12px rgb(0 0 0 / .25); pointer-events: auto; }
+.rmx-toast--error { background: var(--rmx-pdf); color: #fff; }
+.rmx-dropzone { position: fixed; z-index: 150; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(249, 246, 241, .92); box-shadow: inset 0 0 0 3px var(--ark-interaction-primary-default); pointer-events: none; }
+
+/* ---------- tablets and phones ---------- */
+@media (max-width: 960px) { .rmx-main { padding-left: 32px; padding-right: 32px; } }
+@media (max-width: 640px) {
+  .rmx-header { height: 56px; padding: 0 16px; }
+  .rmx-logo img { width: 96px; height: auto; }
+  .rmx-main { padding: 64px 5vw 0; min-height: calc(100vh - 100px); } /* content = 90 % of the width */
+  .rmx-container { gap: 14px; padding-bottom: 40px; }
+  .rmx-footer { padding: 16px; gap: 6px 16px; }
+
+  /* menu: the plain desktop buttons, in one row (wraps if needed) */
+  .rmx-actions .ark-button { padding-left: .5rem; padding-right: .5rem; gap: .375rem; }
+  .rmx-actions .ark-button p { font-size: 1rem; }
+  .rmx-long { display: none; } .rmx-short { display: inline; }
+
+  /* search: field first, icon-only filter button */
+  .rmx-search #f-toggle p { display: none; }
+  .rmx-filters, .rmx-daterow { grid-template-columns: 1fr; }
+  .rmx-filters { padding: 14px; gap: 14px; }
+  .rmx-daterow { gap: 14px; }
+  .rmx-toolbar { gap: 8px; }
+  .rmx-toolbar .spacer { display: none; }
+  .rmx-resultcount { width: 100%; }
+  .rmx-selbar { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; }
+  .rmx-selbar .ark-button { justify-content: center; width: 100%; }
+  .rmx-sort .rmx-sort__dir { flex: none; }
+  .rmx-sort > .ark-button:first-child { flex: 1 1 auto; min-width: 0; }
+  .rmx-selbar [data-act="copy"] { grid-column: 1 / -1; }
+  .rmx-viewbar { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; align-items: center; }
+  .rmx-sort { width: 100%; justify-content: flex-end; }
+  .rmx-tiles { grid-template-columns: 1fr; gap: 8px; } /* same width as the file rows */
+  .rmx-tile__link { padding: 6px; gap: 6px; }
+  .rmx-tile__link > svg { width: 26px; height: 26px; }
+
+  /* file list: every row is a small card, names may use as many lines as they need */
+  .rmx-table, .rmx-table tbody { display: block; }
+  .rmx-table tr { display: grid; grid-template-columns: 40px 26px minmax(0, 1fr) auto; grid-template-areas: "chk ico name name" "chk ico type date" "chk ico act act"; column-gap: 6px; row-gap: 4px; align-items: start; padding: 10px 0; }
+  .rmx-table td, .rmx-table td.c-check, .rmx-table td.c-icon, .rmx-table td.c-type, .rmx-table td.c-date, .rmx-table td.c-act { display: block; width: auto; padding: 0; text-align: left; }
+  .rmx-table td.c-check { grid-area: chk; } .rmx-table td.c-icon { grid-area: ico; padding-top: 4px; }
+  .rmx-table td.c-name { grid-area: name; overflow: visible; }
+  .rmx-table td.c-type { grid-area: type; } .rmx-table td.c-type p { font-size: .8125rem; color: var(--ark-text-muted); }
+  .rmx-table td.c-date { grid-area: date; text-align: right; } .rmx-table td.c-date p { font-size: .8125rem; color: var(--ark-text-muted); }
+  .rmx-table td.c-act { grid-area: act; }
+  .rmx-acts { justify-content: flex-start; flex-wrap: wrap; margin-left: -4px; }
+  .rmx-table td p { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+  .rmx-table .nm { flex-wrap: wrap; row-gap: 2px; }
+  .rmx-path { white-space: normal; }
+  .rmx-iconbtn { width: 34px; height: 34px; }
+  .rmx-thumbs-on .rmx-table tr { padding: 8px 0; }
+  .rmx-thumb { margin: 0; height: 56px; }
+
+  /* dialogs */
+  .rmx-dialog { width: 90vw; }
+  .rmx-dialog__head { padding: 18px 16px 4px; }
+  .rmx-dialog__body { padding: 6px 16px; gap: 18px; }
+  .rmx-dialog__foot { padding: 12px 16px 18px; }
+  .rmx-dialog__foot { flex-direction: column-reverse; align-items: stretch; }
+  .rmx-dialog__foot.rmx-foot--list { flex-direction: column; }
+  .rmx-dialog__foot .ark-button { justify-content: center; width: 100%; }
+  .rmx-inline { flex-direction: column; gap: 0; }
+  .rmx-presets { flex-direction: column; align-items: stretch; }
+  .rmx-presets .ark-button { justify-content: center; }
+  /* Ergebnis-Zeilen: Flexbox-Basisregel (oben) bricht auf schmaler
+     Breite von selbst sauber um, hier nur noch die Einrückung der
+     Status-/Pfadzeile zurücksetzen und Pillen etwas kompakter machen. */
+  .rmx-outs .orow > .rmx-pill { height: 34px; }
+  .rmx-outs .state, .rmx-outs .opath, .rmx-copies .state { padding-left: 0; }
+  .rmx-pv-pages { height: calc(90dvh - 200px); padding: 6px; }
+  .rmx-dpv { min-height: 9rem; }
+  .rmx-namefield { flex-wrap: wrap; }
+  .rmx-namefield .ark-button { flex: 1 0 100%; }
+}
+
+
+/* ---------------------------------------------------------------------
+ * Erweiterung für die Chrome-Extension: Platzierung der gemeinsamen
+ * Server-Komponente (shared/servers.js, shared/servers.css) im
+ * Dateimanager – als erstes Kind von .rmx-container eingehängt (siehe
+ * rmx-bridge.js), erbt dadurch Breite/Zentrierung/responsive Seiten-
+ * ränder sowie den normalen Flex-Abstand zu "Meine Dateien" automatisch
+ * vom Container selbst. Hier daher bewusst kein eigenes Padding/
+ * Max-Width mehr nötig. Im Popup wird dieselbe Komponente ohne diesen
+ * Wrapper direkt in #serverPanel gemountet (siehe popup.css).
+ * --------------------------------------------------------------------- */
+.rmx-srv-panel-wrap { min-width: 0; }
+
+/* ---------------------------------------------------------------------
+ * Erweiterung: allgemeiner Kompaktheits-Durchgang. Reduziert v.a.
+ * Innenabstände (Padding/Höhe) an Stellen, die unnötig viel vertikalen
+ * Platz beanspruchen – Größen/Schrift bleiben dabei immer mindestens so
+ * groß wie das aktuell kleinste bereits vorhandene Element
+ * (.ark-button-small / .ark-input-checkbox-Klickfläche bleiben die
+ * untere Grenze, nichts wird darunter verkleinert).
+ * --------------------------------------------------------------------- */
+
+/* Checkbox: einheitlich etwas kompakter – EINE Regel, gilt dadurch
+   automatisch überall gleich (Dateiliste, Ordner-Kacheln, Dialoge). */
+.ark-input-checkbox { height: 1.5rem; width: 1.5rem; }
+.ark-input-checkbox:after { width: 1.1875rem; height: 1.1875rem; }
+
+/* Dateiansicht (Tabellenzeilen): deutlich weniger Zeilenhöhe. */
+.rmx-table td { padding: 12px 8px; }
+.rmx-thumbs-on .rmx-table td { padding-top: 8px; padding-bottom: 8px; }
+
+/* Ordneransicht (Kachel-Grid): kompaktere Kacheln, gleiches Prinzip wie
+   bisher nur auf Mobile angewendet, jetzt als Standard. */
+.rmx-tile__link { padding: 6px; gap: 6px; }
+.rmx-tile__link > svg { width: 28px; height: 28px; }
+
+/* PDF/RMDoc-Buttons (Dateiansicht) und die gleiche .rmx-pill-Klasse im
+   Import-Dialog: etwas kompakter. */
+.rmx-pill { height: 26px; padding: 0 10px; font-size: .75rem; }
+
+/* Suchfeld + Filterleiste: niedriger statt der Standard-3rem-Eingabe. */
+.rmx-search__field .ark-input { height: 2.5rem; font-size: 1rem; padding-left: 40px; }
+.rmx-filters .ark-input,
+.rmx-filters .ark-select > select { height: 2.5rem; font-size: 1rem; }
+
+/* Import/Export/Vorschau/Details-Dialoge: Eingabefelder, Auswahlfelder,
+   Schaltflächen und Schalter etwas kompakter – .ark-button-small (2rem)
+   bleibt unverändert die untere Grenze, nur Medium/Large rücken näher
+   daran heran. */
+.rmx-dialog .ark-input { height: 2.5rem; font-size: 1rem; padding-left: .75rem; padding-right: .75rem; }
+.rmx-dialog .ark-select > select { height: 2.5rem; font-size: 1rem; padding-left: .75rem; }
+.rmx-dialog .ark-button-medium { min-height: 2.25rem; padding: .25rem .875rem; font-size: .9375rem; }
+.rmx-dialog .ark-button-large { min-height: 2.5rem; padding: .375rem 1rem; font-size: 1rem; }
+.rmx-dialog .ark-switch--track { width: 2.5rem; height: 1.25rem; }
+.rmx-dialog .ark-switch--thumb { width: 1rem; height: 1rem; }

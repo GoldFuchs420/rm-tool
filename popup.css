@@ -1,0 +1,69 @@
+/* Popup-spezifisches Layout. Farben, Schrift, Buttons, Inputs, Server-
+   Komponente kommen bereits aus /assets/index.css, /assets/app.css und
+   shared/servers.css (siehe popup.html) – hier nur noch das, was für
+   das kleine Popup-Fenster zusätzlich nötig ist. */
+
+body { width: 360px; max-height: 600px; overflow-y: auto; }
+
+.rmx-popup-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--ark-divider-muted);
+}
+
+.rmx-popup-section {
+  padding: 12px 14px; border-bottom: 1px solid var(--ark-divider-muted);
+}
+.rmx-popup-section--send { border-bottom: none; }
+
+.rmx-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+
+.rmx-field-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.rmx-field-row input[type="range"] { flex: 1 1 auto; }
+.rmx-value-badge {
+  flex: none; min-width: 1.75rem; text-align: center; font-size: .75rem; font-weight: 600;
+  padding: 2px 6px; border-radius: .125rem; background: var(--ark-interaction-tertiary-default);
+  color: var(--ark-text-default); font-family: reMarkableSansStatic;
+}
+
+.rmx-select-row { display: flex; gap: 14px; margin-top: 8px; }
+
+/* Bilder: kompakter horizontaler Filmstreifen statt Raster */
+.image-strip {
+  display: flex; gap: 8px; overflow-x: auto; overflow-y: hidden;
+  padding: 4px 2px 8px 2px; scroll-snap-type: x proximity; margin-top: 8px;
+}
+.image-strip::-webkit-scrollbar { height: 6px; }
+.image-strip::-webkit-scrollbar-thumb { background: var(--ark-divider-muted); border-radius: 3px; }
+
+.image-tile { position: relative; flex: none; width: 72px; scroll-snap-align: start; }
+.thumb-box {
+  width: 72px; height: 72px; border-radius: .25rem; overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--ark-border-muted); background: var(--ark-interaction-tertiary-default);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.image-tile.selected .thumb-box { box-shadow: inset 0 0 0 2px var(--ark-interaction-primary-default); }
+.thumb-box img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.image-tile .label {
+  font-size: .625rem; color: var(--ark-text-muted); text-align: center; margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: reMarkableSansStatic;
+}
+.select-badge {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(255,255,255,.95); box-shadow: inset 0 0 0 1px var(--ark-divider-muted);
+  display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--ark-interaction-primary-default);
+}
+.image-tile.selected .select-badge { background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); }
+.send-one-btn {
+  position: absolute; bottom: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground);
+  border: 2px solid var(--rmx-page); font-size: 12px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.send-one-btn:hover { background: var(--ark-interaction-primary-hover); }
+.send-one-btn:disabled { opacity: .4; cursor: default; }
+
+.results-list { list-style: none; margin: 10px 0 0 0; padding: 0; font-size: .8125rem; font-family: reMarkableSansStatic; }
+.results-list li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.results-list li.ok { color: #2e9e4f; }
+.results-list li.fail { color: var(--ark-interaction-danger-default, #da0810); }
+.results-list li:not(.ok):not(.fail) { color: #c98a12; }

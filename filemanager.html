@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>reMarkable</title>
+    <!-- Original reMarkable design tokens, fonts and base styles (unchanged) -->
+    <link rel="stylesheet" href="/assets/index.css" />
+    <!-- Extensions: tree view, selection, export / import dialogs -->
+    <link rel="stylesheet" href="/assets/app.css" />
+    <link rel="stylesheet" href="/shared/servers.css" />
+    <!-- Open-source libraries are bundled in /assets/vendor and loaded on demand by assets/js/util.js:
+         pdf-lib (MIT, (c) 2019 Andrew Dillon), JSZip (MIT, (c) 2009-2016 Stuart Knightley et al.),
+         pako (MIT/Zlib, (c) 2014-2017 Vitaly Puzrin, Andrei Tuputcyn), marked (MIT, (c) 2018+ MarkedJS, (c) 2011-2018 Christopher Jeffrey),
+         PDF.js (Apache-2.0, (c) Mozilla Foundation). See assets/vendor/THIRD_PARTY_NOTICES.txt -->
+    <script defer src="/shared/filename.js"></script>
+    <script defer src="/shared/servers.js"></script>
+    <script defer src="/assets/js/util.js"></script>
+    <script defer src="/assets/js/i18n.js"></script>
+    <script defer src="/assets/js/api.js"></script>
+    <script defer src="/assets/js/rmx-bridge.js"></script>
+    <script defer src="/assets/js/rmdoc.js"></script>
+    <script defer src="/assets/js/archive.js"></script>
+    <script defer src="/assets/js/convert.js"></script>
+    <script defer src="/assets/js/textpdf.js"></script>
+    <script defer src="/assets/js/pdfview.js"></script>
+    <script defer src="/assets/js/preview.js"></script>
+    <script defer src="/assets/js/thumbs.js"></script>
+    <script defer src="/assets/js/outputs.js"></script>
+    <script defer src="/assets/js/import.js"></script>
+    <script defer src="/assets/js/copy.js"></script>
+    <script defer src="/assets/js/app.js"></script>
+  </head>
+  <body data-theme="light-neutral">
+    <header id="header" class="rmx-header">
+      <a href="/#/" class="ark-link" data-rmx-home>
+        <h1 class="rmx-logo"><img alt="reMarkable" src="/assets/rm_logo.svg" width="110" height="16" /></h1>
+      </a>
+      <div class="rmx-hdr-tools"><div id="langsel"></div></div>
+    </header>
+
+    <main class="rmx-main">
+      <div class="rmx-container">
+        <div class="rmx-titlebar">
+          <nav class="ark-breadcrumbs rmx-crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+          <nav class="rmx-actions" id="actions"></nav>
+        </div>
+        <div id="banner" role="status"></div>
+        <div id="filterbar"></div>
+        <div class="rmx-toolbar" id="toolbar"></div>
+        <div id="content"></div>
+      </div>
+    </main>
+
+    <footer class="rmx-footer" data-rmx-footer></footer>
+
+    <input type="file" id="import-input" hidden multiple
+           accept=".pdf,.epub,.rmdoc,.jpg,.jpeg,.png,.svg,.webp,.md,.markdown,.txt,.html,.htm,.zip,.tar,.gz,.tgz" />
+
+    <dialog id="dlg-export" class="rmx-dialog" aria-labelledby="dlg-export-title"></dialog>
+    <dialog id="dlg-import" class="rmx-dialog" aria-labelledby="dlg-import-title"></dialog>
+
+    <dialog id="dlg-copy" class="rmx-dialog" aria-labelledby="dlg-copy-title"></dialog>
+    <dialog id="dlg-detail" class="rmx-dialog" aria-labelledby="dlg-detail-title"></dialog>
+    <dialog id="dlg-preview" class="rmx-dialog rmx-dialog--wide" aria-labelledby="dlg-preview-title"></dialog>
+    <div id="dropzone" class="rmx-dropzone" hidden><p class="responsive-heading-sm"></p></div>
+    <div id="toasts" class="rmx-toasts" aria-live="polite"></div>
+    <noscript><p style="padding:100px 32px">This page needs JavaScript.</p></noscript>
+  </body>
+</html>
