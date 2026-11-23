@@ -30,7 +30,7 @@
       "</div>" +
       '<ul class="rmx-srv-list" data-rmx-srv-list></ul>' +
       '<form class="rmx-srv-add-form hidden" data-rmx-srv-addform>' +
-      '<input type="text" class="rmx-srv-add-input" data-rmx-srv-addinput placeholder="z.B. https://10.11.99.1" />' +
+      '<input type="text" class="rmx-srv-add-input" data-rmx-srv-addinput />' +
       '<button type="submit" class="rmx-srv-add-btn">+</button>' +
       "</form>";
 
@@ -39,11 +39,21 @@
     var elList = root.querySelector("[data-rmx-srv-list]");
     var elAddForm = root.querySelector("[data-rmx-srv-addform]");
     var elAddInput = root.querySelector("[data-rmx-srv-addinput]");
+    elAddInput.placeholder = T("srvAddPh", "z. B. https://10.11.99.1");
 
     function esc(s) {
       return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
       });
+    }
+
+    /* Shared texts in 5 languages (assets/js/i18n.js); German as a fallback so
+       this file also works standalone (e.g. before i18n.js has run). */
+    function T(key, fallback, vars) {
+      var v = window.RMX && RMX.t ? RMX.t(key) : "";
+      var out = v && v !== key ? v : fallback;
+      if (vars) out = out.replace(/\{(\w+)\}/g, function (m, n) { return vars[n] !== undefined ? vars[n] : m; });
+      return out;
     }
 
     async function loadServers() {
@@ -99,12 +109,12 @@
       var card = document.createElement("div");
       card.className = "rmx-srv-login";
       card.innerHTML =
-        '<p class="rmx-srv-login__title">🔒 Basic-Auth für ' + esc(s.url) + "</p>" +
-        '<input type="text" class="rmx-srv-login__input ark-input" placeholder="Benutzername" autocomplete="username" data-u />' +
-        '<input type="password" class="rmx-srv-login__input ark-input" placeholder="Passwort" autocomplete="current-password" data-p />' +
+        '<p class="rmx-srv-login__title">🔒 ' + esc(T("srvLoginTitle", "Basic-Auth für {url}", { url: s.url })) + "</p>" +
+        '<input type="text" class="rmx-srv-login__input ark-input" placeholder="' + esc(T("srvUser", "Benutzername")) + '" autocomplete="username" data-u />' +
+        '<input type="password" class="rmx-srv-login__input ark-input" placeholder="' + esc(T("srvPass", "Passwort")) + '" autocomplete="current-password" data-p />' +
         '<div class="rmx-srv-login__row">' +
-        '<button type="button" class="rmx-srv-login__submit" data-submit>Anmelden</button>' +
-        '<span class="rmx-srv-login__err hidden" data-err>Anmeldung fehlgeschlagen.</span>' +
+        '<button type="button" class="rmx-srv-login__submit" data-submit>' + esc(T("srvLogin", "Anmelden")) + '</button>' +
+        '<span class="rmx-srv-login__err hidden" data-err>' + esc(T("srvLoginFail", "Anmeldung fehlgeschlagen.")) + '</span>' +
         "</div>";
       var userInput = card.querySelector("[data-u]");
       var passInput = card.querySelector("[data-p]");
@@ -112,7 +122,7 @@
       var errEl = card.querySelector("[data-err]");
       async function submit() {
         submitBtn.disabled = true;
-        submitBtn.textContent = "Prüft…";
+        submitBtn.textContent = T("srvChecking", "Prüft …");
         errEl.classList.add("hidden");
         var candidate = Object.assign({}, s, { user: userInput.value, pass: passInput.value, hasCreds: true });
         var status = await probe(candidate);
@@ -123,7 +133,7 @@
           onChange(readyServers());
         } else {
           submitBtn.disabled = false;
-          submitBtn.textContent = "Anmelden";
+          submitBtn.textContent = T("srvLogin", "Anmelden");
           errEl.classList.remove("hidden");
         }
       }
@@ -136,8 +146,8 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "rmx-srv-btn";
-      btn.title = "Adresse kopieren";
-      btn.setAttribute("aria-label", "Adresse kopieren: " + s.url);
+      btn.title = T("srvCopyAddr", "Adresse kopieren");
+      btn.setAttribute("aria-label", btn.title + ": " + s.url);
       btn.textContent = "\u2750";
       btn.addEventListener("click", function () {
         navigator.clipboard.writeText(s.url).then(function () {
@@ -153,8 +163,8 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className = "rmx-srv-btn";
-      btn.title = "In neuem Tab \u00f6ffnen";
-      btn.setAttribute("aria-label", "In neuem Tab \u00f6ffnen: " + s.url);
+      btn.title = T("srvOpenTab", "In neuem Tab \u00f6ffnen");
+      btn.setAttribute("aria-label", btn.title + ": " + s.url);
       btn.textContent = "\u2197";
       btn.addEventListener("click", function () { window.open(s.url, "_blank", "noopener"); });
       return btn;
@@ -181,7 +191,7 @@
 
         var label = document.createElement("span");
         label.className = "rmx-srv-state";
-        label.textContent = { online: "bereit", auth: "Login nötig", offline: "offline", checking: "…" }[s._status || "checking"];
+        label.textContent = { online: T("srvOnline", "bereit"), auth: T("srvAuth", "Login nötig"), offline: T("srvOffline", "offline"), checking: "…" }[s._status || "checking"];
 
         rowDiv.append(dot, url, label);
         rowDiv.append(buildCopyBtn(s), buildOpenBtn(s));
@@ -190,7 +200,7 @@
           var del = document.createElement("button");
           del.type = "button";
           del.className = "rmx-srv-rm";
-          del.title = "Entfernen";
+          del.title = T("remove", "Entfernen");
           del.textContent = "✕";
           del.addEventListener("click", async function () {
             servers = servers.filter(function (x) { return x.id !== s.id; });
@@ -209,7 +219,7 @@
       if (!visible.length) {
         var empty = document.createElement("li");
         empty.className = "rmx-srv-empty";
-        empty.textContent = editMode ? "Keine Server hinterlegt." : "Kein Server erreichbar. ⚙ zeigt alle an.";
+        empty.textContent = editMode ? T("srvEmptyEdit", "Keine Server hinterlegt.") : T("srvEmptyHint", "Kein Server erreichbar. ⚙ zeigt alle an.");
         frag.appendChild(empty);
       }
 
@@ -218,7 +228,7 @@
       elAddForm.classList.toggle("hidden", !editMode);
 
       var online = servers.filter(function (s) { return s._status === "online"; }).length;
-      elSummary.textContent = servers.length ? online + "/" + servers.length + " erreichbar" : "";
+      elSummary.textContent = servers.length && online ? T("srvSummary", "{o}/{n} erreichbar", { o: online, n: servers.length }) : "";
       elToggle.classList.toggle("active", editMode);
     }
 

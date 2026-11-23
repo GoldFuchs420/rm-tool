@@ -50,9 +50,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-banner:empty { display: none; }
 .rmx-banner .grow { flex: 1 1 auto; }
 .rmx-banner--error { box-shadow: inset 0 0 0 1px var(--ark-interaction-danger-default); }
-.rmx-note { display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); font-size: .9375rem; line-height: 1.4; box-shadow: inset 3px 0 0 var(--rmx-archive-hover); }
-.rmx-note--ok { box-shadow: inset 3px 0 0 #6f8460; }
-.rmx-note--error { box-shadow: inset 3px 0 0 var(--rmx-pdf); }
 .rmx-spinner { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #211e1c26; border-top-color: var(--ark-text-default); animation: rmx-spin .8s linear infinite; flex: none; }
 @keyframes rmx-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .rmx-spinner { animation-duration: 3s; } }
@@ -211,8 +208,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-namefield .ark-input { flex: 1 1 auto; min-width: 0; width: auto; }
 .rmx-namefield .ext { flex: none; }
 .rmx-addrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.rmx-adv { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.rmx-adv summary { cursor: pointer; padding: 4px 0; }
 .rmx-summary { padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
 .rmx-run { display: flex; flex-direction: column; gap: 12px; }
 .rmx-run .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -232,18 +227,13 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-files .state { flex: none; font-size: .875rem; color: var(--ark-text-muted); display: flex; align-items: center; gap: 6px; }
 .rmx-files li[data-state="error"] .state { color: var(--rmx-pdf); }
 .rmx-outs li, .rmx-copies li { display: block; }
-/* Flexbox mit flex-wrap statt starrer Grid-/nth-child-Positionierung:
-   Größe (osize) steht als erstes Element ganz links, der Dateiname
-   (oname) wächst in die Mitte, die Buttons (obtns) werden per
-   margin-left:auto an den rechten Rand gedrückt. Reicht die Breite
-   nicht (mobil), brechen die Elemente dank flex-wrap einfach sauber in
-   eigene Zeilen um, statt sich zu überlappen. */
-.rmx-outs .orow, .rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
-.rmx-outs .orow > svg, .rmx-copies .orow > svg { flex: none; }
-/* Import result rows: two panels — top: type icon + title, below it the small
-   preview (like in the file list); bottom: size + download/remove buttons. */
-.rmx-outs .orow { display: block; }
+/* Ergebnis-/Kopier-Zeilen: Flexbox mit flex-wrap statt starrer Grid-Positionierung.
+   Import-Ergebniszeilen (.rmx-outs) sind zwei Panels: oben Typ-Icon + Name, darunter
+   die kleine Vorschau (wie in der Dateiliste) sowie getrennt Größe + Aktionen;
+   Kopier-Zeilen (.rmx-copies) bleiben eine flexible Zeile. */
 .rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
+.rmx-copies .orow > svg { flex: none; }
+.rmx-outs .orow { display: block; }
 .rmx-outs .opanel { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .rmx-outs .opanel .oico { flex: none; display: flex; color: var(--ark-text-default); }
 .rmx-outs .opanel .oname { flex: 1 1 auto; min-width: 0; }
@@ -257,7 +247,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-outs .osize { flex: none; min-width: 3rem; color: var(--ark-text-muted); }
 .rmx-outs .oname { display: flex; align-items: center; gap: 4px; flex: 1 1 160px; min-width: 120px; }
 .rmx-outs .oname .ark-input { min-width: 0; flex: 1 1 auto; height: 2.5rem; }
-.rmx-outs .obtns { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 .rmx-outs .opath { display: flex; align-items: center; gap: 6px; padding: 4px 0 0 32px; overflow-wrap: anywhere; }
 .rmx-outs .opath svg { flex: none; }
 .rmx-outs .state, .rmx-copies .state { padding: 6px 0 0 32px; flex: none; }

@@ -105,19 +105,11 @@
     setTimeout(function () { el.remove(); }, isError ? 7000 : 4000);
   }
 
-  var pad2 = function (n) { return String(n).padStart(2, '0'); };
-  function ymd(value) {
-    var d = value instanceof Date ? value : new Date(value);
-    if (isNaN(d.getTime())) return '';
-    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
-  }
+  /* Dateinamen-Helfer liegen gemeinsam in shared/filename.js (auch vom Popup genutzt) */
+  var ymd = RMXShared.ymd;
+  var asciiName = RMXShared.asciiName;
   function norm(x) {
     return String(x == null ? '' : x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  }
-  function asciiName(x) {
-    return String(x).replace(/\u00e4/g, 'ae').replace(/\u00f6/g, 'oe').replace(/\u00fc/g, 'ue').replace(/\u00c4/g, 'Ae')
-      .replace(/\u00d6/g, 'Oe').replace(/\u00dc/g, 'Ue').replace(/\u00df/g, 'ss').normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '_');
   }
 
   /* ================= state / model ================= */

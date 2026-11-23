@@ -43,7 +43,7 @@ All libraries are bundled unmodified and are loaded from this device
    a .js instead of .mjs extension so that simple web servers deliver them as JavaScript.
    Loaded on demand only, not at page start.
 
-Own code (assets/js/*.js, assets/app.css, index.html):
+Own code (assets/js/*.js, assets/app.css, popup.html, filemanager.html):
    TAR writer, API client, UI. Design tokens, fonts and base stylesheet
    (assets/index.css, reMarkableSans/Serif.woff2, rm_logo.svg) are taken
    unchanged from the original reMarkable web interface and remain

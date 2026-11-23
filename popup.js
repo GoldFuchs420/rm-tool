@@ -17,18 +17,28 @@ let fontSize = 16;
 // Bilder
 let foundImages = [];
 let selectedSrcs = new Set();
-let imagesScanned = false;
 let sending = false;         // verhindert parallele Sende-Vorgänge
 
 const $ = (id) => document.getElementById(id);
 
 /* Mehrsprachigkeit: dieselbe Tabelle wie der Dateimanager (assets/js/i18n.js).
    Statische Texte stehen mit data-i18n im HTML und werden unten uebersetzt. */
-const t = (key, vars) => (window.RMX && RMX.t ? RMX.t(key, vars) : key);
-document.querySelectorAll("[data-i18n]").forEach((el) => {
-  const txt = t(el.getAttribute("data-i18n"));
-  if (txt && txt !== el.getAttribute("data-i18n")) el.textContent = txt;
-});
+const t = (key, vars, fallback) => {
+  let out = window.RMX && RMX.t ? RMX.t(key, vars) : "";
+  if (!out || out === key) out = fallback || key;
+  return out;
+};
+function applyI18n() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.getAttribute("data-i18n"), null, el.textContent);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    const v = t(el.getAttribute("data-i18n-title"), null, el.title);
+    el.title = v;
+    el.setAttribute("aria-label", v);
+  });
+}
+applyI18n();
 
 /* ---------------------------------------------------------------------
  * Server (gemeinsame Komponente, siehe shared/servers.js) + Einstellungen
@@ -67,7 +77,7 @@ async function uploadToAllServers(blob, filenameBase, resultsEl, targets) {
   const rows = new Map();
   for (const s of targets) {
     const li = document.createElement("li");
-    li.textContent = `⏳ ${s.url} …`;
+    li.textContent = t("upPending", { url: s.url }, `⏳ ${s.url} …`);
     frag.appendChild(li);
     rows.set(s.id, li);
   }
@@ -82,14 +92,14 @@ async function uploadToAllServers(blob, filenameBase, resultsEl, targets) {
       if (server.hasCreds) headers["Authorization"] = "Basic " + btoa(`${server.user}:${server.pass}`);
       const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form });
       if (res.ok) {
-        li.textContent = `✓ ${server.url}`;
+        li.textContent = t("upOk", { url: server.url }, `✓ ${server.url}`);
         li.className = "ok";
       } else {
-        li.textContent = `✗ ${server.url} (HTTP ${res.status})`;
+        li.textContent = t("upFailHttp", { url: server.url, code: res.status }, `✗ ${server.url} (HTTP ${res.status})`);
         li.className = "fail";
       }
     } catch (e) {
-      li.textContent = `✗ ${server.url} (${e.message || e})`;
+      li.textContent = t("upFail", { msg: `${server.url} ${e.message || e}`.trim(), }, `✗ ${server.url} (${e.message || e})`);
       li.className = "fail";
     }
   }));
@@ -160,14 +170,14 @@ async function extractArticleFromTab(tabId) {
 }
 
 async function prepareArticleSection() {
-  $("articleStatus").textContent = "Lade Seite…";
+  $("articleStatus").textContent = t("stLoadingPage", null, "Lade Seite…");
   articleReady = false;
   articleData = null;
   isPdfSource = false;
   pdfSourceBlob = null;
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
-    $("articleStatus").textContent = "Aktueller Tab ist keine Webseite.";
+    $("articleStatus").textContent = t("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
     $("includeArticle").disabled = true;
     $("includeArticle").checked = false;
     return;
@@ -177,13 +187,13 @@ async function prepareArticleSection() {
   $("fontSlider").disabled = isPdfSource;
 
   if (isPdfSource) {
-    $("articleStatus").textContent = "Lade PDF…";
+    $("articleStatus").textContent = t("stLoadingPdf", null, "Lade PDF…");
     try {
       pdfSourceBlob = await fetchPdfBlob(currentTabInfo.url);
       articleReady = true;
-      $("articleStatus").textContent = "Diese Seite ist bereits ein PDF – wird unverändert gesendet.";
+      $("articleStatus").textContent = t("stPdfSource", null, "Diese Seite ist bereits ein PDF – wird unverändert gesendet.");
     } catch {
-      $("articleStatus").textContent = "PDF konnte nicht geladen werden.";
+      $("articleStatus").textContent = t("stPdfFailed", null, "PDF konnte nicht geladen werden.");
       $("includeArticle").checked = false;
       $("includeArticle").disabled = true;
     }
@@ -191,25 +201,25 @@ async function prepareArticleSection() {
     return;
   }
 
-  $("articleStatus").textContent = "Extrahiere Lesemodus…";
+  $("articleStatus").textContent = t("stExtracting", null, "Extrahiere Lesemodus…");
   try {
     articleData = await extractArticleFromTab(currentTabInfo.id);
   } catch {
-    $("articleStatus").textContent = "Seite konnte nicht gelesen werden (z.B. interne Chrome-Seite).";
+    $("articleStatus").textContent = t("stReadFail", null, "Seite konnte nicht gelesen werden (z. B. interne Chrome-Seite).");
     $("includeArticle").checked = false;
     $("includeArticle").disabled = true;
     updateSendButton();
     return;
   }
   if (!articleData) {
-    $("articleStatus").textContent = "Kein Inhalt gefunden.";
+    $("articleStatus").textContent = t("stNoContent", null, "Kein Inhalt gefunden.");
     $("includeArticle").checked = false;
     $("includeArticle").disabled = true;
     updateSendButton();
     return;
   }
   articleReady = true;
-  $("articleStatus").textContent = `„${(articleData.title || "Artikel").slice(0, 70)}“`;
+  $("articleStatus").textContent = t("stFoundTitle", { name: (articleData.title || "Artikel").slice(0, 70) }, `„${(articleData.title || "Artikel").slice(0, 70)}“`);
   updateSendButton();
 }
 
@@ -664,13 +674,12 @@ function scanImagesInPage() {
 }
 
 async function scanCurrentTab() {
-  $("imageStatus").textContent = "Durchsuche Seite nach Bildern…";
+  $("imageStatus").textContent = t("stScanning", null, "Durchsuche Seite nach Bildern…");
   $("imageStrip").innerHTML = "";
   selectedSrcs.clear();
-  imagesScanned = false;
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
-    $("imageStatus").textContent = "Aktueller Tab ist keine Webseite.";
+    $("imageStatus").textContent = t("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
     return;
   }
 
@@ -682,11 +691,10 @@ async function scanCurrentTab() {
     foundImages = result?.images || [];
     currentTabInfo.pageTitle = result?.pageTitle || currentTabInfo.title || "Bilder";
   } catch {
-    $("imageStatus").textContent = "Seite konnte nicht durchsucht werden (z.B. interne Chrome-Seite).";
+    $("imageStatus").textContent = t("stScanFail", null, "Seite konnte nicht durchsucht werden (z. B. interne Chrome-Seite).");
     return;
   }
 
-  imagesScanned = true;
   renderImageStrip();
 }
 
@@ -704,11 +712,11 @@ function renderImageStrip() {
   const strip = $("imageStrip");
 
   if (foundImages.length === 0) {
-    $("imageStatus").textContent = "Keine passenden Bilder auf dieser Seite gefunden.";
+    $("imageStatus").textContent = t("stNoImages", null, "Keine passenden Bilder auf dieser Seite gefunden.");
     strip.innerHTML = "";
     return;
   }
-  $("imageStatus").textContent = `${foundImages.length} Bild${foundImages.length === 1 ? "" : "er"}`;
+  $("imageStatus").textContent = foundImages.length === 1 ? t("stImgCount", { n: 1 }, "1 Bild") : t("stImgsCount", { n: foundImages.length }, `${foundImages.length} Bilder`);
 
   const frag = document.createDocumentFragment();
   for (const img of foundImages) {
@@ -856,7 +864,7 @@ async function sendNow({ article, images } = {}) {
     } catch (e) {
       const li = document.createElement("li");
       li.className = "fail";
-      li.textContent = `✗ Fehlgeschlagen: ${e.message || e}`;
+      li.textContent = t("upFail", { msg: e.message || e }, `✗ Fehlgeschlagen: ${e.message || e}`);
       resultsEl.appendChild(li);
     }
   }
@@ -908,7 +916,7 @@ async function sendNow({ article, images } = {}) {
       } catch (e) {
         const li = document.createElement("li");
         li.className = "fail";
-        li.textContent = `✗ Fehlgeschlagen: ${e.message || e}`;
+        li.textContent = t("upFail", { msg: e.message || e }, `✗ Fehlgeschlagen: ${e.message || e}`);
         resultsEl.appendChild(li);
       }
     }

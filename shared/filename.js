@@ -22,4 +22,23 @@
       .trim()
       .slice(0, 120) || (fallback || "Dokument");
   };
+
+  // Ersetzt Umlaute und Sonderzeichen durch einfache ASCII-Zeichen
+  // ("ä" -> "ae", "é" -> "e"), wie in den Export-Namensoptionen.
+  RMXShared.asciiName = function (x) {
+    return String(x)
+      .replace(/[äæ]/g, "ae").replace(/[öø]/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .replace(/[ÄÆ]/g, "Ae").replace(/[ÖØ]/g, "Oe").replace(/[Ü]/g, "Ue")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^\x20-\x7e]/g, "_");
+  };
+
+  // "2026-11-23"-Präfix für Dateinamen (leer bei ungültigem Datum).
+  RMXShared.ymd = function (value) {
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return "";
+    var p = function (n) { return String(n).padStart(2, "0"); };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  };
 })(typeof window !== "undefined" ? window : this);
