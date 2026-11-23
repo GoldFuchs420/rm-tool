@@ -308,7 +308,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .obody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .rmx-outs .orow { display: block; }
 .rmx-outs .opanel { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.rmx-outs .opanel .oico { flex: none; display: flex; color: var(--ark-text-default); }
 .rmx-outs .opanel .oname { flex: 1 1 auto; min-width: 0; }
 .rmx-outs .opanel .oname .ark-input { width: 100%; }
 .rmx-outs .othumb { height: 92px; margin: 0; display: flex; align-items: flex-start; }
@@ -412,8 +411,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-dialog__body { padding: 6px 16px; gap: 18px; }
   .rmx-dialog__foot { padding: 12px 16px 18px; }
   .rmx-dialog__foot { flex-direction: column-reverse; align-items: stretch; }
-  .rmx-dialog__foot.rmx-foot--list { flex-direction: column; }
-  .rmx-dialog__foot .ark-button { justify-content: center; width: 100%; }
+    .rmx-dialog__foot .ark-button { justify-content: center; width: 100%; }
   .rmx-inline { flex-direction: column; gap: 0; }
   .rmx-presets .ark-button p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* Ergebnis-Zeilen: Flexbox-Basisregel (oben) bricht auf schmaler
@@ -489,9 +487,8 @@ body.rmx-nosrv .rmx-footer { display: none; }
 .rmx-filters .ark-input,
 .rmx-filters .ark-input[type="date"] { height: 2.5rem; font-size: 1rem; padding: 0 .5rem; }
 .rmx-filters .ark-select > select { height: 2.5rem; font-size: 1rem; padding: 0 2.5rem 0 .5rem; }
-/* Entry of the language selection and radio focus in reMarkable brown */
+/* Entry of the language selection in reMarkable brown */
 .rmx-lang > select { box-shadow: inset 0 0 0 1px var(--rmx-brown); }
-.ark-input-radio:focus:before { box-shadow: inset 0 0 0 1px var(--rmx-brown), 0 0 0 1px var(--rmx-brown); }
 
 /* Import/Export/Vorschau/Details-Dialoge: Eingabefelder, Auswahlfelder,
    Schaltflächen und Schalter etwas kompakter – .ark-button-small (2rem)
