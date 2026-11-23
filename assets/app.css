@@ -102,13 +102,15 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 8px; }
 .rmx-table tr { border-bottom: 1px solid var(--rmx-line); cursor: pointer; user-select: none; transition: background-color .15s; }
 .rmx-table tr:hover { background: var(--rmx-hover); }
-.rmx-table tr[data-selected="true"] { background: var(--rmx-surface); }
+.rmx-table tr[data-selected="true"] { background: var(--ark-interaction-primary-default-subtle); box-shadow: inset 0 0 0 2px var(--ark-interaction-primary-default); }
 .rmx-table td { padding: 12px 8px; vertical-align: top; text-align: left; }
-/* Left column: checkbox, type icon, thumbnail (constant size, flexible free space below) */
+/* Left column, 1st row: checkbox + type icon (left of the title), below that
+   the thumbnail (constant size, flexible free space below) */
 .rmx-table td.c-side { width: 86px; }
-.rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon { display: flex; justify-content: center; }
-.rmx-table td.c-side .c-icon { margin-top: 4px; }
-.rmx-table td.c-side .c-type { display: flex; justify-content: center; height: 64px; margin-top: 6px; }
+.rmx-table .c-side1 { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+.rmx-table td.c-side .c-icon { flex: none; display: flex; }
+.rmx-table td.c-side .c-check { flex: none; display: flex; }
+.rmx-table td.c-side .c-type { display: flex; justify-content: flex-start; height: 64px; margin-top: 6px; }
 /* Right column: title (variable height), below pages/date/buttons */
 .rmx-table td.c-main { overflow: hidden; }
 .rmx-table td p { margin: 0; }
@@ -134,6 +136,8 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 
 /* labelled download buttons: PDF red, RMDoc black (the format is always spelled out) */
 .rmx-acts { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: 6px; }
+/* Own row within the file list row */
+.rmx-table .rmx-acts.far { justify-content: flex-start; margin-top: 6px; flex-wrap: wrap; }
 .rmx-pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid currentColor; border-radius: 99px; background: none; font: inherit; font-size: .8125rem; line-height: 1; white-space: nowrap; cursor: pointer; color: var(--ark-text-default); transition: background-color .2s; }
 .rmx-pill svg { width: 16px; height: 16px; flex: none; }
 .rmx-pill:hover:not(:disabled) { background: var(--rmx-surface); }
@@ -227,6 +231,20 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
    eigene Zeilen um, statt sich zu überlappen. */
 .rmx-outs .orow, .rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
 .rmx-outs .orow > svg, .rmx-copies .orow > svg { flex: none; }
+/* Import result rows: two panels — top: type icon + title, below it the small
+   preview (like in the file list); bottom: size + download/remove buttons. */
+.rmx-outs .orow { display: block; }
+.rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
+.rmx-outs .opanel { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rmx-outs .opanel .oico { flex: none; display: flex; color: var(--ark-text-default); }
+.rmx-outs .opanel .oname { flex: 1 1 auto; min-width: 0; }
+.rmx-outs .opanel .oname .ark-input { width: 100%; }
+.rmx-outs .othumb { height: 64px; margin: 8px 0 0 0; display: flex; align-items: center; }
+.rmx-outs .othumb canvas { box-shadow: 0 0 0 1px var(--rmx-line); border-radius: 2px; background: #fff; }
+.rmx-outs .opanel--bot { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rmx-line); flex-wrap: wrap; }
+.rmx-outs .opanel--bot .rmx-flex { flex: 1 1 auto; }
+.rmx-iconbtn--danger { color: var(--ark-interaction-danger-default); }
+.rmx-iconbtn--danger:hover:not(:disabled) { background: #da08101a; }
 .rmx-outs .osize { flex: none; min-width: 3rem; color: var(--ark-text-muted); }
 .rmx-outs .oname { display: flex; align-items: center; gap: 4px; flex: 1 1 160px; min-width: 120px; }
 .rmx-outs .oname .ark-input { min-width: 0; flex: 1 1 auto; height: 2.5rem; }
@@ -295,7 +313,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-table tr { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "side main"; column-gap: 8px; align-items: start; padding: 10px 0; }
   .rmx-table td, .rmx-table td.c-side, .rmx-table td.c-main { display: block; width: auto; padding: 0; text-align: left; }
   .rmx-table td.c-side { grid-area: side; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon, .rmx-table td.c-side .c-type { display: inline-flex; margin: 0; }
+  .rmx-table td.c-side .c-side1, .rmx-table td.c-side .c-check, .rmx-table td.c-side .c-icon, .rmx-table td.c-side .c-type { display: inline-flex; margin: 0; }
   .rmx-table td.c-main { grid-area: main; overflow: visible; }
   .rmx-thumb { height: 56px; }
   .rmx-acts { justify-content: flex-start; flex-wrap: wrap; margin-left: -4px; }
@@ -340,6 +358,11 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
  * Wrapper direkt in #serverPanel gemountet (siehe popup.css).
  * --------------------------------------------------------------------- */
 .rmx-srv-panel-wrap { min-width: 0; }
+
+/* No server available: only the server panel (with login option) is shown,
+   the file lists cannot be loaded at all. Applies to the file manager. */
+body.rmx-nosrv .rmx-container > :not(.rmx-srv-panel-wrap),
+body.rmx-nosrv .rmx-footer { display: none; }
 
 /* ---------------------------------------------------------------------
  * Erweiterung: allgemeiner Kompaktheits-Durchgang. Reduziert v.a.

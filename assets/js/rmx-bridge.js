@@ -24,6 +24,7 @@
   }
 
   function onServersChanged(readyList) {
+    if (document.body) document.body.classList.toggle("rmx-nosrv", !readyList.length);
     var chosen = pickPreferred(readyList);
     if (!chosen) return;
     var wasConfigured = configured;
@@ -54,6 +55,10 @@
     panel.id = "rmx-srv-panel";
     panel.className = "rmx-srv-panel-wrap";
     container.insertBefore(panel, container.firstChild);
+    /* Bis der erste Erreichbarkeits-Check abgeschlossen ist, gilt: kein
+       Server erreichbar → nur das Serverpanel zeigen (Dateilisten können
+       ohne Server ohnehin nicht geladen werden). */
+    if (document.body) document.body.classList.add("rmx-nosrv");
     window.RMXServers.mount(panel, { onChange: onServersChanged });
   }
 
