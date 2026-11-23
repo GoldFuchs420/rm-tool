@@ -692,20 +692,38 @@ async function scanCurrentTab() {
   renderImageStrip();
 }
 
+/* Minimale Kantenlaenge: Der Slider blendet kleine Bilder (z. B. Icons)
+   aus der Liste aus. SVGs und Bilder ohne messbare Groesse bleiben immer
+   sichtbar; das Maximum waechst mit, sobald groessere Bilder nachladen. */
+function imgIncluded(img) {
+  if (img.svg || img.minEdge === undefined) return true;
+  return img.minEdge >= Number($("minEdgeSlider").value || 0);
+}
+function refreshMinEdgeRow() {
+  const row = $("minEdgeRow"), slider = $("minEdgeSlider");
+  row.hidden = minEdgeMax <= 0;
+  if (row.hidden) return;
+  slider.max = String(minEdgeMax);
+  $("minEdgeValue").textContent = slider.value + " px";
+}
+
 function renderImageStrip() {
   const strip = $("imageStrip");
   const status = $("imageStatus");
 
+  const visible = foundImages.filter(imgIncluded);
   if (foundImages.length === 0) {
     status.hidden = false;
     status.textContent = t("stNoImages", null, "Keine passenden Bilder auf dieser Seite gefunden.");
     strip.innerHTML = "";
     return;
   }
-  status.hidden = true;
+  status.hidden = visible.length > 0;
+  status.textContent = t("stAllFiltered", null, "Alle Bilder liegen unter der minimalen Kantenl\u00e4nge.");
+  if (visible.length === 0) { strip.innerHTML = ""; return; }
 
   const frag = document.createDocumentFragment();
-  for (const img of foundImages) {
+  for (const img of visible) {
     const tile = document.createElement("div");
     tile.className = "image-tile";
     if (selectedSrcs.has(img.src)) tile.classList.add("selected");
@@ -719,7 +737,7 @@ function renderImageStrip() {
       if (img.svg || !thumb.naturalWidth || !thumb.naturalHeight) return;
       img.minEdge = Math.min(thumb.naturalWidth, thumb.naturalHeight);
       if (img.minEdge > minEdgeMax) { minEdgeMax = img.minEdge; refreshMinEdgeRow(); }
-      img._tile && img._tile.classList.toggle("below-edge", !imgIncluded(img));
+      if (!imgIncluded(img)) { img._tile.remove(); img._tile = null; updateSendButton(); }
     });
     thumb.src = img.src;
     box.appendChild(thumb);
@@ -748,7 +766,6 @@ function renderImageStrip() {
   }
   strip.innerHTML = "";
   strip.appendChild(frag);
-  paintEdgeDimming();
 }
 
 $("selectAllBtn").addEventListener("click", () => {
@@ -763,7 +780,7 @@ $("selectNoneBtn").addEventListener("click", () => {
 });
 $("minEdgeSlider").addEventListener("input", () => {
   $("minEdgeValue").textContent = $("minEdgeSlider").value + " px";
-  paintEdgeDimming();
+  renderImageStrip();
   updateSendButton();
 });
 /* ---- PDF-Erzeugung: jedes Bild bekommt eine eigene Seite im exakten
