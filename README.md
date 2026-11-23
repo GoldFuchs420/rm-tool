@@ -741,6 +741,15 @@ Weitere UX-Runde nach Feedback:
   Breiten-Slider (die Zeile hatte dort effektiv 0, da eine
   Gruppe-Regel höhere Spezifität hatte).
 
+## Runde 10d: Import/Export zurückgesetzt, Suchfeld ohne Abstand
+
+- Der zwischen Import- und Export-Buttons verkleinerte Abstand ist
+  zurückgesetzt (negative Margins entfernt).
+- Das Mehr-Abstand über dem Suchfeld ist entfernt: Der leere
+  Status-Banner zählte unsichtbar als Flex-Kind und verdoppelte den
+  Container-Abstand (40 px); er wird jetzt ausgeblendet, und die
+  Suchzeile sitzt direkt unter der Aktionen-Zeile.
+
 ## Installation (Entwicklung/Test)
 1. `chrome://extensions` öffnen.
 2. **Entwicklermodus** aktivieren.
