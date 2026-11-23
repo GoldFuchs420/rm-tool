@@ -970,6 +970,9 @@ $("openManager").addEventListener("click", () => {
  * Init
  * ------------------------------------------------------------------- */
 (async function init() {
+  /* Bis ein Server online ist, nur das Serverpanel zeigen (auch waehrend
+     des Checks; updateSendButton() schaltet spaeter um). */
+  document.body.classList.add("rmx-nosrv");
   currentTabInfo = await getActiveTab();
   await loadSettingsForHost(currentTabInfo?.hostname);
   $("fontSlider").value = String(fontSize);
