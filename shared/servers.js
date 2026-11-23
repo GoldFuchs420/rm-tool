@@ -81,19 +81,27 @@
       return servers.filter(function (s) { return s._status === "online"; });
     }
 
+    /* Probe liefert { status, scheme?, code?, netError? }: scheme aus dem
+       WWW-Authenticate-Header (z. B. Digest/NTLM → Basic-Login kann nie
+       gelingen), code = HTTP-Status, netError = "timeout"/"network". */
     async function probe(s) {
       var ctrl = new AbortController();
-      var timer = setTimeout(function () { ctrl.abort(); }, 3500);
+      var timer = setTimeout(function () { ctrl.abort(); }, 8000);
       try {
         var headers = { Authorization: authHeaderFor(s) };
         var res = await fetch(s.url + "/documents/", { method: "GET", headers: headers, signal: ctrl.signal, cache: "no-store" });
         clearTimeout(timer);
-        if (res.status === 401 || res.status === 403) return "auth";
-        if (res.ok) return "online";
-        return "offline";
+        var scheme = null;
+        try {
+          var chall = (res.headers.get("WWW-Authenticate") || "").trim();
+          if (chall) scheme = chall.split(/\s+/)[0];
+        } catch (e2) { /* Header evtl. nicht lesbar */ }
+        if (res.ok) return { status: "online", scheme: scheme };
+        if (res.status === 401 || res.status === 403) return { status: "auth", scheme: scheme, code: res.status };
+        return { status: "offline", scheme: scheme, code: res.status };
       } catch (e) {
         clearTimeout(timer);
-        return "offline";
+        return { status: "offline", netError: e && e.name === "AbortError" ? "timeout" : "network" };
       }
     }
 
@@ -106,7 +114,7 @@
       var list = servers;
       for (var i = 0; i < list.length; i++) list[i]._status = "checking";
       render();
-      await Promise.all(list.map(async function (s) { s._status = await probe(s); }));
+      await Promise.all(list.map(async function (s) { s._status = (await probe(s)).status; }));
       render();
       onChange(readyServers());
     }
@@ -131,8 +139,8 @@
         submitBtn.textContent = T("srvChecking", "Prüft …");
         errEl.classList.add("hidden");
         var candidate = Object.assign({}, s, { user: userInput.value, pass: passInput.value, hasCreds: true });
-        var status = await probe(candidate);
-        if (status === "online") {
+        var r = await probe(candidate);
+        if (r.status === "online") {
           s.user = userInput.value; s.pass = passInput.value; s.hasCreds = true; s._status = "online";
           await saveServers();
           render();
@@ -140,6 +148,13 @@
         } else {
           submitBtn.disabled = false;
           submitBtn.textContent = T("srvLogin", "Anmelden");
+          if (r.scheme && r.scheme.toLowerCase() !== "basic") {
+            errEl.textContent = T("srvAuthScheme", "Dieser Server erwartet {scheme} statt Basic: bitte an einem Proxy mit Basic-Auth anmelden oder sich im Browser-Fenster einloggen.", { scheme: r.scheme });
+          } else if (r.code) {
+            errEl.textContent = T("srvFailCode", "Anmeldung fehlgeschlagen (HTTP {code}).", { code: r.code });
+          } else {
+            errEl.textContent = T("srvNoConn", "Keine Verbindung.");
+          }
           errEl.classList.remove("hidden");
         }
       }

@@ -674,16 +674,6 @@ async function scanCurrentTab() {
   renderImageStrip();
 }
 
-function filenameFromUrl(url) {
-  try {
-    const u = new URL(url);
-    const last = u.pathname.split("/").filter(Boolean).pop() || "bild";
-    return decodeURIComponent(last).replace(/\.[a-z0-9]{2,5}$/i, "") || "bild";
-  } catch {
-    return "bild";
-  }
-}
-
 function renderImageStrip() {
   const strip = $("imageStrip");
   const status = $("imageStatus");
@@ -724,7 +714,7 @@ function renderImageStrip() {
 
     const label = document.createElement("div");
     label.className = "label";
-    label.textContent = img.alt || filenameFromUrl(img.src);
+    label.textContent = img.alt || img.src;
     label.title = img.alt || img.src;
 
     box.append(badge);
@@ -785,6 +775,21 @@ async function buildImagesPdf(images) {
     loadedCount++;
   }
   return { blob: doc ? doc.output("blob") : null, loadedCount, totalCount: images.length };
+}
+
+/* Dokumentname je Bild: Alt-Text, sonst "Bilder von Titel - n"; Dubletten
+   erhalten eine fortlaufende Nummer. */
+function imageBaseNames(images) {
+  const label = t("imagesFrom", { title: (currentTabInfo?.pageTitle || currentTabInfo?.title || "").trim() || t("imagesHead") });
+  const used = new Map();
+  return images.map((img, i) => {
+    let base = (img.alt || "").trim() || `${label} - ${i + 1}`;
+    const key = base.toLowerCase();
+    const seen = used.get(key) || 0;
+    used.set(key, seen + 1);
+    if (seen > 0) base = `${base} ${seen + 1}`;
+    return sanitizeFilename(base);
+  });
 }
 
 /* ---------------------------------------------------------------------
@@ -872,7 +877,8 @@ async function sendNow({ article, images } = {}) {
   const files = [];
   if (wantArticle) files.push({ kind: "article" });
   if (wantImages && onePerPdf) {
-    for (const img of images) files.push({ kind: "image", img });
+    const bases = imageBaseNames(images);
+    images.forEach((img, i) => files.push({ kind: "image", img, base: bases[i] }));
   } else if (wantImages) {
     files.push({ kind: "images", list: images });
   }
@@ -888,8 +894,8 @@ async function sendNow({ article, images } = {}) {
   const rows = files.map((f) => {
     const li = statusRow(
       f.kind === "article" ? (currentTabInfo?.title || t("pageAsPdfHead"))
-        : f.kind === "images" ? t("imagesHead")
-        : sanitizeFilename(f.img.alt || filenameFromUrl(f.img.src))
+        : f.kind === "images" ? t("imagesFrom", { title: (currentTabInfo?.pageTitle || currentTabInfo?.title || "").trim() || t("imagesHead") })
+        : f.base
     );
     resultsEl.appendChild(li);
     return li;
@@ -924,7 +930,7 @@ async function sendNow({ article, images } = {}) {
       } else if (f.kind === "images") {
         const { blob, loadedCount, totalCount } = await buildImagesPdf(f.list);
         if (!blob || loadedCount === 0) { settle(i, "fail", { label: t("imgNoneLoaded") }); return; }
-        const filenameBase = sanitizeFilename(currentTabInfo?.pageTitle || currentTabInfo?.title || "Bilder");
+        const filenameBase = sanitizeFilename(t("imagesFrom", { title: (currentTabInfo?.pageTitle || currentTabInfo?.title || "").trim() || t("imagesHead") }));
         const res = await uploadToAllServers(blob, filenameBase, targets);
         if (loadedCount < totalCount) {
           const warn = t("imgSomeLoaded", { n: totalCount - loadedCount, m: totalCount });
@@ -936,7 +942,7 @@ async function sendNow({ article, images } = {}) {
       } else {
         const { blob } = await buildImagesPdf([f.img]);
         if (!blob) { settle(i, "fail", { label: t("imgNoneLoaded") }); return; }
-        const res = await uploadToAllServers(blob, sanitizeFilename(f.img.alt || filenameFromUrl(f.img.src)), targets);
+        const res = await uploadToAllServers(blob, f.base, targets);
         settle(i, resultClass(res), res);
       }
     } catch (e) {
