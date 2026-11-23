@@ -30,7 +30,6 @@ body { width: 360px; max-height: 600px; overflow-y: auto; padding-bottom: 10px; 
 .rmx-minedge-row { margin-top: 0; }
 .rmx-minedge-row input[type="range"] { min-width: 0; }
 .rmx-minedge-row .rmx-value-badge { min-width: 3.25rem; }
-.image-tile.below-edge { opacity: .35; }
 
 /* Expander: Kopf mit Zaehlbadge links und Schalter ganz rechts (zu-/aufgeklappt).
    Der Badge-Platz ist fix reserviert, damit die Kopfzeile nicht springt. */
