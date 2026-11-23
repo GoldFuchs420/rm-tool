@@ -656,9 +656,9 @@ Weitere UX-Runde nach Feedback:
   hochgeladen werden (z. B. ungültiges Format).“** — statt des früheren
   pauschalen „Keines der Bilder konnte geladen werden“.
 - Neue Zeile **Minimale Kantenlänge** unter dem Bilderstreifen: Ein Slider
-  (0 bis größte kleinste Bildkante in Pixel) sortiert kleine Bilder wie
-  Icons aus — zu kleine Kacheln werden durchscheinend dargestellt. Der
-  Slider wächst automatisch mit, sobald größere Bilder nachladen. SVGs
+  (0 bis größte kleinste Bildkante in Pixel) blendet kleine Bilder wie
+  Icons aus — sie verschwinden vollständig aus der Liste. Der Slider
+  wächst automatisch mit, sobald größere Bilder nachladen. SVGs
   und Bilder ohne messbare Pixelgröße bleiben immer sichtbar. Auswahl
   („Alles auswählen“), Zähler und Senden berücksichtigen den Filter.
 - **Sprachwahl im Popup** rechts neben dem 🗃-Icon (fünf Sprachen wie im
