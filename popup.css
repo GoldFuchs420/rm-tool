@@ -90,6 +90,7 @@ details[open] > .rmx-xhead .rmx-xswitch-thumb { transform: translateX(11px); }
 .rmx-popup-group:last-of-type { margin-bottom: 8px; }
 .rmx-popup-group .rmx-field-row { margin-top: 0; }
 .rmx-popup-group .image-strip { margin-top: 0; }
+.rmx-popup-group .image-strip { margin-bottom: 5px; } /* Luft ueber dem Breiten-Slider */
 .rmx-dialog .ark-switch--input, .rmx-popup-group .ark-switch--input { cursor: pointer; }
 
 /* Bilder: kompakter horizontaler Filmstreifen statt Raster */
