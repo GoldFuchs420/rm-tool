@@ -153,6 +153,9 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 
 /* labelled download buttons: PDF red, RMDoc black (the format is always spelled out) */
 .rmx-acts { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: 6px; }
+/* preview + details sit close together (recognisable as a pair) */
+.rmx-acts .iconpair { display: inline-flex; }
+.rmx-acts .iconpair .rmx-iconbtn + .rmx-iconbtn { margin-left: -6px; }
 /* Own row within the file list row */
 .rmx-table .rmx-acts.far { justify-content: flex-end; margin-top: 6px; flex-wrap: wrap; row-gap: 2px; }
 .rmx-pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid currentColor; border-radius: 99px; background: none; font: inherit; font-size: .8125rem; line-height: 1; white-space: nowrap; cursor: pointer; color: var(--ark-text-default); transition: background-color .2s; }
@@ -217,7 +220,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-switchrow .txt small { color: var(--ark-text-muted); font-size: .875rem; }
 .rmx-namefield { display: flex; align-items: center; gap: 8px; }
 .rmx-namefield .ark-input { flex: 1 1 auto; min-width: 0; width: auto; }
-.rmx-namefield .ext { flex: none; }
 .rmx-addrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .rmx-summary { padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
 .rmx-run { display: flex; flex-direction: column; gap: 12px; }
@@ -237,11 +239,10 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-files .fname { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 .rmx-files .state { flex: none; font-size: .875rem; color: var(--ark-text-muted); display: flex; align-items: center; gap: 6px; }
 .rmx-files li[data-state="error"] .state { color: var(--rmx-pdf); }
-.rmx-outs li, .rmx-copies li { display: block; }
-/* Ergebnis-/Kopier-Zeilen: Flexbox mit flex-wrap statt starrer Grid-Positionierung.
-   Import-Ergebniszeilen (.rmx-outs) sind zwei Panels: oben Typ-Icon + Name, darunter
-   die kleine Vorschau (wie in der Dateiliste) sowie getrennt Größe + Aktionen;
-   Kopier-Zeilen (.rmx-copies) bleiben eine flexible Zeile. */
+.rmx-outs li { display: block; }
+/* Ergebnis-Zeilen: Import-Ergebniszeilen (.rmx-outs) sind zwei Panels:
+   oben Typ-Icon + Name, darunter die kleine Vorschau (wie in der
+   Dateiliste) sowie getrennt Größe + Aktionen. */
 .olead {
   position: relative; flex: none; width: 92px; max-width: 92px;
   display: flex; align-items: flex-start; justify-content: flex-start;
@@ -256,8 +257,6 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 }
 .obadge svg { display: block; }
 .obody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-.rmx-copies .orow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; min-width: 0; }
-.rmx-copies .orow > svg { flex: none; }
 .rmx-outs .orow { display: block; }
 .rmx-outs .opanel { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .rmx-outs .opanel .oico { flex: none; display: flex; color: var(--ark-text-default); }
@@ -275,9 +274,8 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-outs .oname .ark-input { min-width: 0; flex: 1 1 auto; height: 2.5rem; }
 .rmx-outs .opath { display: flex; align-items: center; gap: 6px; padding: 4px 0 0 32px; overflow-wrap: anywhere; }
 .rmx-outs .opath svg { flex: none; }
-.rmx-outs .state, .rmx-copies .state { padding: 6px 0 0 32px; flex: none; }
+.rmx-outs .state { padding: 6px 0 0 32px; flex: none; }
 .rmx-outs .state:empty { display: none; }
-.rmx-copies .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* details, preview */
 .rmx-dl { margin: 0; display: flex; flex-direction: column; gap: 14px; }
@@ -368,7 +366,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
      Breite von selbst sauber um, hier nur noch die Einrückung der
      Status-/Pfadzeile zurücksetzen und Pillen etwas kompakter machen. */
   .rmx-outs .orow > .rmx-pill { height: 34px; }
-  .rmx-outs .state, .rmx-outs .opath, .rmx-copies .state { padding-left: 0; }
+  .rmx-outs .state, .rmx-outs .opath { padding-left: 0; }
   .rmx-pv-pages { height: calc(90dvh - 200px); padding: 6px; }
   .rmx-dpv { min-height: 9rem; }
   .rmx-namefield { flex-wrap: wrap; }

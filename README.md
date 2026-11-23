@@ -109,12 +109,13 @@ eingebettet als vollwertige Extension-Seite:
   Auswahlrahmen berührt Checkbox und Vorschaubild nicht mehr.
   Ausgewählte Dateien erhalten zur Hintergrundtönung einen
   deutlichen **Rahmen** (reMarkable-Primärfarbe).
-- **Auswahl-Werkzeugleiste**: „Alles auswählen“, „Auswahl aufheben“ und
-  „Kopieren“ stehen in einer Zeile (auf Mobil daneben) und tragen Icons.
+- **Auswahl-Werkzeugleiste**: „Alles auswählen“ und „Auswahl aufheben“
+  stehen in einer Zeile (auf Mobil daneben) und tragen Icons.
 - **Filter**: Bezeichnung links, Element rechts (zweispaltig je Feld);
   die Datumsfelder zeigen das erwartete Format als sichtbaren Hinweis,
-  die drei Schnellfilter („−30 Tage“ etc.) stehen nebeneinander und
-  tragen je ein Kalender-Icon.
+  die drei Schnellfilter (30 / 14 / 7 Tage) stehen nebeneinander und
+  tragen je ein Kalender-Icon samt Tageszahl, daneben setzt ein
+  Reset-Button den Zeitraum zurück.
 - **Entfernt**: der ursprüngliche "URL importieren"-Button (externer
   Lesedienst) sowie der zwischenzeitlich hinzugefügte "Von Webseite
   importieren"-Button (Tab-Auswahl-Dialog) — auf deinen Wunsch entfernt,
@@ -128,9 +129,9 @@ eingebettet als vollwertige Extension-Seite:
 
 Ausgangsbasis war deine erweiterte reMarkable-Weboberfläche (eigener
 Dateibrowser, Import/Export, Favoriten, Suche, mehrsprachig). Davon
-sind **11 von 15 eigenen JS-Dateien sowie das komplette Design-System
+sind **10 von 14 eigenen JS-Dateien sowie das komplette Design-System
 (CSS, Logo, Schriften) zu 100 % unverändert**: `archive.js`,
-`convert.js`, `copy.js`, `import.js`, `pdfview.js`, `preview.js`,
+`convert.js`, `import.js`, `pdfview.js`, `preview.js`,
 `rmdoc.js`, `textpdf.js`, `thumbs.js`, `util.js`, dazu `assets/index.css`
 und `assets/rm_logo.svg` (per `diff` gegengeprüft).
 
@@ -511,6 +512,40 @@ Aktuelle Runde UX-Verbesserungen:
   ein Augen-Icon direkt neben „Details“ die Vorschau an.
 - Eingabefelder haben dezente Standard-Outlines, der Fokusring bleibt
   klar; bei der Suche/Filterung bleibt alles zweispaltig kompatibel.
+
+---
+
+## Popup ohne Checkboxen: Expander-Zustand steuert das Senden
+
+Weitere UX-Runde nach Feedback:
+
+- **Popup**: der Reload-Button in der Bildgruppe ist entfallen —
+  Bilder werden beim Öffnen des Popups ohnehin neu geladen.
+- **Beide Gruppen sind Expander**: „Seite als PDF“ ist ausgeklappt
+  (und dann enthalten), „Bilder“ eingeklappt. Der Zustand der Gruppen
+  steuert, was gesendet wird — Checkboxen sind entfallen. Der
+  Auffalt-Pfeil sitzt ganz rechts am Rand; unter dem Titel der
+  Seitengruppe ist mehr Abstand.
+- **Zählbadges im Expander-Kopf** (links außen, mit reserviertem
+  Platz wie der Auswahl-Zähler im Export): die Seitengruppe zeigt 1
+  solange sie enthalten ist, die Bildgruppe die Anzahl gewählter
+  Bilder (unsichtbar bei 0).
+- **Senden-Button**: nennt die Anzahl der erzeugten PDFs — „In 2 PDF
+  senden“, „In 5 PDF senden“ usw. (Webseite + Bilder zusammengefasst
+  bzw. je Bild im Einzelmodus), in fünf Sprachen.
+
+## Dateimanager: Aufräumen und kompaktere Filter
+
+- **Kopieren entfernt**: die Funktion „Kopieren“ in der Dateiliste ist
+  ersatzlos entfernt (`copy.js` gelöscht, Dialog, Button, Styles und
+  Übersetzungen bereinigt).
+- **Vorschau/Details enger**: das Augen-Icon und das Details-Icon
+  stehen jetzt als Paar dicht beieinander in der Aktionsspalte.
+- **Datumsfilter**: Schnellfilter sind jetzt **30 / 14 / 7 Tage** und
+  zeigen die Tageszahl am Button; daneben setzt ein Reset-Icon den
+  Zeitraum zurück.
+- **Export**: hinter dem Dateinamen steht keine Dateitypen-Endung
+  (.pdf/.zip) mehr — die Endung entsteht beim Download ohnehin.
 
 ---
 

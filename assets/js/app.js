@@ -50,7 +50,6 @@
     down: 'M205.66,149.66l-72,72a8,8,0,0,1-11.32,0l-72-72a8,8,0,0,1,11.32-11.32L120,196.69V40a8,8,0,0,1,16,0V196.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z',
     trash: 'M224,56a8,8,0,0,1-8,8h-8V208a16,16,0,0,1-16,16H64a16,16,0,0,1-16-16V64H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,56ZM88,32h80a8,8,0,0,0,0-16H88a8,8,0,0,0,0,16Z',
     checks: 'M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48ZM72,168a8,8,0,0,1-5.66-2.34l-24-24a8,8,0,0,1,11.32-11.32L72,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32l-64,64A8,8,0,0,1,72,168Zm141.66-66.34-64,64a8,8,0,0,1-11.32,0l-16-16a8,8,0,0,1,11.32-11.32L144,148.69l58.34-58.35a8,8,0,0,1,11.32,11.32Z',
-    copySimple: 'M192,72V216a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V72a8,8,0,0,1,8-8H184A8,8,0,0,1,192,72Zm24-40H72a8,8,0,0,0,0,16H208V184a8,8,0,0,0,16,0V40A8,8,0,0,0,216,32Z',
     calendarBlank: 'M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,48H48V48H72v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24Z'
   };
   function icon(name, size, extra) {
@@ -405,7 +404,7 @@
       return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="' + act + '" data-key="act:' + act + '"' + (disabled ? ' disabled' : '') + ' title="' + esc(label) + '" aria-label="' + esc(label) + '">' + icon(ico, 16, ghost ? 'class="rmx-ico--ghost"' : '') + '<p class="responsive-body-sm">' + esc(label) + '</p></button>';
     };
     var html = curResults ? '<span class="rmx-resultcount responsive-body-md" aria-live="polite">' + esc(t('resultsCount', { n: curResults.length })) + '</span>' : '';
-    html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected, 'checks') + btn('clear', t('clearSelection'), !n, 'checks', true) + btn('copy', t('copyBtn'), !nDocs, 'copySimple') + '</div>' +
+    html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected, 'checks') + btn('clear', t('clearSelection'), !n, 'checks', true) + '</div>' +
       '<span class="spacer"></span><div class="rmx-viewbar">' +
       '<label class="rmx-choice rmx-thumbtoggle"><input type="checkbox" class="ark-input-checkbox" id="thumb-toggle" data-key="thumb:toggle"' + (state.thumbs ? ' checked' : '') + '><span class="txt"><span class="responsive-body-sm">' + esc(t('thumbnails')) + '</span></span></label>';
 
@@ -464,8 +463,8 @@
       return '<button type="button" class="rmx-iconbtn" ' + attr + '="' + id + '" data-key="' + key + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon(ico, 22) + '</button>';
     };
     return (doc ? pill('pdf', 'PDF', t('downloadPdf')) + pill('rmdoc', 'RMDoc', t('downloadRmdoc')) : '') +
-      (doc ? ib('data-pv', 'pv', 'eye', t('preview')) : '') +
-      ib('data-info', 'info', 'infoIcon', t('info'));
+      (doc ? '<span class="iconpair">' + ib('data-pv', 'pv', 'eye', t('preview')) + ib('data-info', 'info', 'infoIcon', t('info')) + '</span>'
+           : ib('data-info', 'info', 'infoIcon', t('info')));
   }
   function docRow(it, showPath) {
     var st = docStat(it.ID);
@@ -565,13 +564,14 @@
       '<div class="rmx-daterow">' +
       '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
       '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input" title="' + esc(t('fDateHint')) + '"><small class="datehint responsive-body-sm">' + esc(t('fDateHint')) + '</small></div>' +
-      '<div class="rmx-presets">' + ['7', '30', 'year'].map(function (p) {
-        var labl = t(p === '7' ? 'fPreset7' : p === '30' ? 'fPreset30' : 'fPresetYear');
+      '<div class="rmx-presets">' + ['30', '14', '7'].map(function (p) {
+        var labl = t(p === '30' ? 'fPreset30' : p === '14' ? 'fPreset14' : 'fPreset7');
         return '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset="' + p + '" title="' + esc(labl) + '" aria-label="' + esc(labl) + '">' +
           '<span class="rmx-calpreset">' + icon('calendarBlank', 18) +
           '<svg class="rmx-ccw" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L60.63,81.29l17,17A8,8,0,0,1,72,112H24a8,8,0,0,1-8-8V56A8,8,0,0,1,29.66,50.3L49.31,70,60.25,60A96,96,0,0,1,224,128Z"/></svg></span>' +
-          '</button>';
-      }).join('') + '</div>' +
+          '<span class="responsive-body-sm">' + p + '</span></button>';
+      }).join('') +
+      '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset-reset title="' + esc(t('fDateReset')) + '" aria-label="' + esc(t('fDateReset')) + '">' + icon('close', 18) + '</button></div>' +
       '</div></div>';
   }
   function syncFilterFields() {
@@ -639,8 +639,13 @@
       if (p) {
         var d = new Date();
         var k = p.getAttribute('data-preset');
-        if (k === 'year') d = new Date(d.getFullYear(), 0, 1); else d.setDate(d.getDate() - parseInt(k, 10));
+        d.setDate(d.getDate() - parseInt(k, 10));
         state.filter.from = ymd(d); state.filter.to = ymd(new Date());
+        syncFilterFields(); render();
+      }
+      var r = e.target.closest('[data-preset-reset]');
+      if (r) {
+        state.filter.from = ''; state.filter.to = '';
         syncFilterFields(); render();
       }
     });
@@ -752,7 +757,6 @@
             .forEach(function (x) { state.selected.add(x); });
           refreshSelectionUI(); break;
         case 'more': state.rowLimit += 300; render(); break;
-        case 'copy': if (app.copySelected) app.copySelected(); break;
         case 'filter-toggle': state.filterOpen = !state.filterOpen; updateFilterbar(); break;
         case 'filter-reset': resetFilter(); render(); break;
         case 'clear': state.selected.clear(); refreshSelectionUI(); break;
@@ -897,7 +901,7 @@
       '<p class="responsive-body-sm rmx-muted" style="margin:0">' + esc(t('exportIntro')) + '</p>' +
       '<div id="ex-options" style="display:flex;flex-direction:column;gap:28px">' +
       '<div class="ark-field"><label for="ex-name" class="responsive-body-md" style="font-weight:600">' + esc(t('archiveName')) + '</label>' +
-      '<div class="rmx-namefield"><input id="ex-name" class="ark-input" type="text" autocomplete="off" spellcheck="false" value=""><span class="ext responsive-body-md" id="ex-ext">.zip</span></div></div>' +
+      '<div class="rmx-namefield"><input id="ex-name" class="ark-input" type="text" autocomplete="off" spellcheck="false" value=""></div></div>' +
       '<div class="rmx-summary responsive-body-sm" id="ex-summary" aria-live="polite"></div>' +
       '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('scope')) + '</legend>' +
       choice('radio', 'scope', 'selection', t('scopeSelection'), '', defaultScope === 'selection') +
@@ -967,7 +971,6 @@
     if (single.checked && !singleOk) $('#dlg-export input[name="archive"][value="zip"]').checked = true;
     if (singleOk && scope === 'selection' && !ex.touchedArchive) single.checked = true;
     var arch = exVal('archive');
-    $('#ex-ext').textContent = arch === 'single' ? '.' + fmt : '.' + arch;
     if (!ex.nameTouched) {
       var one = plan.docs.length === 1 ? plan.docs[0].path.split('/').pop().replace(/\.[^.]+$/, '') : '';
       $('#ex-name').value = one || (today() + ' remarkable-backup');

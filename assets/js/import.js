@@ -310,7 +310,7 @@
       if (!hasFiles(e)) return;
       e.preventDefault(); depth = 0; zone.hidden = true;
       var files = Array.from(e.dataTransfer.files);
-      if (!$('#dlg-export').open && !$('#dlg-preview').open && !$('#dlg-copy').open) app.openImport(files);
+      if (!$('#dlg-export').open && !$('#dlg-preview').open) app.openImport(files);
     });
   });
 })();
