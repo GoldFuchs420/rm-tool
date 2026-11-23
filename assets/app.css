@@ -65,8 +65,8 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-actions { display: flex; flex-wrap: wrap; margin-left: -.75rem; }
 .rmx-actions .ark-button { padding-left: .75rem; padding-right: .75rem; gap: .5rem; cursor: pointer; }
 .rmx-short { display: none; }
-.rmx-count { display: inline-block; min-width: 1.5rem; padding: 0 .4rem; border-radius: 99px; background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); font-size: .75rem; line-height: 1.5rem; text-align: center; }
-.rmx-count--empty { min-width: 0; width: .75rem; height: .75rem; padding: 0; background: none; box-shadow: inset 0 0 0 1.5px var(--ark-border-muted); line-height: normal; }
+.rmx-count { display: inline-block; min-width: 1.2rem; padding: 0 .32rem; border-radius: 99px; background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); font-size: .6rem; line-height: 1.2rem; text-align: center; }
+.rmx-count--empty { min-width: 0; width: 1.2rem; height: 1.2rem; padding: 0; background: none; box-shadow: inset 0 0 0 1.5px var(--ark-border-muted); line-height: normal; }
 
 .rmx-banner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 16px; border-radius: 4px; background: var(--rmx-surface); }
 .rmx-banner:empty { display: none; }
@@ -78,7 +78,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 @media (prefers-reduced-motion: reduce) { .rmx-spinner { animation-duration: 3s; } }
 
 /* ---------- search / filters / toolbar ---------- */
-#filterbar { margin-top: -20px; } /* Suche sitzt direkt unter Import/Export */
+#filterbar { margin-top: -15px; } /* 5 px Luft ueber der Suchzeile */ /* Suche sitzt direkt unter Import/Export */
 .rmx-search { display: flex; gap: 4px; align-items: center; }
 /* filter button and reset icon same visual height (36px) */
 .rmx-search .ark-button-medium { min-height: 2.25rem; height: 2.25rem; font-size: .875rem; }
@@ -86,16 +86,17 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-search__field svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; opacity: .7; }
 .rmx-search__field .ark-input { width: 100%; padding-left: 44px; box-sizing: border-box; }
 #f-reset { flex: none; width: 2.25rem; height: 2.25rem; margin-left: 0; }
-.rmx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; padding: 20px; margin-top: 8px; border-radius: 4px; background: var(--rmx-surface); }
+.rmx-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; padding: 20px; margin-top: 5px; border-radius: 4px; background: var(--rmx-surface); }
 /* Bezeichnung links, Element rechts: zweispaltiges Layout je Feld */
 .rmx-filters .ark-field { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; align-items: center; }
 .rmx-filters .ark-field .rmx-choice { grid-column: 1 / -1; }
 .rmx-filters .ark-input, .rmx-filters .ark-select { width: 100%; box-sizing: border-box; }
-.rmx-filters input[type="date"] { background-clip: padding-box; cursor: pointer; }
-/* date format sits INSIDE the date input (placeholder), hidden once a value is set */
-.rmx-datewrap { position: relative; }
-.rmx-datewrap .datehint { position: absolute; left: .5rem; top: 50%; transform: translateY(-50%); margin: 0; color: var(--ark-text-muted); pointer-events: none; }
-.rmx-datewrap[data-empty="0"] .datehint { display: none; }
+.rmx-filters input[type="date"] { min-height: 2.25rem; font-size: .875rem; padding: 0 .5rem; cursor: pointer; }
+.rmx-filters input[type="date"]::-webkit-calendar-picker-indicator { opacity: 1; cursor: pointer; } /* Kalender immer sichtbar */
+/* Typfilter: drei Checkboxen in einer Zeile */
+.rmx-typerow { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; }
+/* Status beim Laden der Ordnerstruktur, direkt ueber der (verdeckten) Liste */
+.rmx-crawlstatus { display: flex; align-items: center; gap: 10px; padding: 8px 0 4px; }
 .rmx-filters .rmx-choice { margin-top: 4px; }
 .rmx-daterow { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .rmx-presets { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
@@ -188,7 +189,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
 .rmx-acts .iconpair { display: inline-flex; }
 .rmx-acts .iconpair .rmx-iconbtn + .rmx-iconbtn { margin-left: -6px; }
 /* Own row within the file list row */
-.rmx-table .rmx-acts.far { justify-content: flex-end; margin-top: 6px; flex-wrap: wrap; row-gap: 2px; }
+.rmx-table .rmx-acts.far { justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; row-gap: 2px; }
 /* Thumbnail view: buttons bottom right, even when the preview is taller
    than the right-hand part (title + meta); reserved space keeps the
    buttons from overlapping the title. */
@@ -361,7 +362,7 @@ body { margin: 0; background: var(--rmx-page); color: var(--ark-text-default); f
   .rmx-srv-panel-wrap { margin-bottom: -7px; }
   .rmx-container { gap: 14px; padding-bottom: 40px; }
   .rmx-footer { padding: 16px; gap: 6px 16px; }
-  #filterbar { margin-top: -14px; }
+  #filterbar { margin-top: -9px; }
 
   /* menu: the plain desktop buttons, in one row (wraps if needed) */
   .rmx-actions .ark-button { padding-left: .5rem; padding-right: .5rem; gap: .375rem; }

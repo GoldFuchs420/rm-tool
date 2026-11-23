@@ -175,7 +175,6 @@
     exportAsRmdoc: ["Als RMDoc exportieren", "Export as RMDoc", "Esporta come RMDoc", "Exportar como RMDoc", "Exporter en RMDoc"],
     exportAsArchive: ["Als Archiv exportieren ({type})", "Export as archive ({type})", "Esporta come archivio ({type})", "Exportar como archivo ({type})", "Exporter en archive ({type})"],
     urlDoneEpub: ["Datei geladen. Für EPUB gibt es keine PDF-Vorschau, du kannst sie direkt hochladen.", "File loaded. There is no PDF preview for EPUB, you can upload it directly.", "File caricato. Per gli EPUB non c'è anteprima PDF, puoi caricarlo direttamente.", "Archivo cargado. Los EPUB no tienen vista previa en PDF; puedes subirlo directamente.", "Fichier chargé. Il n'y a pas d'aperçu PDF pour les EPUB, vous pouvez l'envoyer directement."],
-    fDateHint: ["JJJJ-MM-TT", "YYYY-MM-DD", "AAAA-MM-GG", "AAAA-MM-DD", "AAAA-MM-JJ"],
     oneImagePerPdf: ["Einzelmodus", "Single mode", "Modalità singola", "Modo individual", "Mode individuel"],
     oneImagePerPdfHint: ["Jedes Bild als eigenes PDF", "Each image as its own PDF", "Ogni immagine come PDF separato", "Cada imagen como PDF independiente", "Chaque image comme PDF distinct"],
     pageAsPdfHead: ["Seite als PDF", "Page as PDF", "Pagina come PDF", "Página como PDF", "Page en PDF"],
