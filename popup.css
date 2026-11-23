@@ -15,6 +15,23 @@ body { width: 360px; max-height: 600px; overflow-y: auto; padding-bottom: 10px; 
 }
 .rmx-popup-section--send { border-bottom: none; }
 
+/* Rechts im Kopf: Dateiverwaltung + Sprachwahl (kompakte Variante der
+   .ark-select/.rmx-lang aus app.css). */
+.rmx-popup-tools { display: flex; align-items: center; gap: 6px; }
+.rmx-popup-lang.rmx-lang { position: relative; width: auto; flex: none; }
+.rmx-popup-lang > select {
+  height: 2rem; padding: 0 1.4rem 0 .5rem; font-size: .8125rem; font-weight: 600;
+  appearance: none; -webkit-appearance: none; border: 0; color: inherit; background: none;
+  box-shadow: inset 0 0 0 1px var(--rmx-brown, #6b4f3a); cursor: pointer;
+}
+.rmx-popup-lang > svg { right: .3rem; top: 50%; margin-top: -5.5px; pointer-events: none; width: 11px; height: 11px; }
+
+/* Minimale Kantenlaenge (Bilder-Filter): komplette Zeile unter dem Streifen */
+.rmx-minedge-row { margin-top: 0; }
+.rmx-minedge-row input[type="range"] { min-width: 0; }
+.rmx-minedge-row .rmx-value-badge { min-width: 3.25rem; }
+.image-tile.below-edge { opacity: .35; }
+
 /* Expander: Kopf mit Zaehlbadge links und Schalter ganz rechts (zu-/aufgeklappt).
    Der Badge-Platz ist fix reserviert, damit die Kopfzeile nicht springt. */
 .rmx-xhead {

@@ -286,7 +286,8 @@
 
     return {
       refresh: runDiscovery,
-      readyServers: readyServers
+      readyServers: readyServers,
+      redraw: render
     };
   };
 })(typeof window !== "undefined" ? window : this);

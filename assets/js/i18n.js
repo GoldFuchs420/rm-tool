@@ -224,6 +224,8 @@
     statusHead: ["Status", "Status", "Stato", "Estado", "Statut"],
     statusSummary: ["{done} von {n} Dateien", "{done} of {n} files", "{done} di {n} file", "{done} de {n} archivos", "{done} sur {n} fichiers"],
     imgSomeLoaded: ["{n} von {m} Bildern geladen", "{n} of {m} images loaded", "{n} di {m} immagini caricate", "{n} de {m} imágenes cargadas", "{n} sur {m} images chargées"],
+    imgOneFail: ["{name} konnte nicht hochgeladen werden (z. B. ung\u00fcltiges Format).", "{name} could not be uploaded (e.g. invalid format).", "Impossibile caricare {name} (ad es. formato non valido).", "No se pudo subir {name} (p. ej., formato no v\u00e1lido).", "Impossible de t\u00e9l\u00e9verser {name} (par ex. format non valide)."],
+    minEdge: ["Minimale Kantenl\u00e4nge", "Minimum edge length", "Lunghezza minima del lato", "Longitud m\u00ednima del borde", "Longueur minimale du bord"],
     alreadyList: ["{n} Datei(en) bereits in der Liste – aktualisiert", "{n} file(s) already in the list – updated", "{n} file già nell'elenco – aggiornati", "{n} archivo(s) ya en la lista – actualizados", "{n} fichier(s) déjà dans la liste – mis à jour"],
     sendPdfCount: ["In {n} PDF senden", "Send in {n} PDF", "Invia in {n} PDF", "Enviar en {n} PDF", "Envoyer en {n} PDF"],
     fPreset14: ["Letzte 14 Tage", "Last 14 days", "Ultimi 14 giorni", "\u00daltimos 14 d\u00edas", "14 derniers jours"],
