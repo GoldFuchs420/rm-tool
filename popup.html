@@ -16,13 +16,12 @@
 
   <section id="serverPanel" class="rmx-popup-section"></section>
 
-  <section class="rmx-popup-section rmx-popup-group">
-    <div class="rmx-xrow">
-      <label class="rmx-xcheck" for="includeArticle">
-        <input type="checkbox" class="ark-input-checkbox" id="includeArticle" checked>
-      </label>
+  <details class="rmx-popup-section rmx-popup-group rmx-xpander rmx-xpander--page" id="grpPage" open>
+    <summary class="rmx-xhead">
+      <span class="rmx-badgeslot"><span class="rmx-count rmx-headbadge" id="pageBadge">1</span></span>
       <span class="responsive-body-md rmx-xtitle" data-i18n="pageAsPdfHead">Seite als PDF</span>
-    </div>
+      <svg class="rmx-caret" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+    </summary>
     <div class="rmx-xbody">
       <p id="articleStatus" class="responsive-body-sm rmx-muted" data-i18n="loading">Lade …</p>
       <div class="rmx-field-row">
@@ -31,13 +30,12 @@
         <span id="fontSizeValue" class="rmx-value-badge">16</span>
       </div>
     </div>
-  </section>
+  </details>
 
   <details class="rmx-popup-section rmx-popup-group rmx-xpander" id="grpImages">
     <summary class="rmx-xhead">
-      <span class="responsive-body-md rmx-xpander__title" data-i18n="imagesHead">Bilder</span>
-      <span class="rmx-flex"></span>
-      <button id="rescanBtn" type="button" class="ark-button ark-button--tertiary-neutral ark-button-small" data-i18n-title="rescanTitle" title="Seite erneut durchsuchen" aria-label="Seite erneut durchsuchen">↻</button>
+      <span class="rmx-badgeslot"><span class="rmx-count rmx-headbadge" id="imgBadge"></span></span>
+      <span class="responsive-body-md rmx-xtitle" data-i18n="imagesHead">Bilder</span>
       <svg class="rmx-caret" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
     </summary>
     <div class="rmx-xbody">
@@ -62,10 +60,10 @@
 
   <details class="rmx-popup-section rmx-xpander rmx-popup-status" id="statusBox" hidden>
     <summary class="rmx-xhead">
-      <svg class="rmx-caret" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
-      <span class="responsive-body-sm rmx-xpander__title rmx-muted" id="statusSummaryText"></span>
+      <span class="responsive-body-sm rmx-xtitle rmx-muted" id="statusSummaryText"></span>
       <span class="rmx-flex"></span>
       <span class="rmx-spinner rmx-status-spin" id="statusSpin" aria-hidden="true"></span>
+      <svg class="rmx-caret" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
     </summary>
     <ul id="results" class="results-list"></ul>
   </details>

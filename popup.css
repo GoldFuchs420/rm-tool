@@ -15,18 +15,19 @@ body { width: 360px; max-height: 600px; overflow-y: auto; }
 }
 .rmx-popup-section--send { border-bottom: none; }
 
-/* Expander: Kopfzeile mit Caret, Body floppt mit details um */
-.rmx-xrow { display: flex; align-items: flex-start; gap: 8px; }
-.rmx-xcheck { display: inline-flex; align-items: center; flex: none; padding-top: 1px; }
-.rmx-xtitle { flex: 1 1 auto; font-weight: 500; }
+/* Expander: Kopf mit Zaehlbadge links und Caret ganz rechts am Rand.
+   Der Badge-Platz ist fix reserviert, damit die Kopfzeile nicht springt. */
 .rmx-xhead {
   display: flex; align-items: center; gap: 8px; cursor: pointer;
-  list-style: none; min-height: 24px;
+  list-style: none;
 }
 .rmx-xhead::-webkit-details-marker { display: none; }
-.rmx-caret { width: 14px; height: 14px; flex: none; color: var(--ark-text-muted); transition: transform .15s ease; }
+.rmx-xtitle { flex: 1 1 auto; font-weight: 500; }
+.rmx-caret { width: 14px; height: 14px; flex: none; margin-left: auto; color: var(--ark-text-muted); transition: transform .15s ease; }
 details:not([open]) > .rmx-xhead .rmx-caret { transform: rotate(-90deg); }
-.rmx-xbody { margin-top: 8px; }
+.rmx-xbody { margin-top: 10px; }
+#grpPage .rmx-xhead { padding-bottom: 6px; }
+.rmx-badgeslot { display: inline-flex; justify-content: flex-start; width: 24px; flex: none; }
 
 /* Status-Expander vor dem Senden-Button */
 .rmx-popup-status .rmx-xhead { list-style: none; }

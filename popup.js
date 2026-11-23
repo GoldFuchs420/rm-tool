@@ -161,8 +161,6 @@ async function prepareArticleSection() {
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
     $("articleStatus").textContent = t("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
-    $("includeArticle").disabled = true;
-    $("includeArticle").checked = false;
     return;
   }
 
@@ -177,8 +175,6 @@ async function prepareArticleSection() {
       $("articleStatus").textContent = t("stPdfSource", null, "Diese Seite ist bereits ein PDF – wird unverändert gesendet.");
     } catch {
       $("articleStatus").textContent = t("stPdfFailed", null, "PDF konnte nicht geladen werden.");
-      $("includeArticle").checked = false;
-      $("includeArticle").disabled = true;
     }
     updateSendButton();
     return;
@@ -189,15 +185,11 @@ async function prepareArticleSection() {
     articleData = await extractArticleFromTab(currentTabInfo.id);
   } catch {
     $("articleStatus").textContent = t("stReadFail", null, "Seite konnte nicht gelesen werden (z. B. interne Chrome-Seite).");
-    $("includeArticle").checked = false;
-    $("includeArticle").disabled = true;
     updateSendButton();
     return;
   }
   if (!articleData) {
     $("articleStatus").textContent = t("stNoContent", null, "Kein Inhalt gefunden.");
-    $("includeArticle").checked = false;
-    $("includeArticle").disabled = true;
     updateSendButton();
     return;
   }
@@ -211,7 +203,8 @@ $("fontSlider").addEventListener("input", () => {
   $("fontSizeValue").textContent = String(fontSize);
 });
 $("fontSlider").addEventListener("change", () => saveSettingsForHost(currentTabInfo?.hostname));
-$("includeArticle").addEventListener("change", updateSendButton);
+$("grpPage").addEventListener("toggle", updateSendButton);
+$("grpImages").addEventListener("toggle", updateSendButton);
 
 /* Schalter: alle gewaehlten Bilder in EINEM zusammenhaengenden PDF (Standard)
    oder ein eigenes PDF je Bild. Die Wahl bleibt gespeichert. */
@@ -221,6 +214,7 @@ $("onePerPdf").checked = onePerPdf;
 $("onePerPdf").addEventListener("change", () => {
   onePerPdf = $("onePerPdf").checked;
   try { localStorage.setItem("rmx.oneimg", onePerPdf ? "1" : "0"); } catch (e) { /* private mode */ }
+  updateSendButton();
 });
 
 /* ---- PDF-Erzeugung aus dem extrahierten Artikel (Kapitel-Umbruch,
@@ -752,12 +746,6 @@ $("selectNoneBtn").addEventListener("click", () => {
   renderImageStrip();
   updateSendButton();
 });
-$("rescanBtn").addEventListener("click", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  scanCurrentTab();
-});
-
 /* ---- PDF-Erzeugung: jedes Bild bekommt eine eigene Seite im exakten
    Bild-Seitenverhältnis (randlos, kein Letterboxing). ---- */
 async function loadImageBytes(src) {
@@ -804,22 +792,23 @@ async function buildImagesPdf(images) {
  * Senden: Artikel und/oder Bilder, gemeinsam oder einzeln, an alle
  * aktuell erreichbaren Server.
  * ------------------------------------------------------------------- */
-function sendLabel(hasArticle, n) {
-  if (hasArticle && n > 0) return t(n === 1 ? "sendBothImage" : "sendBothImages", { n });
-  if (hasArticle) return t("sendPage");
-  if (n > 0) return t(n === 1 ? "sendImage" : "sendImages", { n });
-  return t("sendBtnLabel", null, "Senden");
-}
-
 function updateSendButton() {
-  const hasArticle = $("includeArticle").checked && articleReady;
+  /* Der Zustand der Gruppen (aus-/eingeklappt) steuert, was gesendet wird. */
+  const hasArticle = $("grpPage").open && articleReady;
   const n = selectedSrcs.size;
+  const imgIncl = $("grpImages").open;
+  /* Gesamte PDFs: Webseite (0/1) plus Bilder (Einzelmodus: je Bild, sonst 1). */
+  const files = (hasArticle ? 1 : 0) + (imgIncl && n > 0 ? (onePerPdf ? n : 1) : 0);
   const btn = $("sendBtn");
-  btn.disabled = (!hasArticle && n === 0) || readyServers().length === 0 || sending;
+  btn.disabled = files === 0 || readyServers().length === 0 || sending;
   /* Kein Server erreichbar: nur das Serverpanel zeigen (Senden/Konfiguration
      der restlichen Bereiche ist dann ohne Zweck). */
   document.body.classList.toggle("rmx-nosrv", readyServers().length === 0);
-  if (!sending) btn.textContent = sendLabel(hasArticle, n);
+  if (!sending) btn.textContent = files > 0 ? t("sendPdfCount", { n: files }) : t("sendBtnLabel", null, "Senden");
+  /* Zaehlbadges im Expander-Kopf (Platz ist fix reserviert). */
+  $("pageBadge").hidden = !hasArticle;
+  $("imgBadge").textContent = String(n);
+  $("imgBadge").hidden = n === 0;
 }
 
 /* Status-Expander: eine Zeile pro DATEI (Webseite, zusammengefasstes
@@ -955,8 +944,8 @@ async function sendNow({ article, images } = {}) {
 }
 
 $("sendBtn").addEventListener("click", () => {
-  const hasArticle = $("includeArticle").checked && articleReady;
-  const images = foundImages.filter((img) => selectedSrcs.has(img.src));
+  const hasArticle = $("grpPage").open && articleReady;
+  const images = $("grpImages").open ? foundImages.filter((img) => selectedSrcs.has(img.src)) : [];
   sendNow({ article: hasArticle, images });
 });
 

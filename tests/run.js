@@ -221,7 +221,7 @@ const jsFiles = [
   "background.js", "popup.js",
   "shared/servers.js",
   "assets/js/api.js", "assets/js/app.js", "assets/js/archive.js", "assets/js/convert.js",
-  "assets/js/copy.js", "assets/js/import.js", "assets/js/outputs.js", "assets/js/pdfview.js",
+  "assets/js/import.js", "assets/js/outputs.js", "assets/js/pdfview.js",
   "assets/js/preview.js", "assets/js/rmdoc.js", "assets/js/rmx-bridge.js", "assets/js/textpdf.js",
   "assets/js/thumbs.js", "assets/js/util.js"
 ];
