@@ -6,6 +6,16 @@
   gap: 8px; margin-bottom: 4px;
 }
 .rmx-srv-summary { font-family: reMarkableSansStatic; font-size: .8125rem; color: var(--ark-text-muted); }
+.rmx-srv-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rmx-srv-reload {
+  border: 0; background: var(--ark-interaction-tertiary-neutral-default);
+  color: var(--ark-interaction-tertiary-neutral-foreground);
+  width: 1.5rem; height: 1.5rem; border-radius: 4999.5rem; cursor: pointer; font-size: .8125rem;
+  display: flex; align-items: center; justify-content: center; flex: none; line-height: 1;
+}
+.rmx-srv-reload:hover { background: var(--ark-interaction-tertiary-neutral-hover); }
+.rmx-srv-reload.spinning { pointer-events: none; animation: rmx-srv-spin 0.9s linear infinite; }
+@keyframes rmx-srv-spin { to { transform: rotate(360deg); } }
 .rmx-srv-toggle {
   border: 0; background: var(--ark-interaction-tertiary-neutral-default);
   color: var(--ark-interaction-tertiary-neutral-foreground);

@@ -190,6 +190,7 @@
     srvEmptyEdit: ["Keine Server hinterlegt.", "No servers stored.", "Nessun server salvato.", "No hay servidores guardados.", "Aucun serveur enregistré."],
     srvEmptyHint: ["Kein Server erreichbar. \u2699 zeigt alle an.", "No server reachable. \u2699 shows all.", "Nessun server raggiungibile. \u2699 li mostra tutti.", "Ningún servidor accesible. \u2699 los muestra.", "Aucun serveur accessible. \u2699 les affiche."],
     srvSummary: ["{o}/{n} erreichbar", "{o}/{n} reachable", "{o}/{n} raggiungibili", "{o}/{n} accesibles", "{o}/{n} accessibles"],
+    srvReload: ["Verbindung erneut pr\u00fcfen", "Re-check connection", "Riverifica la connessione", "Comprobar la conexi\u00f3n de nuevo", "Rev\u00e9rifier la connexion"],
     srvLoginTitle: ["Basic-Auth für {url}", "Basic auth for {url}", "Basic auth per {url}", "Basic auth para {url}", "Basic auth pour {url}"],
     srvUser: ["Benutzername", "Username", "Nome utente", "Usuario", "Nom d'utilisateur"],
     srvPass: ["Passwort", "Password", "Password", "Contrase\u00f1a", "Mot de passe"],

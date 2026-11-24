@@ -25,7 +25,10 @@
 
     root.innerHTML =
       '<div class="rmx-srv-head">' +
+      '<div class="rmx-srv-left">' +
       '<span class="rmx-srv-summary" data-rmx-srv-summary></span>' +
+      '<button type="button" class="rmx-srv-reload" data-rmx-srv-reload title="Verbindung erneut \u00fcberpr\u00fcfen" aria-label="Verbindung erneut \u00fcberpr\u00fcfen">↻</button>' +
+      "</div>" +
       '<button type="button" class="rmx-srv-toggle" data-rmx-srv-toggle title="Server verwalten / alle anzeigen" aria-label="Server verwalten / alle anzeigen">⚙</button>' +
       "</div>" +
       '<ul class="rmx-srv-list" data-rmx-srv-list></ul>' +
@@ -36,6 +39,7 @@
 
     const elSummary = root.querySelector("[data-rmx-srv-summary]");
     const elToggle = root.querySelector("[data-rmx-srv-toggle]");
+    const elReload = root.querySelector("[data-rmx-srv-reload]");
     const elList = root.querySelector("[data-rmx-srv-list]");
     const elAddForm = root.querySelector("[data-rmx-srv-addform]");
     const elAddInput = root.querySelector("[data-rmx-srv-addinput]");
@@ -118,14 +122,25 @@
     // hinzugefügter/entfernter Server (neue, andere Länge von `servers`)
     // zu "Cannot set properties of undefined" führen, falls ein älterer
     // Discovery-Lauf noch läuft, wenn servers sich bereits geändert hat.
+    let discovering = false;
     async function runDiscovery() {
-      const list = servers;
-      for (let i = 0; i < list.length; i++) list[i]._status = "checking";
-      render();
-      await Promise.all(list.map(async function (s) { s._status = (await probe(s)).status; }));
-      render();
-      onChange(readyServers());
+      if (discovering) return;
+      discovering = true;
+      elReload.classList.add("spinning");
+      try {
+        const list = servers;
+        for (let i = 0; i < list.length; i++) list[i]._status = "checking";
+        render();
+        await Promise.all(list.map(async function (s) { s._status = (await probe(s)).status; }));
+        render();
+        onChange(readyServers());
+      } finally {
+        discovering = false;
+        elReload.classList.remove("spinning");
+      }
     }
+    elReload.title = T("srvReload", "Verbindung erneut \u00fcberpr\u00fcfen");
+    elReload.addEventListener("click", function () { runDiscovery(); });
 
     function buildLoginCard(s) {
       const card = document.createElement("div");
