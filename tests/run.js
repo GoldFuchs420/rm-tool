@@ -342,7 +342,7 @@ check("manifest.json ist gültiges MV3-Manifest", function () {
   assert(man.action && man.action.default_popup === "popup.html", "default_popup falsch");
   assert(Array.isArray(man.permissions) && man.permissions.indexOf("scripting") >= 0, "permissions");
   assert(man.background && man.background.service_worker === "background.js", "service_worker");
-  assert(typeof man.version === "string" && /^\d+\.\d+\.\d+$/.test(man.version), "version: " + man.version);
+  assert(typeof man.version === "string" && /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?$/.test(man.version), "version: " + man.version);
 });
 
 /* ---------- 6. Syntax aller eigenen JS-Dateien ---------- */
