@@ -11,6 +11,9 @@
  *   });
  *   srv.refresh();                     // manuell neu prüfen
  *   srv.readyServers();                // aktuell erreichbare (online) Server
+ *   RMXServers.report(url, msg)        // Aufruf-Fehler melden: Server geht
+ *                                      // auf offline (rot) + Meldung unter
+ *                                      // der Serverliste
  */
 (function (global) {
   "use strict";
@@ -26,12 +29,13 @@
     root.innerHTML =
       '<div class="rmx-srv-head">' +
       '<div class="rmx-srv-left">' +
-      '<span class="rmx-srv-summary" data-rmx-srv-summary></span>' +
       '<button type="button" class="rmx-srv-reload" data-rmx-srv-reload title="Verbindung erneut \u00fcberpr\u00fcfen" aria-label="Verbindung erneut \u00fcberpr\u00fcfen">↻</button>' +
+      '<span class="rmx-srv-summary" data-rmx-srv-summary></span>' +
       "</div>" +
       '<button type="button" class="rmx-srv-toggle" data-rmx-srv-toggle title="Server verwalten / alle anzeigen" aria-label="Server verwalten / alle anzeigen">⚙</button>' +
       "</div>" +
       '<ul class="rmx-srv-list" data-rmx-srv-list></ul>' +
+      '<div class="rmx-srv-msg" data-rmx-srv-msg hidden></div>' +
       '<form class="rmx-srv-add-form hidden" data-rmx-srv-addform>' +
       '<input type="text" class="rmx-srv-add-input" data-rmx-srv-addinput />' +
       '<button type="submit" class="rmx-srv-add-btn">+</button>' +
@@ -43,6 +47,7 @@
     const elList = root.querySelector("[data-rmx-srv-list]");
     const elAddForm = root.querySelector("[data-rmx-srv-addform]");
     const elAddInput = root.querySelector("[data-rmx-srv-addinput]");
+    const elMsg = root.querySelector("[data-rmx-srv-msg]");
     elAddInput.placeholder = T("srvAddPh", "z. B. https://10.11.99.1");
 
     function esc(s) {
@@ -93,6 +98,32 @@
       return servers.filter(function (s) { return s._status === "online"; });
     }
 
+    /* Meldung unter der Serverliste: der servernahe Grund, warum ein Aufruf
+       gerade fehlgeschlagen ist; die naechste erfolgreiche Pruefung raeumt
+       sie wieder weg. */
+    function setServerMessage(text) {
+      elMsg.hidden = !text;
+      if (text) elMsg.textContent = text;
+    }
+    function failReason(r) {
+      if (r.code) return "HTTP " + r.code;
+      if (r.netError === "timeout") return T("srvErrTimeout", "Zeitüberschreitung");
+      return T("srvErrNet", "Netzwerkfehler");
+    }
+    /* Von popup.js (fetch-Upload) und api.js (Dateimanager-Aufrufe) gerufen,
+       wenn ein echter Aufruf fehlschlaegt: Server auf offline (rot) setzen
+       und die Ursache unter der Serverliste anzeigen. 401/403 werden hier
+       NICHT gemeldet – das bleibt der gelbe "Login noetig"-Fall. */
+    RMXServers.report = function (url, msg) {
+      const s = servers.find(function (x) { return x.url === url; });
+      if (!s) return;
+      const wasOnline = s._status === "online";
+      s._status = "offline";
+      setServerMessage(T("srvConnLost", "Verbindung zu {url} verloren ({msg})", { url: url, msg: msg || "" }));
+      render();
+      if (wasOnline) onChange(readyServers());
+    };
+
     /* Probe liefert { status, scheme?, code?, netError? }: scheme aus dem
        WWW-Authenticate-Header (z. B. Digest/NTLM → Basic-Login kann nie
        gelingen), code = HTTP-Status, netError = "timeout"/"network". */
@@ -122,11 +153,12 @@
     // hinzugefügter/entfernter Server (neue, andere Länge von `servers`)
     // zu "Cannot set properties of undefined" führen, falls ein älterer
     // Discovery-Lauf noch läuft, wenn servers sich bereits geändert hat.
-    /* Manuelle Pruefung: bereits erreichbare Server bleiben solange "online"
-       angezeigt (weiter verfuegbar), nur nicht erreichbare springen auf
-       "checking". `onChange` feuert zusaetzlich im checking-Stadium, damit
+    /* Manuelle Pruefung: ALLE Server werden sichtbar neu geprueft – auch
+       zuvor erreichbare gehen auf "checking" (graues Pulsieren), damit klar
+       ist, dass geprueft wird, und waehrenddessen nicht mehr als verfuegbar
+       gelten. `onChange` feuert zusaetzlich im checking-Stadium, damit
        popup/dateimanager "Senden" deaktivieren, solange KEIN Server online
-       ist (z. B. beim Reload, wenn ein Server weggebrochen war). */
+       ist. Scheiternde Server erzeugen eine Meldung unter der Serverliste. */
     let discovering = false;
     async function runDiscovery() {
       if (discovering) return;
@@ -134,11 +166,17 @@
       elReload.classList.add("spinning");
       try {
         const list = servers;
-        for (let i = 0; i < list.length; i++)
-          if (list[i]._status !== "online") list[i]._status = "checking";
+        list.forEach(function (s) { s._status = "checking"; });
+        setServerMessage("");
         render();
         onChange(readyServers());
-        await Promise.all(list.map(async function (s) { s._status = (await probe(s)).status; }));
+        const fails = [];
+        await Promise.all(list.map(async function (s) {
+          const r = await probe(s);
+          s._status = r.status;
+          if (r.status === "offline") fails.push(s.url + " (" + failReason(r) + ")");
+        }));
+        setServerMessage(fails.join(" · "));
         render();
         onChange(readyServers());
       } finally {

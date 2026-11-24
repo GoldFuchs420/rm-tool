@@ -135,6 +135,12 @@ async function uploadOne(blob, filename, server) {
 
 async function uploadToAllServers(blob, filename, targets) {
   const results = await Promise.all(targets.map((server) => uploadOne(blob, filename, server)));
+  results.forEach((r, i) => {
+    if (r.ok || r.code === 401 || r.code === 403) return;
+    if (serverComponent && serverComponent.report) {
+      serverComponent.report(targets[i].url, r.code != null ? "HTTP " + r.code : r.msg || "");
+    }
+  });
   let ok = 0;
   const detail = results.map((r, i) => {
     const url = targets[i].url;
