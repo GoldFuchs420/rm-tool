@@ -353,6 +353,7 @@ async function buildPdfFromArticle(title, contentHtml, size, sourceUrl) {
   const footerReserve = 34;
   const maxWidth = doc.pageWidth - margin * 2;
   const lineHeight = size * 1.15;
+  const CM_TO_PT = 28.35;
   let y = doc.pageHeight - margin;
 
   function ensureSpace(h) {
@@ -489,7 +490,7 @@ async function buildPdfFromArticle(title, contentHtml, size, sourceUrl) {
       return withFont("bold", hsize, () => {
         const lines = doc.splitTextToSize(el.innerText || "", maxWidth);
         return lines.length * hsize * 1.25;
-      }) + 6;
+      }) + Math.max(CM_TO_PT, hsize) + 6;
     }
     if (tag === "UL" || tag === "OL") return measureList(el);
     if (tag === "BLOCKQUOTE") return measureBlockquote(el);
@@ -544,7 +545,14 @@ async function buildPdfFromArticle(title, contentHtml, size, sourceUrl) {
     if (tag === "IMG") { await renderImage(el); return; }
     if (/^H[1-6]$/.test(tag)) {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(Math.max(size, size + (7 - parseInt(tag[1], 10)) * 1.2));
+      const hSize = Math.max(size, size + (7 - parseInt(tag[1], 10)) * 1.2);
+      doc.setFontSize(hSize);
+      const wasAtTop = y >= doc.pageHeight - margin - 0.01;
+      if (!wasAtTop) {
+        const gapBefore = Math.max(CM_TO_PT, hSize);
+        ensureSpace(gapBefore + hSize * 1.25);
+        if (y < doc.pageHeight - margin - 0.01) y -= gapBefore;
+      }
       doc.splitTextToSize(el.innerText || "", maxWidth).forEach((line) => {
         ensureSpace(doc.getFontSize() * 1.25);
         doc.text(line, margin, y);
