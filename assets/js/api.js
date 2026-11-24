@@ -32,15 +32,30 @@
     if (readyResolve) { readyResolve(); readyResolve = null; }
   };
 
-  function NoConnection() {
+  function NoConnection(reason) {
     const e = new Error('No connection to device');
     e.name = 'NoConnectionError';
+    e.reason = reason || 'network';
     return e;
   }
   function AbortErr() {
     const e = new Error('Aborted');
     e.name = 'AbortError';
     return e;
+  }
+
+  /* Fehler an die Serverkomponente melden: Server geht auf offline (rot)
+     und die Ursache erscheint unter der Serverliste. 401/403 sind Login-
+     Faelle (gelb, "Login noetig") und werden nicht als offline gemeldet. */
+  function srvErrorMsg(kind) {
+    const key = kind === 'timeout' ? 'srvErrTimeout' : 'srvErrNet';
+    return (window.RMX && RMX.t ? RMX.t(key) : '') || (kind === 'timeout' ? 'Timeout' : 'Network error');
+  }
+  function reportProblem(kind, status) {
+    if (!baseUrl || status === 401 || status === 403) return;
+    if (window.RMXServers && typeof window.RMXServers.report === 'function') {
+      window.RMXServers.report(baseUrl, kind ? srvErrorMsg(kind) : 'HTTP ' + status);
+    }
   }
 
   // Two lanes, one request at a time: interactive calls always run before background
@@ -89,7 +104,7 @@
       return { status: res.status, body: body, headers: res.headers };
     } catch (e) {
       if (o.signal && o.signal.aborted) throw AbortErr();
-      throw NoConnection();
+      throw NoConnection(e.name === 'AbortError' ? 'timeout' : 'network');
     } finally {
       clearTimeout(timer);
       if (o.signal) o.signal.removeEventListener('abort', onAbort);
@@ -99,7 +114,7 @@
   async function rawList(id) {
     const url = !id || id === 'root' ? '/documents/' : '/documents/' + encodeURIComponent(id);
     const r = await request(url, { method: 'GET' }, { timeout: 30000, as: 'json' });
-    if (r.status !== 200) throw new Error('Get documents failed (' + r.status + ')');
+    if (r.status !== 200) { reportProblem(null, r.status); throw new Error('Get documents failed (' + r.status + ')'); }
     return Array.isArray(r.body) ? r.body : [];
   }
 
@@ -110,10 +125,11 @@
       try {
         const r = await request('/download/' + encodeURIComponent(id) + '/' + fmt, { method: 'GET' },
           { timeout: 300000, as: 'blob', signal: signal });
-        if (r.status !== 200) throw new Error('Download failed (' + r.status + ')');
+        if (r.status !== 200) { reportProblem(null, r.status); throw new Error('Download failed (' + r.status + ')'); }
         return r.body;
       } catch (e) {
         if (e.name === 'NoConnectionError' && attempts < 2) continue; // one retry
+        if (e.name === 'NoConnectionError') reportProblem(e.reason, null);
         throw e;
       }
     }
@@ -123,7 +139,7 @@
     const fd = new FormData();
     fd.append('file', file);
     const r = await request('/upload', { method: 'POST', body: fd }, { timeout: 300000, as: 'none', signal: signal });
-    if (r.status !== 201) throw new Error('Upload failed (' + r.status + ')');
+    if (r.status !== 201) { reportProblem(null, r.status); throw new Error('Upload failed (' + r.status + ')'); }
   }
 
   R.api = {

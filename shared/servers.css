@@ -1,6 +1,11 @@
 /* Gemeinsame Server-Komponente (shared/servers.js) – von popup.html und
    filemanager.html geladen, nutzt die echten Ark-Design-Tokens aus
-   assets/index.css für Konsistenz mit dem restlichen reMarkable-Design. */
+   assets/index.css für Konsistenz mit dem restlichen reMarkable-Design.
+
+   Der Reload-Knopf sitzt in der Kopfzeile ganz links und ist nur etwas
+   (ca. 10 %) größer als die Status-Icons der Serverzeilen; sein Mittelpunkt
+   liegt exakt über der Spalte der Status-Icons (Zeilen-Polsterung 6px,
+   Icon 1.2rem, Mittelpunkt 6px + 0.6rem). */
 .rmx-srv-head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; margin-bottom: 4px;
@@ -10,8 +15,9 @@
 .rmx-srv-reload {
   border: 0; background: var(--ark-interaction-tertiary-neutral-default);
   color: var(--ark-interaction-tertiary-neutral-foreground);
-  width: 1.5rem; height: 1.5rem; border-radius: 4999.5rem; cursor: pointer; font-size: .8125rem;
+  width: 1.32rem; height: 1.32rem; border-radius: 4999.5rem; cursor: pointer; font-size: .75rem;
   display: flex; align-items: center; justify-content: center; flex: none; line-height: 1;
+  margin-left: calc(6px - 0.06rem);  /* zentriert über den Status-Icons */
 }
 .rmx-srv-reload:hover { background: var(--ark-interaction-tertiary-neutral-hover); }
 .rmx-srv-reload.spinning { pointer-events: none; animation: rmx-srv-spin 0.9s linear infinite; }
@@ -26,6 +32,7 @@
 .rmx-srv-toggle.active { background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); }
 
 .rmx-srv-list { list-style: none; margin: 0 0 4px 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.rmx-srv-msg { font-family: reMarkableSansStatic; font-size: .8125rem; color: var(--ark-interaction-danger-default, #da0810); margin: 2px 0 4px; padding: 0 2px; overflow-wrap: anywhere; }
 .rmx-srv-empty { font-family: reMarkableSansStatic; font-size: .8125rem; color: var(--ark-text-muted); padding: 4px 2px; }
 
 .rmx-srv-row {
