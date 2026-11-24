@@ -7,14 +7,14 @@
  */
 (function () {
   'use strict';
-  var R = window.RMX;
-  var t = R.t;
-  var app = (R.app = {}); // shared with the feature modules (preview, import, tools)
+  const R = window.RMX;
+  const t = R.t;
+  const app = (R.app = {}); // shared with the feature modules (preview, import, tools)
 
   /* ================= helpers ================= */
 
-  var $ = function (sel, root) { return (root || document).querySelector(sel); };
-  var esc = function (s) {
+  const $ = function (sel, root) { return (root || document).querySelector(sel); };
+  const esc = function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
@@ -25,7 +25,7 @@
   }
 
   // Icons: Phosphor "regular" paths, the same set the original interface uses.
-  var PATH = {
+  const PATH = {
     folderFull: 'M216,72H131.31L104,44.69A15.88,15.88,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.41,15.41,0,0,0,39.39,216h177.5A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40Z',
     folderEmpty: 'M216,72H131.31L104,44.69A15.86,15.86,0,0,0,92.69,40H40A16,16,0,0,0,24,56V200.62A15.4,15.4,0,0,0,39.38,216H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72ZM40,56H92.69l16,16H40ZM216,200H40V88H216Z',
     notebook: 'M184,112a8,8,0,0,1-8,8H112a8,8,0,0,1,0-16h64A8,8,0,0,1,184,112Zm-8,24H112a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16Zm48-88V208a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32H208A16,16,0,0,1,224,48ZM48,208H72V48H48Zm160,0V48H88V208H208Z',
@@ -54,12 +54,12 @@
   };
   /* Stroke-Icons (Linienform, Phosphor-Stil): eigenes SVG pro Name,
      Groesse/Extra kommen wie bei den Pfad-Icons vom Aufruf. */
-  var STROKE_ICONS = {
+  const STROKE_ICONS = {
     funnelClear: '<line x1="62" y1="130" x2="178" y2="130"/><line x1="32" y1="84" x2="178" y2="84"/><line x1="98" y1="176" x2="144" y2="176"/><line x1="160" y1="164" x2="204" y2="208"/><line x1="204" y1="164" x2="160" y2="208"/>',
     calendarX: '<rect x="40" y="40" width="176" height="176" rx="8"/><line x1="176" y1="24" x2="176" y2="56"/><line x1="80" y1="24" x2="80" y2="56"/><line x1="40" y1="88" x2="216" y2="88"/><line x1="152" y1="128" x2="104" y2="176"/><line x1="152" y1="176" x2="104" y2="128"/>'
   };
   function icon(name, size, extra) {
-    var s = size || 24;
+    const s = size || 24;
     if (STROKE_ICONS[name]) {
       return '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (extra ? ' ' + extra : '') + '>' + STROKE_ICONS[name] + '</svg>';
     }
@@ -67,37 +67,37 @@
       (extra ? ' ' + extra : '') + '><path d="' + PATH[name] + '"/></svg>';
   }
 
-  var CHEV = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
-  var rtf = null;
+  const CHEV = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+  let rtf = null;
   try { rtf = new Intl.RelativeTimeFormat(R.lang, { numeric: 'auto' }); } catch (e) { /* old browser */ }
   function ago(value) {
-    var d = new Date(value);
+    const d = new Date(value);
     if (isNaN(d.getTime()) || !rtf) return '';
-    var m = Math.floor(Math.max(0, Date.now() - d.getTime()) / 60000);
+    const m = Math.floor(Math.max(0, Date.now() - d.getTime()) / 60000);
     if (m < 1) return t('justNow');
     if (m < 60) return rtf.format(-m, 'minute');
-    var h = Math.floor(m / 60);
+    const h = Math.floor(m / 60);
     if (h < 48) return rtf.format(-h, 'hour');
-    var days = Math.floor(h / 24);
+    const days = Math.floor(h / 24);
     if (days < 60) return rtf.format(-days, 'day');
-    var mo = Math.floor(days / 30);
+    const mo = Math.floor(days / 30);
     if (mo < 24) return rtf.format(-mo, 'month');
     return rtf.format(-Math.floor(days / 365), 'year');
   }
   function typeLabel(it) {
     if (it.Type === 'CollectionType') return t('typeFolder');
-    var ft = String(it.fileType || 'notebook').toLowerCase();
+    const ft = String(it.fileType || 'notebook').toLowerCase();
     if (ft === 'notebook' || ft === '') return t('typeNotebook');
     return ft.toUpperCase();
   }
   function today() {
-    var d = new Date();
-    var p = function (n) { return String(n).padStart(2, '0'); };
+    const d = new Date();
+    const p = function (n) { return String(n).padStart(2, '0'); };
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
   }
   function saveBlob(blob, filename) {
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -106,7 +106,7 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 120000);
   }
   function toast(msg, isError) {
-    var el = document.createElement('div');
+    const el = document.createElement('div');
     el.className = 'rmx-toast responsive-body-sm' + (isError ? ' rmx-toast--error' : '');
     el.textContent = msg;
     $('#toasts').appendChild(el);
@@ -114,15 +114,15 @@
   }
 
   /* Dateinamen-Helfer liegen gemeinsam in shared/filename.js (auch vom Popup genutzt) */
-  var ymd = RMXShared.ymd;
-  var asciiName = RMXShared.asciiName;
+  const ymd = RMXShared.ymd;
+  const asciiName = RMXShared.asciiName;
   function norm(x) {
     return String(x == null ? '' : x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 
   /* ================= state / model ================= */
 
-  var state = {
+  const state = {
     items: new Map(),       // id -> entry
     kids: new Map(),        // parent id ('root' for top level) -> [child ids]
     loaded: new Set(),      // folder ids whose entries are known ('root' included)
@@ -144,8 +144,8 @@
   };
   R.state = state; // handy for debugging
 
-  var isFolder = function (it) { return it && it.Type === 'CollectionType'; };
-  var pk = function (it) { return it.Parent === '' || it.Parent == null ? 'root' : it.Parent; };
+  const isFolder = function (it) { return it && it.Type === 'CollectionType'; };
+  const pk = function (it) { return it.Parent === '' || it.Parent == null ? 'root' : it.Parent; };
   function children(id) {
     return (state.kids.get(id) || []).map(function (c) { return state.items.get(c); }).filter(Boolean);
   }
@@ -154,8 +154,8 @@
   }
   function sortedFolders(list) { return list.filter(isFolder).sort(nameCmp); }
   function sortedDocs(list) {
-    var docs = list.filter(function (i) { return !isFolder(i); });
-    var cmp;
+    const docs = list.filter(function (i) { return !isFolder(i); });
+    let cmp;
     if (state.sortKey === 'visibleName') cmp = nameCmp;
     else if (state.sortKey === 'fileType') cmp = function (a, b) { return String(a.fileType || '').localeCompare(String(b.fileType || '')) || nameCmp(a, b); };
     else cmp = function (a, b) { return new Date(b.ModifiedClient) - new Date(a.ModifiedClient); }; // newest first
@@ -166,31 +166,31 @@
 
   /** Leaves under a node: documents and empty folders. Only what is already loaded. */
   function leaves(id) {
-    var it = id === 'root' ? null : state.items.get(id);
+    const it = id === 'root' ? null : state.items.get(id);
     if (it && !isFolder(it)) return [id];
     if (!state.loaded.has(id)) return [];
-    var kids = state.kids.get(id) || [];
+    const kids = state.kids.get(id) || [];
     if (!kids.length) return id === 'root' ? [] : [id];
-    var out = [];
+    const out = [];
     kids.forEach(function (k) { out.push.apply(out, leaves(k)); });
     return out;
   }
-  var statCache = new Map();
+  let statCache = new Map();
   /** {total, sel, ready, fav} for a node, memoised per render */
   function stat(id) {
-    var c = statCache.get(id);
+    const c = statCache.get(id);
     if (c) return c;
-    var it = id === 'root' ? null : state.items.get(id);
-    var s;
+    const it = id === 'root' ? null : state.items.get(id);
+    let s;
     if (it && !isFolder(it)) s = { total: 1, sel: state.selected.has(id) ? 1 : 0, ready: true, fav: it.Bookmarked ? 1 : 0 };
     else if (!state.loaded.has(id)) s = { total: 0, sel: 0, ready: false, fav: 0 };
     else {
-      var kids = state.kids.get(id) || [];
+      const kids = state.kids.get(id) || [];
       if (!kids.length) s = id === 'root' ? { total: 0, sel: 0, ready: true, fav: 0 } : { total: 1, sel: state.selected.has(id) ? 1 : 0, ready: true, fav: 0 };
       else {
         s = { total: 0, sel: 0, ready: true, fav: 0 };
-        for (var i = 0; i < kids.length; i++) {
-          var k = stat(kids[i]);
+        for (let i = 0; i < kids.length; i++) {
+          const k = stat(kids[i]);
           s.total += k.total; s.sel += k.sel; s.fav += k.fav;
           if (!k.ready) s.ready = false;
         }
@@ -200,10 +200,10 @@
     return s;
   }
   function chainOf(id) {
-    var chain = [];
-    var cur = id;
+    const chain = [];
+    let cur = id;
     while (cur && cur !== 'root' && state.items.has(cur)) {
-      var it = state.items.get(cur);
+      const it = state.items.get(cur);
       chain.unshift(it);
       cur = pk(it);
     }
@@ -216,8 +216,8 @@
   /* ================= loading ================= */
 
   function ingest(folderId, list) {
-    var key = folderId || 'root';
-    var ids = [];
+    const key = folderId || 'root';
+    const ids = [];
     list.forEach(function (it) {
       if (!it || !it.ID) return;
       state.items.set(it.ID, it);
@@ -238,15 +238,15 @@
   }
   state.crawlSeen = new Set();
 
-  var renderTimer = null;
+  let renderTimer = null;
   function renderSoon() {
     if (renderTimer) return;
     renderTimer = setTimeout(function () { renderTimer = null; render(); }, 350);
   }
 
-  var crawlRun = 0;
+  let crawlRun = 0;
   async function crawl() {
-    var run = ++crawlRun;
+    const run = ++crawlRun;
     state.items = new Map(); state.kids = new Map(); state.loaded = new Set();
     state.crawlSeen = new Set(['root']);
     state.pending = ['root'];
@@ -254,7 +254,7 @@
     state.crawling = true; state.connection = true;
     render();
     while (state.pending.length && run === crawlRun) {
-      var id = state.pending.shift();
+      const id = state.pending.shift();
       try {
         ingest(id, await R.api.listFolder(id));
       } catch (e) {
@@ -281,7 +281,7 @@
     render();
   }
   function want(id) {
-    var i = state.pending.indexOf(id);
+    const i = state.pending.indexOf(id);
     if (i > 0) { state.pending.splice(i, 1); state.pending.unshift(id); }
   }
   async function reloadFolder(id) {
@@ -293,7 +293,7 @@
   /* ================= routing ================= */
 
   function readRoute() {
-    var m = /^#\/folder\/(.+)$/.exec(location.hash);
+    const m = /^#\/folder\/(.+)$/.exec(location.hash);
     return m ? decodeURIComponent(m[1]) : 'root';
   }
   function navigate(id) {
@@ -311,11 +311,11 @@
   /* ================= selection ================= */
 
   function toggleSelect(id) {
-    var it = state.items.get(id);
+    const it = state.items.get(id);
     if (!it) return;
     if (isFolder(it)) {
-      var lv = leaves(id);
-      var all = lv.length > 0 && lv.every(function (x) { return state.selected.has(x); });
+      const lv = leaves(id);
+      const all = lv.length > 0 && lv.every(function (x) { return state.selected.has(x); });
       lv.forEach(function (x) { if (all) state.selected.delete(x); else state.selected.add(x); });
     } else if (state.selected.has(id)) state.selected.delete(id);
     else state.selected.add(id);
@@ -323,31 +323,31 @@
   }
   /** Updates checkboxes, row marks, counters in place instead of re-rendering the whole list. */
   function refreshSelectionUI() {
-    var active = document.activeElement;
-    var focusKey = active && active.dataset ? active.dataset.key : null;
+    const active = document.activeElement;
+    const focusKey = active && active.dataset ? active.dataset.key : null;
     statCache = new Map();
     document.querySelectorAll('#content [data-chk]').forEach(function (c) {
-      var st = stat(c.getAttribute('data-chk'));
-      var checked = st.total > 0 && st.sel === st.total;
+      const st = stat(c.getAttribute('data-chk'));
+      const checked = st.total > 0 && st.sel === st.total;
       if (c.checked !== checked) c.checked = checked;
       c.indeterminate = st.sel > 0 && st.sel < st.total;
-      var row = c.closest('tr[data-row]') || c.closest('.rmx-tile');
+      const row = c.closest('tr[data-row]') || c.closest('.rmx-tile');
       if (row) row.setAttribute('data-selected', String(checked));
     });
     renderActions();
     renderToolbar();
-    if (focusKey) { var again = document.querySelector('[data-key="' + focusKey.replace(/"/g, '\\"') + '"]'); if (again && again !== active) again.focus({ preventScroll: true }); }
+    if (focusKey) { const again = document.querySelector('[data-key="' + focusKey.replace(/"/g, '\\"') + '"]'); if (again && again !== active) again.focus({ preventScroll: true }); }
   }
   function selectedDocCount() {
-    var n = 0;
-    state.selected.forEach(function (id) { var it = state.items.get(id); if (it && !isFolder(it)) n++; });
+    let n = 0;
+    state.selected.forEach(function (id) { const it = state.items.get(id); if (it && !isFolder(it)) n++; });
     return n;
   }
 
   /* ================= rendering ================= */
 
   function renderFrame() {
-    var link = function (href, label) {
+    const link = function (href, label) {
       return '<a href="' + href + '" target="_blank" rel="external noopener" class="ark-link"><span class="responsive-body-sm">' + esc(label) + '</span></a>';
     };
     $('#langsel').innerHTML = '<div class="ark-select rmx-lang"><select id="lang-select" aria-label="Language" title="Language">' +
@@ -358,12 +358,12 @@
     document.documentElement.lang = R.lang;
   }
 
-  var short = function (n) { n = String(n); return n.length > 30 ? n.slice(0, 30) + '...' : n; };
+  const short = function (n) { n = String(n); return n.length > 30 ? n.slice(0, 30) + '...' : n; };
   function renderCrumbs() {
-    var chain = chainOf(state.folder);
-    var html = '<ol><li><a class="ark-link" href="#/"' + (chain.length ? '' : ' aria-current="page"') + '><p class="responsive-heading-sm" style="font-weight:400;margin:0">' + esc(t('myFiles')) + '</p></a></li>';
+    const chain = chainOf(state.folder);
+    let html = '<ol><li><a class="ark-link" href="#/"' + (chain.length ? '' : ' aria-current="page"') + '><p class="responsive-heading-sm" style="font-weight:400;margin:0">' + esc(t('myFiles')) + '</p></a></li>';
     chain.forEach(function (it, i) {
-      var last = i === chain.length - 1;
+      const last = i === chain.length - 1;
       html += '<li>' + icon('caret', 16) + '<a class="ark-link" href="#/folder/' + encodeURIComponent(it.ID) + '" title="' + esc(it.VissibleName) + '"' + (last ? ' aria-current="page"' : '') +
         '><p class="responsive-heading-sm" style="font-weight:400;margin:0">' + esc(short(it.VissibleName)) + '</p></a></li>';
     });
@@ -376,8 +376,8 @@
     return '<p class="responsive-body-md"><span class="rmx-long">' + esc(t(k)) + '</span><span class="rmx-short">' + esc(t(k + 'Short')) + '</span></p>';
   }
   function renderActions() {
-    var n = selectedDocCount();
-    var busy = state.crawling || !state.connection;
+    const n = selectedDocCount();
+    const busy = state.crawling || !state.connection;
     $('#actions').innerHTML =
       '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-large" data-act="import" data-key="act:import">' +
       icon('importIcon') + label('import') + '</button>' +
@@ -387,7 +387,7 @@
   }
 
   function renderBanner() {
-    var el = $('#banner');
+    const el = $('#banner');
     if (!state.connection) {
       el.innerHTML = '<div class="rmx-banner rmx-banner--error"><span class="grow responsive-body-sm">' + esc(t('noConnection')) + '</span>' +
         '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="refresh">' + esc(t('refresh')) + '</button></div>';
@@ -395,15 +395,15 @@
   }
 
   function renderToolbar() {
-    var n = state.selected.size;
-    var nDocs = selectedDocCount();
-    var sortLabels = { lastModified: t('sortLastUpdated'), visibleName: t('sortAlpha'), fileType: t('sortType') };
-    var pool = curResults ? curResults.filter(function (x) { return !isFolder(x); }).map(function (x) { return x.ID; }) : leaves(state.folder);
-    var allSelected = !pool.length || pool.every(function (x) { return state.selected.has(x); });
-    var btn = function (act, label, disabled, ico, ghost) {
+    const n = state.selected.size;
+    const nDocs = selectedDocCount();
+    const sortLabels = { lastModified: t('sortLastUpdated'), visibleName: t('sortAlpha'), fileType: t('sortType') };
+    const pool = curResults ? curResults.filter(function (x) { return !isFolder(x); }).map(function (x) { return x.ID; }) : leaves(state.folder);
+    const allSelected = !pool.length || pool.every(function (x) { return state.selected.has(x); });
+    const btn = function (act, label, disabled, ico, ghost) {
       return '<button type="button" class="ark-button ark-button--secondary ark-button-small" data-act="' + act + '" data-key="act:' + act + '"' + (disabled ? ' disabled' : '') + ' title="' + esc(label) + '" aria-label="' + esc(label) + '">' + icon(ico, 16, ghost ? 'class="rmx-ico--ghost"' : '') + '<p class="responsive-body-sm">' + esc(label) + '</p></button>';
     };
-    var html = curResults ? '<span class="rmx-resultcount responsive-body-md" aria-live="polite">' + esc(t('resultsCount', { n: curResults.length })) + '</span>' : '';
+    let html = curResults ? '<span class="rmx-resultcount responsive-body-md" aria-live="polite">' + esc(t('resultsCount', { n: curResults.length })) + '</span>' : '';
     html += '<div class="rmx-selbar">' + btn('select-all', t('selectAll'), allSelected, 'checks') + btn('clear', t('clearSelection'), !n, 'checks', true) + '</div>' +
       '<span class="spacer"></span><div class="rmx-viewbar">' +
       '<label class="rmx-choice rmx-thumbtoggle"><input type="checkbox" class="ark-input-checkbox" id="thumb-toggle" data-key="thumb:toggle"' + (state.thumbs ? ' checked' : '') + '><span class="txt"><span class="responsive-body-sm">' + esc(t('thumbnails')) + '</span></span></label>';
@@ -420,15 +420,15 @@
   }
 
   function checkboxHtml(id, name, st, key) {
-    var checked = st.total > 0 && st.sel === st.total;
-    var ind = st.sel > 0 && st.sel < st.total;
+    const checked = st.total > 0 && st.sel === st.total;
+    const ind = st.sel > 0 && st.sel < st.total;
     return '<input type="checkbox" class="ark-input-checkbox" data-chk="' + esc(id) + '" data-key="' + key + '"' +
       (checked ? ' checked' : '') + (ind ? ' data-ind="1"' : '') + (st.ready === false || st.total === 0 ? ' disabled' : '') +
       ' aria-label="' + esc(t('selectItem', { name: name })) + '">';
   }
   function docStat(id) { return { total: 1, sel: state.selected.has(id) ? 1 : 0, ready: true }; }
   function folderIcon(it) {
-    var empty = state.loaded.has(it.ID) && !(state.kids.get(it.ID) || []).length;
+    const empty = state.loaded.has(it.ID) && !(state.kids.get(it.ID) || []).length;
     return icon(empty ? 'folderEmpty' : 'folderFull', 24);
   }
   function docIcon(it) { return icon(String(it.fileType).toLowerCase() === 'pdf' ? 'pdf' : 'notebook', 24); }
@@ -443,23 +443,23 @@
     return String(name).replace(/\.(pdf|epub|rm(doc|code)?|notebook)$/i, '');
   }
   function nameCell(it, showPath) {
-    var doc = !isFolder(it);
-    var star = it.Bookmarked ? '<span class="rmx-star" title="' + esc(t('bookmarked')) + '">' + icon('starFill', 16) + '</span>' : '';
-    var title = doc ? stripExt(it.VissibleName) : it.VissibleName;
-    var pg = doc && it.CurrentPage > 0 ? '<span class="rmx-pg rmx-muted">' + esc(t('pageShort', { n: it.CurrentPage + 1 })) + '</span>' : '';
-    var date = doc ? '<span class="rmx-date rmx-muted">' + esc(ago(it.ModifiedClient)) + '</span>' : '';
+    const doc = !isFolder(it);
+    const star = it.Bookmarked ? '<span class="rmx-star" title="' + esc(t('bookmarked')) + '">' + icon('starFill', 16) + '</span>' : '';
+    const title = doc ? stripExt(it.VissibleName) : it.VissibleName;
+    const pg = doc && it.CurrentPage > 0 ? '<span class="rmx-pg rmx-muted">' + esc(t('pageShort', { n: it.CurrentPage + 1 })) + '</span>' : '';
+    const date = doc ? '<span class="rmx-date rmx-muted">' + esc(ago(it.ModifiedClient)) + '</span>' : '';
     return '<div class="nm"><p class="responsive-body-sm">' + esc(title) + '</p>' + star + '</div>' +
       (doc ? '<div class="rmx-meta">' + pg + date + '</div>' : '') +
       (showPath ? '<small class="rmx-path">' + esc(pathLabel(pk(it))) + '</small>' : '') +
       (doc ? '<div class="rmx-acts far">' + actBtns(it) + '</div>' : '');
   }
   function actBtns(it) {
-    var doc = !isFolder(it);
-    var id = esc(it.ID), nm = esc(stripExt(it.VissibleName));
-    var pill = function (fmt, label, title) {
+    const doc = !isFolder(it);
+    const id = esc(it.ID), nm = esc(stripExt(it.VissibleName));
+    const pill = function (fmt, label, title) {
       return '<button type="button" class="rmx-pill rmx-pill--' + fmt + '" data-dl="' + id + '" data-fmt="' + fmt + '" data-key="dl' + fmt + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon('importIcon', 16) + '<span>' + label + '</span></button>';
     };
-    var ib = function (attr, key, ico, title) {
+    const ib = function (attr, key, ico, title) {
       return '<button type="button" class="rmx-iconbtn" ' + attr + '="' + id + '" data-key="' + key + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon(ico, 22) + '</button>';
     };
     return (doc ? pill('pdf', 'PDF', t('downloadPdf')) + pill('rmdoc', 'RMDoc', t('downloadRmdoc')) : '') +
@@ -467,7 +467,7 @@
            : ib('data-info', 'info', 'infoIcon', t('info')));
   }
   function docRow(it, showPath) {
-    var st = docStat(it.ID);
+    const st = docStat(it.ID);
     return '<tr data-row="' + esc(it.ID) + '" data-selected="' + (st.sel === 1) + '">' +
       '<td class="c-side"><span class="c-side1"><span class="c-check">' + checkboxHtml(it.ID, it.VissibleName, st, 'chk:' + it.ID) + '</span><span class="c-icon">' + docIcon(it) + '</span></span><span class="c-type">' + (state.thumbs && app.thumbHtml ? app.thumbHtml(it) : '') + '</span></td>' +
       '<td class="c-main">' + nameCell(it, showPath) + '</td></tr>';
@@ -481,37 +481,37 @@
   /* ---------- search / filter ---------- */
 
   function typeKey(it) {
-    var ft = String(it.fileType || '').toLowerCase();
+    const ft = String(it.fileType || '').toLowerCase();
     return ft && ft !== 'notebook' ? ft : 'notebook';
   }
   function typeChecks(f) {
     return Object.keys(f.types || {}).filter(function (k) { return f.types[k]; });
   }
   function filterCount() {
-    var f = state.filter;
+    const f = state.filter;
     return typeChecks(f).length + (f.fav ? 1 : 0) + (f.from || f.to ? 1 : 0) + (f.folder !== 'all' ? 1 : 0);
   }
   function filterActive() { return !!state.filter.q.trim() || filterCount() > 0; }
   function resetFilter() {
     state.filter = { q: '', types: {}, fav: false, from: '', to: '', folder: 'all', sub: true };
-    var q = $('#f-q'); if (q) q.value = '';
+    const q = $('#f-q'); if (q) q.value = '';
     syncFilterFields();
   }
   function inScope(it) {
-    var f = state.filter;
+    const f = state.filter;
     if (f.folder === 'all') return true;
     if (!f.sub) return pk(it) === f.folder;
     return chainOf(it.ID).some(function (x) { return x.ID === f.folder && x.ID !== it.ID; });
   }
   function searchResults() {
-    var f = state.filter;
-    var nq = norm(f.q.trim());
-    var from = f.from ? new Date(f.from + 'T00:00:00') : null;
-    var to = f.to ? new Date(f.to + 'T23:59:59.999') : null;
-    var types = typeChecks(f);
-    var docOnly = !!(f.fav || f.from || f.to) || types.length > 0;
-    var folders = [];
-    var docs = [];
+    const f = state.filter;
+    const nq = norm(f.q.trim());
+    const from = f.from ? new Date(f.from + 'T00:00:00') : null;
+    const to = f.to ? new Date(f.to + 'T23:59:59.999') : null;
+    const types = typeChecks(f);
+    const docOnly = !!(f.fav || f.from || f.to) || types.length > 0;
+    const folders = [];
+    const docs = [];
     state.items.forEach(function (it) {
       if (isFolder(it)) {
         if (docOnly || !nq || (nq && (it._n || (it._n = norm(it.VissibleName))).indexOf(nq) < 0) || !inScope(it)) return;
@@ -522,7 +522,7 @@
       if (types.length && !f.types[typeKey(it)]) return;
       if (f.fav && !it.Bookmarked) return;
       if (from || to) {
-        var d = new Date(it.ModifiedClient);
+        const d = new Date(it.ModifiedClient);
         if (isNaN(d.getTime()) || (from && d < from) || (to && d > to)) return;
       }
       if (!inScope(it)) return;
@@ -530,18 +530,18 @@
     });
     return sortedFolders(folders).concat(sortedDocs(docs));
   }
-  var RESULT_CAP = 500;
-  var curResults = null;
+  const RESULT_CAP = 500;
+  let curResults = null;
   function crawlStatusHtml() {
     return '<div class="rmx-crawlstatus"><span class="rmx-spinner" style="margin:0"></span><span class="responsive-body-sm rmx-muted">' +
       esc(t('loadingStructure', { done: Math.min(state.crawlDone, state.crawlTotal), total: state.crawlTotal })) + '</span></div>';
   }
   function renderSearchView() {
-    var res = curResults || [];
+    const res = curResults || [];
     if (!res.length) {
       return state.crawling ? '' : '<p class="rmx-empty responsive-body-sm rmx-muted">' + esc(t('noResults')) + '</p>';
     }
-    var rows = res.slice(0, RESULT_CAP).map(function (it) {
+    const rows = res.slice(0, RESULT_CAP).map(function (it) {
       if (!isFolder(it)) return docRow(it, true);
       return '<tr class="is-folder" data-goto="' + esc(it.ID) + '"><td class="c-side"><span class="c-side1"><span class="c-icon">' + folderIcon(it) + '</span></span></td>' +
         '<td class="c-main">' + nameCell(it, true) + '</td></tr>';
@@ -550,13 +550,13 @@
       (res.length > RESULT_CAP ? '<p class="responsive-body-sm rmx-muted" style="margin-top:16px">' + esc(t('resultsLimited', { n: RESULT_CAP })) + '</p>' : '');
   }
 
-  var filterFolderSig = '';
+  let filterFolderSig = '';
   function buildFilterbar() {
-    var chev = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
-    var sel = function (id, label, opts) {
+    const chev = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 256 256" aria-hidden="true"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+    const sel = function (id, label, opts) {
       return '<label for="' + id + '" class="responsive-body-sm">' + esc(label) + '</label><div class="ark-select"><select id="' + id + '">' + opts + '</select>' + chev + '</div>';
     };
-    var chk = function (id, label) {
+    const chk = function (id, label) {
       return '<label class="rmx-choice"><input type="checkbox" class="ark-input-checkbox" id="' + id + '"><span class="txt"><span class="responsive-body-sm">' + esc(label) + '</span></span></label>';
     };
     $('#filterbar').innerHTML =
@@ -571,7 +571,7 @@
       '<div class="ark-field"><label for="f-from" class="responsive-body-sm">' + esc(t('fFrom')) + '</label><input id="f-from" type="date" class="ark-input"></div>' +
       '<div class="ark-field"><label for="f-to" class="responsive-body-sm">' + esc(t('fTo')) + '</label><input id="f-to" type="date" class="ark-input"></div>' +
       '<div class="rmx-presets">' + ['30', '14', '7'].map(function (p) {
-        var labl = t(p === '30' ? 'fPreset30' : p === '14' ? 'fPreset14' : 'fPreset7');
+        const labl = t(p === '30' ? 'fPreset30' : p === '14' ? 'fPreset14' : 'fPreset7');
         return '<button type="button" class="ark-button ark-button--secondary ark-button-small rmx-preset" data-preset="' + p + '" title="' + esc(labl) + '" aria-label="' + esc(labl) + '">' +
           '<span class="rmx-calpreset">' + icon('calendarBlank', 18) +
           '<svg class="rmx-ccw" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 256 256" aria-hidden="true"><path d="M224,128a96,96,0,0,1-94.71,96H128A95.38,95.38,0,0,1,62.1,197.8a8,8,0,0,1,11-11.63A80,80,0,1,0,71.43,71.39a3.07,3.07,0,0,1-.26.25L60.63,81.29l17,17A8,8,0,0,1,72,112H24a8,8,0,0,1-8-8V56A8,8,0,0,1,29.66,50.3L49.31,70,60.25,60A96,96,0,0,1,224,128Z"/></svg></span>' +
@@ -581,38 +581,38 @@
       '</div></div>';
   }
   function syncFilterFields() {
-    var f = state.filter;
-    var set = function (id, v) { var el = $(id); if (el) el.value = v; };
-    typeChecks(f).forEach(function (k) { var c = $('#f-t-' + k); if (c) c.checked = true; }); ['#f-t-pdf', '#f-t-epub', '#f-t-notebook'].forEach(function (id) { var c = $(id); if (c && !f.types[id.slice(5)]) c.checked = false; }); set('#f-from', f.from); set('#f-to', f.to);
-    var fav = $('#f-fav'); if (fav) fav.checked = f.fav;
-    var sub = $('#f-sub'); if (sub) sub.checked = f.sub;
-    var fo = $('#f-folder'); if (fo) fo.value = f.folder;
+    const f = state.filter;
+    const set = function (id, v) { const el = $(id); if (el) el.value = v; };
+    typeChecks(f).forEach(function (k) { const c = $('#f-t-' + k); if (c) c.checked = true; }); ['#f-t-pdf', '#f-t-epub', '#f-t-notebook'].forEach(function (id) { const c = $(id); if (c && !f.types[id.slice(5)]) c.checked = false; }); set('#f-from', f.from); set('#f-to', f.to);
+    const fav = $('#f-fav'); if (fav) fav.checked = f.fav;
+    const sub = $('#f-sub'); if (sub) sub.checked = f.sub;
+    const fo = $('#f-folder'); if (fo) fo.value = f.folder;
   }
   function updateFilterbar() {
-    var sel = $('#f-folder');
+    const sel = $('#f-folder');
     if (sel && state.filterOpen) {
-      var ids = [];
+      const ids = [];
       state.items.forEach(function (it) { if (isFolder(it)) ids.push(it.ID); });
-      var sig = ids.length + ':' + state.ver + ':' + R.lang;
+      const sig = ids.length + ':' + state.ver + ':' + R.lang;
       if (sig !== filterFolderSig) {
         filterFolderSig = sig;
-        var opts = [{ id: 'all', label: t('fFolderAll') }].concat(ids.map(function (id) { return { id: id, label: pathLabel(id) }; })
+        const opts = [{ id: 'all', label: t('fFolderAll') }].concat(ids.map(function (id) { return { id: id, label: pathLabel(id) }; })
           .sort(function (a, b) { return a.label.localeCompare(b.label, R.lang, { numeric: true }); }));
         sel.innerHTML = opts.map(function (o) { return '<option value="' + esc(o.id) + '">' + esc(o.label) + '</option>'; }).join('');
         sel.value = state.filter.folder;
       }
     }
-    var n = filterCount();
-    var badge = $('#f-badge');
+    const n = filterCount();
+    const badge = $('#f-badge');
     if (badge) { badge.hidden = !n; badge.textContent = n; }
-    var reset = $('#f-reset'); if (reset) reset.hidden = !filterActive();
-    var panel = $('#f-panel'); if (panel) panel.hidden = !state.filterOpen;
-    var tg = $('#f-toggle'); if (tg) tg.setAttribute('aria-expanded', String(state.filterOpen));
+    const reset = $('#f-reset'); if (reset) reset.hidden = !filterActive();
+    const panel = $('#f-panel'); if (panel) panel.hidden = !state.filterOpen;
+    const tg = $('#f-toggle'); if (tg) tg.setAttribute('aria-expanded', String(state.filterOpen));
   }
-  var qTimer = null;
+  let qTimer = null;
   function initFilterbar() {
     buildFilterbar();
-    var bar = $('#filterbar');
+    const bar = $('#filterbar');
     bar.addEventListener('input', function (e) {
       if (e.target.id !== 'f-q') return;
       state.filter.q = e.target.value;
@@ -620,7 +620,7 @@
       qTimer = setTimeout(render, 160);
     });
     bar.addEventListener('change', function (e) {
-      var f = state.filter;
+      const f = state.filter;
       switch (e.target.id) {
         case 'f-t-pdf': f.types.pdf = e.target.checked; break;
         case 'f-t-epub': f.types.epub = e.target.checked; break;
@@ -635,15 +635,15 @@
       render();
     });
     bar.addEventListener('click', function (e) {
-      var p = e.target.closest('[data-preset]');
+      const p = e.target.closest('[data-preset]');
       if (p) {
-        var d = new Date();
-        var k = p.getAttribute('data-preset');
+        const d = new Date();
+        const k = p.getAttribute('data-preset');
         d.setDate(d.getDate() - parseInt(k, 10));
         state.filter.from = ymd(d); state.filter.to = ymd(new Date());
         syncFilterFields(); render();
       }
-      var r = e.target.closest('[data-preset-reset]');
+      const r = e.target.closest('[data-preset-reset]');
       if (r) {
         state.filter.from = ''; state.filter.to = '';
         syncFilterFields(); render();
@@ -656,26 +656,26 @@
     return '<div class="rmx-more"><button type="button" class="ark-button ark-button--secondary ark-button-medium" data-act="more"><p class="responsive-body-md">' + esc(t('showMore', { n: total - state.rowLimit })) + '</p></button></div>';
   }
   function renderFolderView() {
-    var id = state.folder;
+    const id = state.folder;
     if (id !== 'root' && !state.items.has(id)) {
       return state.crawling
         ? '<div class="rmx-empty"><span class="rmx-spinner" style="margin:0 auto"></span></div>'
         : '';
     }
     if (!state.loaded.has(id)) return '<div class="rmx-empty"><span class="rmx-spinner" style="margin:0 auto 12px"></span><p class="responsive-body-sm rmx-muted">' + esc(t('loadingFolder')) + '</p></div>';
-    var kids = children(id);
-    var folders = sortedFolders(kids);
-    var all = sortedDocs(kids);
-    var favs = all.filter(function (d) { return d.Bookmarked; });
-    var docs = all.filter(function (d) { return !d.Bookmarked; });
+    const kids = children(id);
+    const folders = sortedFolders(kids);
+    const all = sortedDocs(kids);
+    const favs = all.filter(function (d) { return d.Bookmarked; });
+    const docs = all.filter(function (d) { return !d.Bookmarked; });
     if (!folders.length && !all.length) {
       return '<p class="rmx-empty responsive-body-sm rmx-muted">' + esc(id === 'root' ? t('emptyLibrary') : t('emptyFolder')) + '</p>';
     }
-    var html = favoritesHtml(favs);
+    let html = favoritesHtml(favs);
     if (folders.length) {
       html += '<div class="rmx-tiles">' + folders.map(function (f) {
-        var st = stat(f.ID);
-        var sel = st.total > 0 && st.sel === st.total;
+        const st = stat(f.ID);
+        const sel = st.total > 0 && st.sel === st.total;
         return '<div class="rmx-tile" data-selected="' + sel + '"><a class="rmx-tile__link ark-link" href="#/folder/' + encodeURIComponent(f.ID) + '" data-key="tile:' + esc(f.ID) + '">' +
           icon(state.loaded.has(f.ID) && !(state.kids.get(f.ID) || []).length ? 'folderEmpty' : 'folderFull', 32) +
           '<p class="responsive-body-sm">' + esc(f.VissibleName) + '</p>' + (st.fav ? '<span class="rmx-star" title="' + esc(t('bookmarked')) + '">' + icon('starFill', 16) + '</span>' : '') + '</a>' +
@@ -691,8 +691,8 @@
   function render() {
     statCache = new Map();
     curResults = filterActive() ? searchResults() : null;
-    var active = document.activeElement;
-    var focusKey = active && active.dataset ? active.dataset.key : null;
+    const active = document.activeElement;
+    const focusKey = active && active.dataset ? active.dataset.key : null;
     renderCrumbs();
     renderActions();
     renderBanner();
@@ -704,21 +704,21 @@
     document.querySelectorAll('input[data-ind]').forEach(function (c) { c.indeterminate = true; });
     document.documentElement.classList.toggle('rmx-thumbs-on', state.thumbs);
     if (focusKey) {
-      var again = document.querySelector('[data-key="' + focusKey.replace(/"/g, '\\"') + '"]');
+      const again = document.querySelector('[data-key="' + focusKey.replace(/"/g, '\\"') + '"]');
       if (again && again !== active) again.focus({ preventScroll: true });
     }
     if (state.sortOpen) {
-      var first = document.querySelector('.rmx-menu [aria-checked="true"]') || document.querySelector('.rmx-menu button');
+      const first = document.querySelector('.rmx-menu [aria-checked="true"]') || document.querySelector('.rmx-menu button');
       if (first && !(active && active.closest && active.closest('.rmx-menu'))) first.focus();
     }
   }
 
   /* ================= events ================= */
 
-  var folderIdsCache = { ver: -1, ids: [] };
+  let folderIdsCache = { ver: -1, ids: [] };
   function allFolderIds() {
     if (folderIdsCache.ver !== state.ver) {
-      var out = [];
+      const out = [];
       state.items.forEach(function (it) { if (isFolder(it)) out.push(it.ID); });
       folderIdsCache = { ver: state.ver, ids: out };
     }
@@ -726,27 +726,27 @@
   }
 
   function onClick(e) {
-    var target = e.target;
-    var chk = target.closest('[data-chk]');
+    const target = e.target;
+    const chk = target.closest('[data-chk]');
     if (chk) { e.stopPropagation(); toggleSelect(chk.getAttribute('data-chk')); return; }
-    var pvBtn = target.closest('[data-pv]');
+    const pvBtn = target.closest('[data-pv]');
     if (pvBtn) { e.stopPropagation(); if (app.previewDocument) app.previewDocument(pvBtn.getAttribute('data-pv')); return; }
-    var infoBtn = target.closest('[data-info]');
+    const infoBtn = target.closest('[data-info]');
     if (infoBtn) { e.stopPropagation(); if (app.openDetails) app.openDetails(infoBtn.getAttribute('data-info')); return; }
-    var dlBtn = target.closest('[data-dl]');
+    const dlBtn = target.closest('[data-dl]');
     if (dlBtn) { e.stopPropagation(); if (app.downloadDocument) app.downloadDocument(dlBtn.getAttribute('data-dl'), dlBtn, dlBtn.getAttribute('data-fmt')); return; }
-    var goRow = target.closest('tr[data-goto]');
-    if (goRow && !target.closest('button')) { var gid = goRow.getAttribute('data-goto'); resetFilter(); if (readRoute() === gid) render(); else navigate(gid); return; }
-    var sortBtn = target.closest('[data-sort]');
+    const goRow = target.closest('tr[data-goto]');
+    if (goRow && !target.closest('button')) { const gid = goRow.getAttribute('data-goto'); resetFilter(); if (readRoute() === gid) render(); else navigate(gid); return; }
+    const sortBtn = target.closest('[data-sort]');
     if (sortBtn) {
-      var k = sortBtn.getAttribute('data-sort');
+      const k = sortBtn.getAttribute('data-sort');
       if (k !== state.sortKey) { state.sortKey = k; state.sortReverse = false; }
       state.sortOpen = false;
       render();
-      var again = $('[data-key="act:sort"]'); if (again) again.focus();
+      const again = $('[data-key="act:sort"]'); if (again) again.focus();
       return;
     }
-    var act = target.closest('[data-act]');
+    const act = target.closest('[data-act]');
     if (act) {
       switch (act.getAttribute('data-act')) {
         case 'import': if (app.openImport) app.openImport([]); break;
@@ -765,10 +765,10 @@
       }
       return;
     }
-    var row = target.closest('tr[data-row]');
+    const row = target.closest('tr[data-row]');
     if (row && !target.closest('a')) {
-      var rid = row.getAttribute('data-row');
-      var it = state.items.get(rid);
+      const rid = row.getAttribute('data-row');
+      const it = state.items.get(rid);
       if (!isFolder(it)) toggleSelect(rid);
       return;
     }
@@ -777,12 +777,12 @@
   function onKey(e) {
     if (e.key === 'Escape' && state.sortOpen) {
       state.sortOpen = false; render();
-      var b = $('[data-key="act:sort"]'); if (b) b.focus();
+      const b = $('[data-key="act:sort"]'); if (b) b.focus();
     }
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && e.target.closest && e.target.closest('.rmx-menu')) {
       e.preventDefault();
-      var items = Array.from(document.querySelectorAll('.rmx-menu button'));
-      var i = items.indexOf(e.target);
+      const items = Array.from(document.querySelectorAll('.rmx-menu button'));
+      const i = items.indexOf(e.target);
       items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
     }
   }
@@ -790,13 +790,13 @@
     if (e.target.id === 'lang-select') {
       R.setLang(e.target.value);
       try { rtf = new Intl.RelativeTimeFormat(R.lang, { numeric: 'auto' }); } catch (err) { /* old browser */ }
-      var q = state.filter.q;
+      const q = state.filter.q;
       renderFrame(); buildFilterbar(); $('#f-q').value = q; syncFilterFields(); filterFolderSig = ''; render();
       if (R.serversRedraw) R.serversRedraw();
     }
     else if (e.target.id === 'thumb-toggle') { state.thumbs = e.target.checked; store('rmx.thumbs', state.thumbs ? '1' : '0'); render(); }
     else if (e.target.id === 'import-input') {
-      var files = Array.from(e.target.files || []);
+      const files = Array.from(e.target.files || []);
       e.target.value = '';
       if (files.length && app.openImport) app.openImport(files);
     }
@@ -804,7 +804,7 @@
 
   /* ================= export ================= */
 
-  var ex = { running: false, abort: null, blob: null, filename: '' };
+  let ex = { running: false, abort: null, blob: null, filename: '' };
 
   function scopeLeaves(scope) {
     if (scope === 'selection') return Array.from(state.selected).filter(function (id) { return state.items.has(id); });
@@ -817,25 +817,25 @@
 
   /** Unique, sanitised path segments per folder (stable across partial exports). */
   function baseOf(it, naming) {
-    var s = it.VissibleName;
+    let s = it.VissibleName;
     if (!isFolder(it) && naming && naming.prefix) s = ymd(it.ModifiedClient) + ' ' + s; // modification date before the title
     return naming && naming.ascii ? asciiName(s) : s;
   }
   function currentNaming() {
-    var d = $('#ex-date');
+    const d = $('#ex-date');
     return d ? { prefix: d.checked, ascii: $('#ex-ascii').checked } : { prefix: false, ascii: false };
   }
   function nameResolver(fmt, naming) {
-    var cache = new Map();
+    const cache = new Map();
     function names(parent) {
       if (cache.has(parent)) return cache.get(parent);
-      var used = new Set();
-      var map = new Map();
+      const used = new Set();
+      const map = new Map();
       children(parent).slice().sort(function (a, b) { return nameCmp(a, b) || (a.ID < b.ID ? -1 : 1); }).forEach(function (it) {
-        var base = R.archive.sanitizeSegment(baseOf(it, naming));
-        var doc = !isFolder(it);
-        var cand = doc ? base + '.' + fmt : base;
-        for (var n = 2; used.has(cand.toLowerCase()); n++) cand = doc ? base + ' (' + n + ').' + fmt : base + ' (' + n + ')';
+        const base = R.archive.sanitizeSegment(baseOf(it, naming));
+        const doc = !isFolder(it);
+        let cand = doc ? base + '.' + fmt : base;
+        for (let n = 2; used.has(cand.toLowerCase()); n++) cand = doc ? base + ' (' + n + ').' + fmt : base + ' (' + n + ')';
         used.add(cand.toLowerCase());
         map.set(it.ID, cand);
       });
@@ -850,36 +850,36 @@
   }
 
   function makePlan(leafIds, fmt, keep, naming) {
-    var res = nameResolver(fmt, naming);
-    var docs = [];
-    var dirs = new Map();
-    var flat = new Set();
-    var addDirs = function (chain, segs, count) {
-      for (var i = 0; i < count; i++) {
-        var p = segs.slice(0, i + 1).join('/');
+    const res = nameResolver(fmt, naming);
+    const docs = [];
+    const dirs = new Map();
+    const flat = new Set();
+    const addDirs = function (chain, segs, count) {
+      for (let i = 0; i < count; i++) {
+        const p = segs.slice(0, i + 1).join('/');
         if (!dirs.has(p)) dirs.set(p, new Date(chain[i].ModifiedClient));
       }
     };
     leafIds.forEach(function (id) {
-      var it = state.items.get(id);
+      const it = state.items.get(id);
       if (!it) return;
-      var chain = chainOf(id);
-      var segs = res.segs(id);
+      const chain = chainOf(id);
+      const segs = res.segs(id);
       if (isFolder(it)) { if (keep) addDirs(chain, segs, segs.length); return; }
-      var path;
+      let path;
       if (keep) {
         path = segs.join('/');
         addDirs(chain, segs, segs.length - 1);
       } else {
-        var base = R.archive.sanitizeSegment(baseOf(it, naming));
+        const base = R.archive.sanitizeSegment(baseOf(it, naming));
         path = base + '.' + fmt;
-        for (var n = 2; flat.has(path.toLowerCase()); n++) path = base + ' (' + n + ').' + fmt;
+        for (let n = 2; flat.has(path.toLowerCase()); n++) path = base + ' (' + n + ').' + fmt;
         flat.add(path.toLowerCase());
       }
       docs.push({ id: id, path: path, label: it.VissibleName, mtime: new Date(it.ModifiedClient) });
     });
     docs.sort(function (a, b) { return a.path.localeCompare(b.path, R.lang, { numeric: true }); });
-    var dirList = Array.from(dirs.keys()).sort().map(function (p) { return { path: p, mtime: dirs.get(p) }; });
+    const dirList = Array.from(dirs.keys()).sort().map(function (p) { return { path: p, mtime: dirs.get(p) }; });
     return { docs: docs, dirs: dirList };
   }
 
@@ -890,10 +890,10 @@
   }
 
   function openExport() {
-    var dlg = $('#dlg-export');
-    var hasSel = state.selected.size > 0;
-    var inFolder = state.folder !== 'root' && state.items.has(state.folder);
-    var defaultScope = hasSel ? 'selection' : (inFolder ? 'folder' : 'all');
+    const dlg = $('#dlg-export');
+    const hasSel = state.selected.size > 0;
+    const inFolder = state.folder !== 'root' && state.items.has(state.folder);
+    const defaultScope = hasSel ? 'selection' : (inFolder ? 'folder' : 'all');
     dlg.innerHTML =
       '<form method="dialog" id="ex-form" novalidate>' +
       '<div class="rmx-dialog__head"><h2 id="dlg-export-title" class="responsive-heading-sm" style="font-weight:400">' + esc(t('exportTitle')) + '</h2>' +
@@ -934,7 +934,7 @@
   }
 
   function exVal(name) {
-    var el = $('#dlg-export input[name="' + name + '"]:checked');
+    const el = $('#dlg-export input[name="' + name + '"]:checked');
     return el ? el.value : null;
   }
   /** The button always says what you get: PDF, RMDoc or archive (ZIP / TAR.GZ). */
@@ -943,40 +943,40 @@
     return t('exportAsArchive', { type: arch === 'zip' ? 'ZIP' : 'TAR.GZ' });
   }
   function refreshExport() {
-    var scope = exVal('scope');
-    var fmt = exVal('format');
-    var keep = $('#ex-keep').checked;
-    var info = {};
+    let scope = exVal('scope');
+    const fmt = exVal('format');
+    const keep = $('#ex-keep').checked;
+    const info = {};
     ['selection', 'folder', 'all'].forEach(function (s) {
-      var ids = scopeLeaves(s);
+      const ids = scopeLeaves(s);
       info[s] = { ids: ids, docs: countDocs(ids) };
-      var radio = $('#dlg-export input[name="scope"][value="' + s + '"]');
+      const radio = $('#dlg-export input[name="scope"][value="' + s + '"]');
       if (!radio) return;
-      var disabled = s === 'selection' ? info[s].docs + 0 === 0 && ids.length === 0 : ids.length === 0;
+      const disabled = s === 'selection' ? info[s].docs + 0 === 0 && ids.length === 0 : ids.length === 0;
       radio.disabled = disabled;
       radio.closest('.rmx-choice').setAttribute('data-disabled', String(disabled));
     });
     if (!$('#dlg-export input[name="scope"]:checked') || $('#dlg-export input[name="scope"]:checked').disabled) {
-      var firstOk = Array.from(document.querySelectorAll('#dlg-export input[name="scope"]')).find(function (r) { return !r.disabled; });
+      const firstOk = Array.from(document.querySelectorAll('#dlg-export input[name="scope"]')).find(function (r) { return !r.disabled; });
       if (firstOk) { firstOk.checked = true; scope = firstOk.value; } else scope = null;
     }
-    var naming = currentNaming();
-    var plan = scope ? makePlan(info[scope].ids, fmt, keep, naming) : { docs: [], dirs: [] };
-    var sample = $('#ex-sample');
+    const naming = currentNaming();
+    const plan = scope ? makePlan(info[scope].ids, fmt, keep, naming) : { docs: [], dirs: [] };
+    const sample = $('#ex-sample');
     if (sample) sample.textContent = plan.docs.length ? plan.docs[0].path : '';
-    var onlyIds = scope ? info[scope].ids : [];
-    var singleOk = onlyIds.length === 1 && !isFolder(state.items.get(onlyIds[0])); // exactly one document, no (empty) folder
-    var single = $('#dlg-export input[name="archive"][value="single"]');
+    const onlyIds = scope ? info[scope].ids : [];
+    const singleOk = onlyIds.length === 1 && !isFolder(state.items.get(onlyIds[0])); // exactly one document, no (empty) folder
+    const single = $('#dlg-export input[name="archive"][value="single"]');
     single.disabled = !singleOk;
     single.closest('.rmx-choice').setAttribute('data-disabled', String(!singleOk));
     if (single.checked && !singleOk) $('#dlg-export input[name="archive"][value="zip"]').checked = true;
     if (singleOk && scope === 'selection' && !ex.touchedArchive) single.checked = true;
-    var arch = exVal('archive');
+    const arch = exVal('archive');
     if (!ex.nameTouched) {
-      var one = plan.docs.length === 1 ? plan.docs[0].path.split('/').pop().replace(/\.[^.]+$/, '') : '';
+      const one = plan.docs.length === 1 ? plan.docs[0].path.split('/').pop().replace(/\.[^.]+$/, '') : '';
       $('#ex-name').value = one || (today() + ' remarkable-backup');
     }
-    var kind = arch === 'single' ? fmt : 'archive';
+    const kind = arch === 'single' ? fmt : 'archive';
     $('#ex-start').className = 'ark-button ark-button-large rmx-btn rmx-btn--' + kind;
     $('#ex-start').innerHTML = rmxBtnInner(kind, exportLabel(arch, fmt));
     $('#ex-name').disabled = arch === 'single';
@@ -986,40 +986,40 @@
   }
 
   async function runExport() {
-    var scope = exVal('scope');
-    var fmt = exVal('format');
-    var arch = exVal('archive');
-    var keep = $('#ex-keep').checked;
-    var naming = currentNaming();
+    const scope = exVal('scope');
+    const fmt = exVal('format');
+    const arch = exVal('archive');
+    const keep = $('#ex-keep').checked;
+    const naming = currentNaming();
     store('rmx.ex.date', naming.prefix ? '1' : '0'); store('rmx.ex.ascii', naming.ascii ? '1' : '0');
-    var plan = makePlan(scopeLeaves(scope), fmt, keep, naming);
-    var n = plan.docs.length;
+    const plan = makePlan(scopeLeaves(scope), fmt, keep, naming);
+    const n = plan.docs.length;
     if (!n && !plan.dirs.length) { toast(t('exportNothing'), true); return; }
 
-    var ctrl = new AbortController();
+    const ctrl = new AbortController();
     ex = { running: true, abort: ctrl, blob: null, filename: '', touchedArchive: true };
-    var bar = $('#ex-bar');
-    var status = $('#ex-status');
+    const bar = $('#ex-bar');
+    const status = $('#ex-status');
     $('#ex-options').hidden = true;
     $('#ex-run').hidden = false;
     $('#ex-start').hidden = true;
     $('#ex-cancel').hidden = false;
-    var errList = $('#ex-errors');
-    var setBar = function (frac) { bar.classList.remove('is-indeterminate'); bar.firstElementChild.style.width = Math.round(frac * 100) + '%'; };
-    var errors = [];
-    var ok = 0;
-    var cancelled = false;
-    var writer = arch === 'single' ? null : await R.archive.create(arch);
-    var failStreak = 0;
+    const errList = $('#ex-errors');
+    const setBar = function (frac) { bar.classList.remove('is-indeterminate'); bar.firstElementChild.style.width = Math.round(frac * 100) + '%'; };
+    const errors = [];
+    let ok = 0;
+    let cancelled = false;
+    const writer = arch === 'single' ? null : await R.archive.create(arch);
+    let failStreak = 0;
 
     if (writer) plan.dirs.forEach(function (d) { writer.addDir(d.path, d.mtime); });
 
-    for (var i = 0; i < n; i++) {
-      var d = plan.docs[i];
+    for (let i = 0; i < n; i++) {
+      const d = plan.docs[i];
       status.textContent = t('exportDownloading', { i: i + 1, n: n, name: d.label });
       setBar(i / n);
       try {
-        var blob = await R.api.download(d.id, fmt, ctrl.signal);
+        const blob = await R.api.download(d.id, fmt, ctrl.signal);
         if (writer) writer.addFile(d.path, blob, d.mtime);
         else { ex.blob = blob; ex.filename = d.path.split('/').pop(); }
         ok++;
@@ -1039,13 +1039,13 @@
           saveBlob(ex.blob, ex.filename);
         } else {
           if (errors.length) {
-            var report = errors.map(function (er) { return er.path + '\t' + er.msg; }).join('\n') + '\n';
+            const report = errors.map(function (er) { return er.path + '\t' + er.msg; }).join('\n') + '\n';
             writer.addFile(t('errorsFile'), new Blob([report], { type: 'text/plain' }), new Date());
           }
           status.textContent = t('exportPacking');
           bar.classList.add('is-indeterminate');
-          var base = R.archive.sanitizeSegment(($('#ex-name').value || 'remarkable-backup').replace(/\.(zip|tar\.gz|tgz)$/i, ''));
-          var out = await writer.finish(arch === 'zip' ? function (f) { bar.classList.remove('is-indeterminate'); setBar(f); } : null);
+          const base = R.archive.sanitizeSegment(($('#ex-name').value || 'remarkable-backup').replace(/\.(zip|tar\.gz|tgz)$/i, ''));
+          const out = await writer.finish(arch === 'zip' ? function (f) { bar.classList.remove('is-indeterminate'); setBar(f); } : null);
           ex.blob = out;
           ex.filename = base + '.' + R.archive.extension(arch);
           saveBlob(out, ex.filename);
@@ -1066,10 +1066,10 @@
         errors.slice(0, 50).map(function (er) { return '<li>' + esc((er.label ? er.label + ': ' : '') + er.msg) + '</li>'; }).join('');
     }
     $('#ex-cancel').hidden = true;
-    var again = $('#ex-again');
+    const again = $('#ex-again');
     if (ex.blob) {
       again.hidden = false;
-      var k2 = arch === 'single' ? fmt : 'archive';
+      const k2 = arch === 'single' ? fmt : 'archive';
       again.className = 'ark-button ark-button-large rmx-btn rmx-btn--' + k2;
       again.innerHTML = rmxBtnInner(k2, t('downloadAgain') + ' (' + (arch === 'single' ? (fmt === 'pdf' ? 'PDF' : 'RMDoc') : arch === 'zip' ? 'ZIP' : 'TAR.GZ') + ')');
       again.focus();
@@ -1077,16 +1077,16 @@
   }
 
   function initExportDialog() {
-    var dlg = $('#dlg-export');
+    const dlg = $('#dlg-export');
     dlg.addEventListener('input', function (e) { if (e.target.id === 'ex-name') ex.nameTouched = true; });
     dlg.addEventListener('change', function (e) {
       if (e.target.name === 'archive') ex.touchedArchive = true;
       if (!ex.running) refreshExport();
     });
     dlg.addEventListener('click', function (e) {
-      var b = e.target.closest('[data-ex]');
+      const b = e.target.closest('[data-ex]');
       if (!b) return;
-      var a = b.getAttribute('data-ex');
+      const a = b.getAttribute('data-ex');
       if (a === 'close' || a === 'cancel') {
         if (ex.running) { ex.abort.abort(); return; }
         dlg.close();
@@ -1101,10 +1101,10 @@
 
   function init() {
     // /folder/<id> deep links from the original UI -> hash route
-    var m = /^\/folder\/([^/]+)/.exec(location.pathname);
+    const m = /^\/folder\/([^/]+)/.exec(location.pathname);
     if (m && !location.hash) history.replaceState(null, '', '/#/folder/' + m[1]);
     renderFrame();
-    var content = $('#content');
+    const content = $('#content');
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKey);
     document.addEventListener('change', onChange);
@@ -1121,8 +1121,8 @@
           '<button type="button" class="ark-button ark-button--tertiary-neutral ark-button-medium" ' + closeAttr + ' aria-label="' + esc(t('close')) + '">' + icon('close', 24) + '</button></div>';
       },
       btn: function (label, attrs, kind) {
-        var k = kind || 'secondary';
-        var m = { pdf: 'pdf', rmdoc: 'rmdoc', archive: 'archive', primary: 'upload', upload: 'upload', preview: 'preview' };
+        const k = kind || 'secondary';
+        const m = { pdf: 'pdf', rmdoc: 'rmdoc', archive: 'archive', primary: 'upload', upload: 'upload', preview: 'preview' };
         if (!m[k]) return '<button type="button" class="ark-button ark-button--' + k + ' ark-button-large" ' + attrs + '>' + esc(label) + '</button>';
         return '<button type="button" class="ark-button rmx-btn rmx-btn--' + m[k] + ' ark-button-large" ' + attrs + '>' + icon(rmxBtnIcon(m[k]), 18) + '<span>' + esc(label) + '</span></button>';
       }

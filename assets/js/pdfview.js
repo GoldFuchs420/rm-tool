@@ -5,8 +5,8 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
-  var libPromise = null;
+  const R = (window.RMX = window.RMX || {});
+  let libPromise = null;
 
   function load() {
     if (!libPromise) {
@@ -18,22 +18,22 @@
     return libPromise;
   }
   async function open(blob) {
-    var lib = await load();
-    var data = new Uint8Array(await blob.arrayBuffer());
+    const lib = await load();
+    const data = new Uint8Array(await blob.arrayBuffer());
     return lib.getDocument({ data: data, isEvalSupported: false, useSystemFonts: true, verbosity: 0 }).promise;
   }
 
   /** Renders all pages lazily into `container`. Returns {destroy()}. */
   async function show(container, blob) {
-    var doc = await open(blob);
-    var first = await doc.getPage(1);
-    var v1 = first.getViewport({ scale: 1 });
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var width = function () { return Math.max(200, container.clientWidth - 2); };
-    var pages = [];
-    var frag = document.createDocumentFragment();
-    for (var i = 1; i <= doc.numPages; i++) {
-      var box = document.createElement('div');
+    const doc = await open(blob);
+    const first = await doc.getPage(1);
+    const v1 = first.getViewport({ scale: 1 });
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = function () { return Math.max(200, container.clientWidth - 2); };
+    const pages = [];
+    const frag = document.createDocumentFragment();
+    for (let i = 1; i <= doc.numPages; i++) {
+      const box = document.createElement('div');
       box.className = 'rmx-pv-page';
       box.style.aspectRatio = v1.width + ' / ' + v1.height;
       box.dataset.n = String(i);
@@ -43,17 +43,17 @@
     container.innerHTML = '';
     container.appendChild(frag);
 
-    var token = 0;
+    let token = 0;
     async function renderPage(p) {
       if (p.canvas || p.busy) return;
       p.busy = true;
-      var my = ++token;
+      const my = ++token;
       try {
-        var page = await doc.getPage(p.n);
-        var base = page.getViewport({ scale: 1 });
-        var scale = (width() / base.width) * dpr;
-        var vp = page.getViewport({ scale: scale });
-        var canvas = document.createElement('canvas');
+        const page = await doc.getPage(p.n);
+        const base = page.getViewport({ scale: 1 });
+        const scale = (width() / base.width) * dpr;
+        const vp = page.getViewport({ scale: scale });
+        const canvas = document.createElement('canvas');
         canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
         canvas.style.width = '100%'; canvas.style.height = 'auto';
         p.box.style.aspectRatio = base.width + ' / ' + base.height;
@@ -69,9 +69,9 @@
       if (p.task) { try { p.task.cancel(); } catch (e) { /* ignore */ } }
       if (p.canvas) { p.canvas.width = p.canvas.height = 0; p.canvas.remove(); p.canvas = null; }
     }
-    var io = new IntersectionObserver(function (entries) {
+    const io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
-        var p = pages[parseInt(en.target.dataset.n, 10) - 1];
+        const p = pages[parseInt(en.target.dataset.n, 10) - 1];
         p.visible = en.isIntersecting;
         if (en.isIntersecting) renderPage(p); else release(p);
       });
@@ -95,14 +95,14 @@
    * so this also works in browsers that scramble canvas data (fingerprint protection).
    */
   async function firstPageCanvas(blob, height) {
-    var doc = await open(blob);
+    const doc = await open(blob);
     try {
-      var page = await doc.getPage(1);
-      var base = page.getViewport({ scale: 1 });
-      var vp = page.getViewport({ scale: height / base.height });
-      var canvas = document.createElement('canvas');
+      const page = await doc.getPage(1);
+      const base = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: height / base.height });
+      const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.floor(vp.width)); canvas.height = Math.max(1, Math.floor(vp.height));
-      var ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: ctx, viewport: vp }).promise;
       return canvas;

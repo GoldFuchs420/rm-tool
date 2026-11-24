@@ -11,7 +11,7 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
+  const R = (window.RMX = window.RMX || {});
 
   /* ---------------------------------------------------------------------
    * Erweiterung für die Chrome-Extension: Im Original lief diese Seite
@@ -22,9 +22,9 @@
    * von assets/js/rmx-bridge.js, sobald ein Server ausgewählt ist), und
    * stellt die Basis-URL + ggf. einen Authorization-Header voran.
    * ------------------------------------------------------------------- */
-  var baseUrl = '';
-  var authHeader = null;
-  var readyResolve;
+  let baseUrl = '';
+  let authHeader = null;
+  let readyResolve;
   R.ready = new Promise(function (res) { readyResolve = res; });
   R.configureServer = function (url, auth) {
     baseUrl = url || '';
@@ -33,19 +33,20 @@
   };
 
   function NoConnection() {
-    var e = new Error('No connection to device');
+    const e = new Error('No connection to device');
     e.name = 'NoConnectionError';
     return e;
   }
   function AbortErr() {
-    var e = new Error('Aborted');
+    const e = new Error('Aborted');
     e.name = 'AbortError';
     return e;
   }
 
   // Two lanes, one request at a time: interactive calls always run before background
   // work (thumbnails), so the UI never waits behind a pile of preview downloads.
-  var highQ = [], lowQ = [], running = false;
+  const highQ = [], lowQ = [];
+  let running = false;
   function enqueue(task, signal, low) {
     return new Promise(function (resolve, reject) {
       (low ? lowQ : highQ).push({ task: task, signal: signal, resolve: resolve, reject: reject });
@@ -57,7 +58,7 @@
     running = true;
     try {
       for (;;) {
-        var job = highQ.shift() || lowQ.shift();
+        const job = highQ.shift() || lowQ.shift();
         if (!job) break;
         if (job.signal && job.signal.aborted) { job.reject(AbortErr()); continue; }
         try { job.resolve(await job.task()); } catch (e) { job.reject(e); }
@@ -68,19 +69,19 @@
   /** fetch + read body inside one timeout window. as: 'json' | 'blob' | 'none' */
   async function request(url, opts, o) {
     await R.ready; // wartet, bis rmx-bridge.js einen Server konfiguriert hat
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, o.timeout);
-    var onAbort = function () { ctrl.abort(); };
+    const ctrl = new AbortController();
+    const timer = setTimeout(function () { ctrl.abort(); }, o.timeout);
+    const onAbort = function () { ctrl.abort(); };
     if (o.signal) o.signal.addEventListener('abort', onAbort, { once: true });
     try {
       /* credentials: "omit" — die Auth läuft ausschließlich ueber den
          Authorization-Header; mit Credentials müsste Chrome bei 401 den
          nativen Basic-Login-Dialog öffnen (Fetch-Spec: Prompt erfordert
          includeCredentials). */
-      var merged = Object.assign({ credentials: 'omit', signal: ctrl.signal }, opts);
+      const merged = Object.assign({ credentials: 'omit', signal: ctrl.signal }, opts);
       if (authHeader) merged.headers = Object.assign({}, opts.headers || {}, { Authorization: authHeader });
-      var res = await fetch((baseUrl || '') + url, merged);
-      var body = null;
+      const res = await fetch((baseUrl || '') + url, merged);
+      let body = null;
       if (res.status === 200 || res.status === 201) {
         if (o.as === 'json') body = await res.json();
         else if (o.as === 'blob') body = await res.blob();
@@ -96,18 +97,18 @@
   }
 
   async function rawList(id) {
-    var url = !id || id === 'root' ? '/documents/' : '/documents/' + encodeURIComponent(id);
-    var r = await request(url, { method: 'GET' }, { timeout: 30000, as: 'json' });
+    const url = !id || id === 'root' ? '/documents/' : '/documents/' + encodeURIComponent(id);
+    const r = await request(url, { method: 'GET' }, { timeout: 30000, as: 'json' });
     if (r.status !== 200) throw new Error('Get documents failed (' + r.status + ')');
     return Array.isArray(r.body) ? r.body : [];
   }
 
   async function rawDownload(id, fmt, signal) {
-    var attempts = 0;
+    let attempts = 0;
     for (;;) {
       attempts++;
       try {
-        var r = await request('/download/' + encodeURIComponent(id) + '/' + fmt, { method: 'GET' },
+        const r = await request('/download/' + encodeURIComponent(id) + '/' + fmt, { method: 'GET' },
           { timeout: 300000, as: 'blob', signal: signal });
         if (r.status !== 200) throw new Error('Download failed (' + r.status + ')');
         return r.body;
@@ -119,9 +120,9 @@
   }
 
   async function rawUpload(file, signal) {
-    var fd = new FormData();
+    const fd = new FormData();
     fd.append('file', file);
-    var r = await request('/upload', { method: 'POST', body: fd }, { timeout: 300000, as: 'none', signal: signal });
+    const r = await request('/upload', { method: 'POST', body: fd }, { timeout: 300000, as: 'none', signal: signal });
     if (r.status !== 201) throw new Error('Upload failed (' + r.status + ')');
   }
 

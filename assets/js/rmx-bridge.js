@@ -6,30 +6,30 @@
  */
 (function () {
   "use strict";
-  var R = (window.RMX = window.RMX || {});
+  const R = (window.RMX = window.RMX || {});
 
   /* RMXServers.authHeaderFor liefert immer einen Basic-Header (ggf. leerer),
      damit die API-Aufrufe hier denselben tragen wie der Erreichbarkeits-
      Probe – ueberall gleich, und nirgends oeffnet Chrome den nativen
      Login-Dialog (siehe shared/servers.js). */
-  var authHeaderFor = function (s) { return window.RMXServers.authHeaderFor(s); };
+  const authHeaderFor = function (s) { return window.RMXServers.authHeaderFor(s); };
 
-  var configured = false;
-  var lastActiveId = null;
+  let configured = false;
+  let lastActiveId = null;
 
   function pickPreferred(ready) {
     if (!ready.length) return null;
-    var preferred = null;
+    let preferred = null;
     try { preferred = localStorage.getItem("rmx.activeServer"); } catch (e) { /* private mode */ }
     return ready.filter(function (s) { return s.id === preferred; })[0] || ready[0];
   }
 
   function onServersChanged(readyList) {
     if (document.body) document.body.classList.toggle("rmx-nosrv", !readyList.length);
-    var chosen = pickPreferred(readyList);
+    const chosen = pickPreferred(readyList);
     if (!chosen) return;
-    var wasConfigured = configured;
-    var serverChanged = chosen.id !== lastActiveId;
+    const wasConfigured = configured;
+    const serverChanged = chosen.id !== lastActiveId;
     lastActiveId = chosen.id;
     configured = true;
     try { localStorage.setItem("rmx.activeServer", chosen.id); } catch (e) { /* private mode */ }
@@ -50,9 +50,9 @@
     // und der normale Flex-"gap" des Containers sorgt für einen zum
     // restlichen Seiten-Rhythmus passenden Abstand statt zusätzlich
     // aufaddierter eigener Polsterung.
-    var container = document.querySelector(".rmx-container");
+    const container = document.querySelector(".rmx-container");
     if (!container || document.getElementById("rmx-srv-panel")) return;
-    var panel = document.createElement("div");
+    const panel = document.createElement("div");
     panel.id = "rmx-srv-panel";
     panel.className = "rmx-srv-panel-wrap";
     container.insertBefore(panel, container.firstChild);
@@ -60,7 +60,7 @@
        Server erreichbar → nur das Serverpanel zeigen (Dateilisten können
        ohne Server ohnehin nicht geladen werden). */
     if (document.body) document.body.classList.add("rmx-nosrv");
-    var srv = window.RMXServers.mount(panel, { onChange: onServersChanged });
+    const srv = window.RMXServers.mount(panel, { onChange: onServersChanged });
     /* Sprachwechsel im Dateimanager: Serverleiste ebenfalls neu uebersetzen. */
     if (srv && srv.redraw) R.serversRedraw = srv.redraw;
   }

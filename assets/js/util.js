@@ -6,14 +6,14 @@
  */
 (function () {
   'use strict';
-  var R = (window.RMX = window.RMX || {});
-  var scripts = {};
+  const R = (window.RMX = window.RMX || {});
+  const scripts = {};
 
   function script(url, test) {
     if (test && test()) return Promise.resolve();
     if (!scripts[url]) {
       scripts[url] = new Promise(function (resolve, reject) {
-        var s = document.createElement('script');
+        const s = document.createElement('script');
         s.src = url;
         s.onload = function () { resolve(); };
         s.onerror = function () { delete scripts[url]; reject(new Error('Could not load ' + url)); };
@@ -29,7 +29,7 @@
     marked: function () { return script('/assets/vendor/marked.min.js', function () { return window.marked; }); }     // MIT, (c) 2018+ MarkedJS, (c) 2011-2018 Christopher Jeffrey
   };
 
-  var safe = null;
+  let safe = null;
   /**
    * Reads back a known pattern. Browsers with fingerprint protection (Firefox resistFingerprinting,
    * Tor, canvas-blocker add-ons) return random noise: images created from canvas pixels then look like
@@ -38,17 +38,17 @@
   R.canvasSafe = function () {
     if (safe !== null) return safe;
     try {
-      var c = document.createElement('canvas');
+      const c = document.createElement('canvas');
       c.width = c.height = 8;
-      var x = c.getContext('2d', { willReadFrequently: true });
-      var want = [[200, 30, 60], [30, 140, 60], [30, 60, 200], [240, 240, 240]];
+      const x = c.getContext('2d', { willReadFrequently: true });
+      const want = [[200, 30, 60], [30, 140, 60], [30, 60, 200], [240, 240, 240]];
       want.forEach(function (w, i) {
         x.fillStyle = 'rgb(' + w.join(',') + ')';
         x.fillRect((i % 2) * 4, (i >> 1) * 4, 4, 4);
       });
-      var d = x.getImageData(0, 0, 8, 8).data;
+      const d = x.getImageData(0, 0, 8, 8).data;
       safe = want.every(function (w, i) {
-        var p = (((i >> 1) * 4 + 1) * 8 + (i % 2) * 4 + 1) * 4;
+        const p = (((i >> 1) * 4 + 1) * 8 + (i % 2) * 4 + 1) * 4;
         return Math.abs(d[p] - w[0]) <= 8 && Math.abs(d[p + 1] - w[1]) <= 8 && Math.abs(d[p + 2] - w[2]) <= 8;
       });
     } catch (e) { safe = false; }
@@ -58,7 +58,7 @@
   R.uuid = function () {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = (Math.random() * 16) | 0;
+      const r = (Math.random() * 16) | 0;
       return (c === 'x' ? r : (r & 3) | 8).toString(16);
     });
   };
