@@ -122,6 +122,11 @@
     // hinzugefügter/entfernter Server (neue, andere Länge von `servers`)
     // zu "Cannot set properties of undefined" führen, falls ein älterer
     // Discovery-Lauf noch läuft, wenn servers sich bereits geändert hat.
+    /* Manuelle Pruefung: bereits erreichbare Server bleiben solange "online"
+       angezeigt (weiter verfuegbar), nur nicht erreichbare springen auf
+       "checking". `onChange` feuert zusaetzlich im checking-Stadium, damit
+       popup/dateimanager "Senden" deaktivieren, solange KEIN Server online
+       ist (z. B. beim Reload, wenn ein Server weggebrochen war). */
     let discovering = false;
     async function runDiscovery() {
       if (discovering) return;
@@ -129,8 +134,10 @@
       elReload.classList.add("spinning");
       try {
         const list = servers;
-        for (let i = 0; i < list.length; i++) list[i]._status = "checking";
+        for (let i = 0; i < list.length; i++)
+          if (list[i]._status !== "online") list[i]._status = "checking";
         render();
+        onChange(readyServers());
         await Promise.all(list.map(async function (s) { s._status = (await probe(s)).status; }));
         render();
         onChange(readyServers());
