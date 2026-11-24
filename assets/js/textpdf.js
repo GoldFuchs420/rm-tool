@@ -493,6 +493,41 @@
     lua: { line: ['--'], block: [['--[[', ']]']], kw: KW_GROUPS.lua, name: 'Lua' }
   };
 
+  /* Regex-Literale (/.../flags) sind in JS von Division ("a / b") nicht
+     unterscheidbar, ohne den vorangehenden Token anzuschauen. Ohne diese
+     Unterscheidung interpretiert der Tokenizer ein eingebettetes Zeichen
+     wie \" innerhalb eines Regex-Literals (z. B. /[\"]/g) faelschlich als
+     String-Start, was die Einfaerbung fuer den Rest der Datei verschiebt. */
+  const REGEX_PRE_WORD = /(^|[^\w$])(return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await)$/;
+  function canStartRegex(prefix) {
+    const trimmed = prefix.replace(/\s+$/, '');
+    if (!trimmed) return true;
+    const lastChar = trimmed[trimmed.length - 1];
+    if (/[\w$)\]}]/.test(lastChar)) return REGEX_PRE_WORD.test(trimmed);
+    return true;
+  }
+  /** Scannt ab einem öffnenden '/' ein Regex-Literal inkl. Zeichenklasse
+      ([...]) und Flags. Gibt die Endposition zurück, oder -1, wenn in
+      dieser Zeile kein schliessendes '/' gefunden wurde (dann lieber
+      konservativ als normales Zeichen behandeln statt zu raten). */
+  function scanRegexLiteral(line, start) {
+    let j = start + 1;
+    let inClass = false;
+    while (j < line.length) {
+      const ch = line[j];
+      if (ch === '\\') { j += 2; continue; }
+      if (ch === '[') { inClass = true; j++; continue; }
+      if (ch === ']') { inClass = false; j++; continue; }
+      if (ch === '/' && !inClass) {
+        j++;
+        while (j < line.length && /[a-z]/i.test(line[j])) j++;
+        return j;
+      }
+      j++;
+    }
+    return -1;
+  }
+ 
   /** Splits source into lines of {t, cls} segments, cls: kw | str | com | num | null. */
   function tokenize(text, lang) {
     const L = LANGS[lang] || { line: [], block: [], kw: [], ci: false };
@@ -546,6 +581,15 @@
           if (idx < 0) pending = { end: blockTok[1], cls: 'com' };
           i += seg.length;
           continue;
+        }
+        if (lang === 'js' && c0 === '/' && canStartRegex(line.slice(0, i))) {
+          const end = scanRegexLiteral(line, i);
+          if (end > i) {
+            flush();
+            segs.push({ t: line.slice(i, end), cls: 'str' });
+            i = end;
+            continue;
+          }
         }
         const wm = /^[\w$]+/.exec(line.slice(i));
         if (wm) {
