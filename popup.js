@@ -82,32 +82,48 @@ function readyServers() {
   return serverComponent ? serverComponent.readyServers() : [];
 }
 
+/* Schriftgroesse wird je Seite (Hostname) UND je Dokumenttyp gespeichert
+   (article | pdf | code | md | epub); als Default gilt der letzte Wert. */
+let docType = "article";
+
 async function loadSettingsForHost(hostname) {
+  const type = docType;
   const { pageSettings, lastSettings } = await chrome.storage.local.get(["pageSettings", "lastSettings"]);
   const perPage = pageSettings && hostname ? pageSettings[hostname] : null;
-  const base = perPage || lastSettings || {};
-  fontSize = Number.isFinite(base.fontSize) ? base.fontSize : 16;
+  const v = perPage && Number.isFinite(perPage[type]) ? perPage[type]
+    : perPage && Number.isFinite(perPage.fontSize) ? perPage.fontSize
+    : lastSettings && Number.isFinite(lastSettings.fontSize) ? lastSettings.fontSize : 16;
+  fontSize = v;
 }
 async function saveSettingsForHost(hostname) {
-  const data = { fontSize };
+  await chrome.storage.local.set({ lastSettings: { fontSize } });
+  if (!hostname) return;
   const { pageSettings } = await chrome.storage.local.get("pageSettings");
   const next = pageSettings || {};
-  if (hostname) next[hostname] = data;
-  await chrome.storage.local.set({ pageSettings: next, lastSettings: data });
+  if (!next[hostname] || typeof next[hostname] !== "object") next[hostname] = {};
+  next[hostname][docType] = fontSize;
+  await chrome.storage.local.set({ pageSettings: next });
+}
+
+async function applyFontForDocType() {
+  await loadSettingsForHost(currentTabInfo?.hostname);
+  $("fontSlider").value = String(fontSize);
+  $("fontSizeValue").textContent = String(fontSize);
 }
 
 function sanitizeFilename(s) {
   return RMXShared.sanitizeFilename(s);
 }
 
-// Lädt einen Blob als PDF an alle übergebenen Server (parallel) und liefert
-// das je-Server-Ergebnis zurück: { ok, fail, total, detail }. Eine Zeile pro
-// DATEI im Status-Expander fasst die Server-Ergebnisse zusammen; im
-// title-Attribut steht die Server-Liste für die Details.
-async function uploadOne(blob, filenameBase, server) {
+// Lädt eine Datei (vollständiger Dateiname inkl. Endung; EPUB wird
+// unverändert durchgereicht) an alle übergebenen Server (parallel) und
+// liefert das je-Server-Ergebnis zurück: { ok, fail, total, detail }. Eine
+// Zeile pro DATEI im Status-Expander fasst die Server-Ergebnisse zusammen;
+// im title-Attribut steht die Server-Liste für die Details.
+async function uploadOne(blob, filename, server) {
   try {
     const form = new FormData();
-    form.append("file", blob, filenameBase + ".pdf");
+    form.append("file", blob, filename);
     const headers = { Authorization: RMXServers.authHeaderFor(server) };
     const res = await fetch(server.url + "/upload", { method: "POST", headers, body: form, credentials: "omit" });
     if (res.ok) return { ok: true };
@@ -117,8 +133,8 @@ async function uploadOne(blob, filenameBase, server) {
   }
 }
 
-async function uploadToAllServers(blob, filenameBase, targets) {
-  const results = await Promise.all(targets.map((server) => uploadOne(blob, filenameBase, server)));
+async function uploadToAllServers(blob, filename, targets) {
+  const results = await Promise.all(targets.map((server) => uploadOne(blob, filename, server)));
   let ok = 0;
   const detail = results.map((r, i) => {
     const url = targets[i].url;
@@ -191,6 +207,8 @@ async function prepareArticleSection() {
   articleData = null;
   isPdfSource = false;
   pdfSourceBlob = null;
+  docType = "article";
+  $("fontSlider").disabled = false;
 
   if (!currentTabInfo || !currentTabInfo.url || !/^https?:\/\//.test(currentTabInfo.url)) {
     setArtStatus("stNotWebpage", null, "Aktueller Tab ist keine Webseite.");
@@ -209,16 +227,24 @@ async function prepareArticleSection() {
     try {
       const res = await fetch(currentTabInfo.url, { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const body = await res.text();
       const path = currentTabInfo.url.split(/[?#]/)[0].replace(/\/+$/, "").split("/");
       let base = decodeURIComponent(path.pop() || "") || "Dokument";
       base = base.replace(/[\\/:*?\"<>|]/g, "_") || "Dokument";
-      textSource = new File([body], base, { type: "text/plain" });
-      articleReady = true;
-      setArtStatus(uk === "code" ? "stCodeSource" : "stMdSource", { name: base.slice(0, 60) }, base.slice(0, 60));
+      docType = uk;
+      $("fontSlider").disabled = uk === "epub";
+      if (uk === "epub") {
+        textSource = new File([await res.blob()], base, { type: "application/epub+zip" });
+        articleReady = true;
+        setArtStatus("stEpubSource", { name: base.slice(0, 60) }, base.slice(0, 60));
+      } else {
+        textSource = new File([await res.text()], base, { type: "text/plain" });
+        articleReady = true;
+        setArtStatus(uk === "code" ? "stCodeSource" : "stMdSource", { name: base.slice(0, 60) }, base.slice(0, 60));
+      }
     } catch {
       setArtStatus("stFileFail", null, "Datei konnte nicht geladen werden.");
     }
+    await applyFontForDocType();
     updateSendButton();
     return;
   }
@@ -228,11 +254,12 @@ async function prepareArticleSection() {
     try {
       pdfSourceBlob = await fetchPdfBlob(currentTabInfo.url);
       articleReady = true;
+      docType = "pdf";
       setArtStatus("stPdfSource", null, "Diese Seite ist bereits ein PDF – wird unverändert gesendet.");
     } catch {
       setArtStatus("stPdfFailed", null, "PDF konnte nicht geladen werden.");
     }
-    updateSendButton();
+    await applyFontForDocType();
     return;
   }
 
@@ -250,6 +277,7 @@ async function prepareArticleSection() {
     return;
   }
   articleReady = true;
+  await applyFontForDocType();
   setArtStatus("stFoundTitle", { name: (articleData.title || "Artikel").slice(0, 70) }, `„${(articleData.title || "Artikel").slice(0, 70)}“`);
   updateSendButton();
 }
@@ -979,6 +1007,8 @@ async function sendNow({ article, images } = {}) {
   const wantImages = Array.isArray(images) && images.length > 0;
   if (!wantArticle && !wantImages) return;
 
+  /* der beim Senden aktive Wert gilt als letzter Default (global gespeichert) */
+  await saveSettingsForHost(currentTabInfo?.hostname);
   sending = true;
   updateSendButton();
 
@@ -1027,21 +1057,23 @@ async function sendNow({ article, images } = {}) {
   await Promise.all(files.map(async (f, i) => {
     try {
       if (f.kind === "article") {
-        let blob, filenameBase;
+        let blob, filename;
         if (isPdfSource) {
           blob = pdfSourceBlob;
-          filenameBase = sanitizeFilename(currentTabInfo?.title || "Dokument");
+          filename = sanitizeFilename(currentTabInfo?.title || "Dokument") + ".pdf";
         } else if (textSource) {
+          /* EPUB reist als EPUB; Code/Markdown werden hier zu PDF gerendert
+             und uebernehmen die Schriftgroesse des Sliders (fontScale). */
           blob = await RMX.textpdf.convert(textSource, {
             page: "remarkable",
             fontScale: Math.min(2.2, Math.max(0.6, fontSize / 16))
           });
-          filenameBase = sanitizeFilename(textSource.name.replace(/\.[^.]+$/, ""));
+          filename = sanitizeFilename(blob.name);
         } else {
           blob = await buildPdfFromArticle(articleData.title || "Artikel", articleData.content, fontSize, currentTabInfo?.url);
-          filenameBase = sanitizeFilename(articleData.title || "Artikel");
+          filename = sanitizeFilename(articleData.title || "Artikel") + ".pdf";
         }
-        const res = await uploadToAllServers(blob, filenameBase, targets);
+        const res = await uploadToAllServers(blob, filename, targets);
         settle(i, resultClass(res), res);
       } else if (f.kind === "images") {
         const { blob, loadedCount, totalCount } = await buildImagesPdf(f.list);
@@ -1058,7 +1090,7 @@ async function sendNow({ article, images } = {}) {
       } else {
         const { blob } = await buildImagesPdf([f.img]);
         if (!blob) { settle(i, "fail", { label: t("imgOneFail", { name: f.base }) }); return; }
-        const res = await uploadToAllServers(blob, f.base, targets);
+        const res = await uploadToAllServers(blob, f.base + ".pdf", targets);
         settle(i, resultClass(res), res);
       }
     } catch (e) {
