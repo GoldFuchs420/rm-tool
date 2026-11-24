@@ -1,12 +1,12 @@
 /*
  * Markdown / plain text / source code -> PDF, entirely in the browser.
- *   Markdown is parsed with marked (MIT), HTML with the browser's DOMParser
- *   (inert, nothing is executed or loaded). Source code files (JS, TS, PY,
- *   SH, ...) and HTML are rendered as formatted code with line numbers and
- *   light syntax highlighting. Code titles carry the file extension so the
- *   document type stays visible on the tablet; code pages use tight margins
- *   (flush left with a line-number gutter, half margin elsewhere). EPUB files
- *   are passed through unchanged because the device imports them natively.
+  *   Markdown is parsed with marked (MIT), HTML with the browser's DOMParser
+ *   (inert, nothing is executed or loaded) and rendered as a normal page.
+ *   Source code files (JS, TS, PY, SH, ...) are rendered as formatted code
+ *   with line numbers and light syntax highlighting. Code titles carry the file
+ *   extension so the document type stays visible on the tablet; code pages use
+ *   tight margins (flush left with a line-number gutter, half margin elsewhere).
+ *   EPUB files are passed through unchanged because the device imports them natively.
  *   The page layout is own code on top of
  *   pdf-lib (MIT) using the standard PDF fonts (Latin-1 / WinAnsi characters;
  *   emoji and non-Latin scripts are replaced by "?").
@@ -407,7 +407,7 @@
     return pdf;
   }
 
-  const MD = /\.(md|markdown|mdown)$/i, TXT = /\.txt$/i, EPUB = /\.epub$/i;
+  const MD = /\.(md|markdown|mdown)$/i, TXT = /\.txt$/i, HTML = /\.(html?|xhtml)$/i, EPUB = /\.epub$/i;
 
   /* Source-code file types: rendered as readable formatted code (the device
      UI does not display code files at all, and HTML is sent as code, too). */
@@ -419,7 +419,7 @@
     py: 'py', pyw: 'py', rb: 'py', erb: 'py', php: 'py', phtml: 'py', pl: 'py', pm: 'py',
     sh: 'sh', bash: 'sh', zsh: 'sh', ksh: 'sh', fish: 'sh', ps1: 'sh', psm1: 'sh', bat: 'sh', cmd: 'sh',
     css: 'css', scss: 'css', sass: 'css', less: 'css', styl: 'css',
-    html: 'xml', htm: 'xml', xhtml: 'xml', xml: 'xml', xsl: 'xml', xslt: 'xml',
+    htm: 'xml', xml: 'xml', xsl: 'xml', xslt: 'xml',
     yaml: 'yaml', yml: 'yaml', toml: 'yaml', ini: 'yaml', cfg: 'yaml', conf: 'yaml', properties: 'yaml',
     sql: 'sql', lua: 'lua', r: 'lua', jl: 'lua', proto: 'xml', graphql: 'js', gql: 'js', tf: 'yaml'
   };
@@ -429,8 +429,9 @@
   function kindOf(file) {
     const n = file.name, m = /\.([a-z0-9]+)$/i.exec(n), ext = m ? m[1].toLowerCase() : '';
     if (MD.test(n) || file.type === 'text/markdown') return 'md';
+    if (HTML.test(n) || /^(text\/html|application\/xhtml\+xml)$/.test(file.type)) return 'html';
     if (CODE_EXTS[ext] || CODE_NAME.test(n) ||
-        /^(text\/(javascript|typescript|x-sh|sh|kotlin|rust|sql)|application\/(javascript|typescript|json|xml|xhtml|sql|x-sh))$/.test(file.type)) return 'code';
+        /^(text\/(javascript|typescript|x-sh|sh|kotlin|rust|sql)|application\/(javascript|typescript|json|xml|sql|x-sh))$/.test(file.type)) return 'code';
     if (/\.epub$/i.test(n) || file.type === 'application/epub+zip') return 'epub';
     if (TXT.test(n) || file.type === 'text/plain') return 'txt';
     return null;
@@ -443,6 +444,7 @@
     if (/\.pdf$/i.test(p)) return 'pdf';
     const m = /\.([a-z0-9]+)$/i.exec(p), ext = m ? m[1].toLowerCase() : '';
     if (/^(md|markdown|mdown)$/.test(ext)) return 'md';
+    if (ext === 'html' || ext === 'xhtml') return 'html';
     if (ext === 'epub') return 'epub';
     if (CODE_EXTS[ext]) return 'code';
     return null;
