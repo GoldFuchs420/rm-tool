@@ -1,4 +1,4 @@
-# reMarkable Toolkit
+# reMarkable Toolkit v1.2
 
 [![tests](https://github.com/GoldFuchs420/rm-tool/actions/workflows/tests.yml/badge.svg)](https://github.com/GoldFuchs420/rm-tool/actions/workflows/tests.yml)
 
