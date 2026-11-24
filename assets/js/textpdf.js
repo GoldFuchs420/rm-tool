@@ -26,6 +26,24 @@
 
   function pageDate(d) { return d; }
 
+  /** WinAnsi-safe text per embedded standard font: transliterates common
+     symbols (e.g. \u2192 -> "->") and replaces everything else outside the
+     font's character set with "?" instead of letting pdf-lib throw. */
+  function charsetCleaner(fonts) {
+    const sets = {};
+    Object.keys(fonts).forEach(function (k) { sets[k] = new Set(fonts[k].getCharacterSet()); });
+    return function (text, key) {
+      const cs = sets[key] || sets.r;
+      let out = '';
+      for (let ch of text) {
+        if (ch === '\n') { out += ch; continue; }
+        if (TRANSLIT[ch] !== undefined) ch = TRANSLIT[ch];
+        for (const c of ch) out += cs.has(c.codePointAt(0)) ? c : (c.charCodeAt(0) < 32 ? '' : '?');
+      }
+      return out;
+    };
+  }
+
   /* ---------- HTML -> block model ---------- */
 
   function Walker() { this.blocks = []; this.title = ''; }
@@ -208,22 +226,11 @@
       m: await pdf.embedFont(SF.Courier),
       mb: await pdf.embedFont(SF.CourierBold)
     };
-    const charsets = {};
-    Object.keys(fonts).forEach(function (k) { charsets[k] = new Set(fonts[k].getCharacterSet()); });
     const fk = function (r) {
       if (r.m) return r.b ? 'mb' : 'm';
       return r.b && r.i ? 'bi' : r.b ? 'b' : r.i ? 'i' : 'r';
     };
-    const clean = function (text, key) {
-      const cs = charsets[key];
-      let out = '';
-      for (let ch of text) {
-        if (ch === '\n') { out += ch; continue; }
-        if (TRANSLIT[ch] !== undefined) ch = TRANSLIT[ch];
-        for (const c of ch) out += cs.has(c.codePointAt(0)) ? c : (c.charCodeAt(0) < 32 ? '' : '?');
-      }
-      return out;
-    };
+    const clean = charsetCleaner(fonts);
 
     const left = pg.margin, right = pg.w - pg.margin, top = pg.h - pg.margin, bottom = pg.margin;
     let page = null, y = 0;
@@ -568,6 +575,7 @@
       r: await pdf.embedFont(SF.Helvetica),
       rb: await pdf.embedFont(SF.HelveticaBold)
     };
+    const clean = charsetCleaner(fonts);
     const size = Math.max(5.5, Math.min(11.5, 8.8 * (opts.fontScale || 1)));
     const lh = size * 1.32;
     const margin = pg.margin;
@@ -593,6 +601,7 @@
 
     /* One visual line = { no: source line number, segs: [{t, cls}] }. Lines that
        do not fit are wrapped (continuation without line number). */
+    text = clean(text, 'm');   /* WinAnsi-safe ahead of wrapping/width math */
     const rows = tokenize(text, (CODE_EXTS[(name.match(/\.([a-z0-9]+)$/i) || [])[1] || '']) || '');
     const visual = [];
     rows.forEach(function (segs, li) {
@@ -631,12 +640,12 @@
     /* first page + title block */
     let page = pdf.addPage([pg.w, pg.h]);
     let y = pg.h - cm;
-    const title = (opts.title || name).replace(/[\\/]/g, ' ').trim() || name;
+    const title = clean(((opts.title || name).replace(/[\\/]/g, ' ').trim() || name), 'rb');
     const titleSize = Math.min(19, size * 1.9);
     page.drawText(title, { x: left, y: y - titleSize, font: fonts.rb, size: titleSize, color: black });
     y -= titleSize * 1.5;
     const ext = (name.match(/\.([a-z0-9]+)$/i) || [])[1] || '';
-    const meta = R.t('codeLines', { n: rows.length, lang: (LANGS[CODE_EXTS[ext]] || {}).name || 'TXT' });
+    const meta = clean(R.t('codeLines', { n: rows.length, lang: (LANGS[CODE_EXTS[ext]] || {}).name || 'TXT' }), 'r');
     page.drawText(meta, { x: left, y: y - size, font: fonts.r, size: size * 0.95, color: colors.com });
     y -= size * 1.9;
     page.drawLine({ start: { x: 0, y: y }, end: { x: pg.w - cm, y: y }, thickness: 0.7, color: PDFLib.rgb(0.72, 0.70, 0.67) });
@@ -670,7 +679,7 @@
     /* footer: file name left, page n/m right */
     const pages = pdf.getPages();
     const fSize = Math.max(6.5, size * 0.82);
-    const fn = name.length > 60 ? name.slice(0, 57) + '...' : name;
+    const fn = clean(name.length > 60 ? name.slice(0, 57) + '...' : name, 'r');
     pages.forEach(function (p, pi) {
       p.drawLine({ start: { x: 0, y: cm + size * 1.5 }, end: { x: pg.w - cm, y: cm + size * 1.5 }, thickness: 0.5, color: PDFLib.rgb(0.80, 0.78, 0.75) });
       const rightText = (pi + 1) + ' / ' + pages.length;
