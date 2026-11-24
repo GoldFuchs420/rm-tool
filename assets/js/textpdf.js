@@ -1,7 +1,9 @@
 /*
- * Markdown / plain text / HTML -> PDF, entirely in the browser.
+ * Markdown / plain text / source code -> PDF, entirely in the browser.
  *   Markdown is parsed with marked (MIT), HTML with the browser's DOMParser
- *   (inert, nothing is executed or loaded). The page layout is own code on top of
+ *   (inert, nothing is executed or loaded). Source code files (JS, TS, PY,
+ *   SH, ...) and HTML are rendered as formatted code with line numbers and
+ *   light syntax highlighting. The page layout is own code on top of
  *   pdf-lib (MIT) using the standard PDF fonts (Latin-1 / WinAnsi characters;
  *   emoji and non-Latin scripts are replaced by "?").
  */
@@ -394,17 +396,282 @@
     return pdf;
   }
 
-  const MD = /\.(md|markdown|mdown)$/i, TXT = /\.txt$/i, HTML = /\.(html?|xhtml)$/i;
+  const MD = /\.(md|markdown|mdown)$/i, TXT = /\.txt$/i;
 
+  /* Source-code file types: rendered as readable formatted code (the device
+     UI does not display code files at all, and HTML is sent as code, too). */
+  const CODE_EXTS = {
+    js: 'js', mjs: 'js', cjs: 'js', jsx: 'js', ts: 'js', tsx: 'js', mts: 'js', cts: 'js',
+    vue: 'js', svelte: 'js', astro: 'js', json: 'js', jsonc: 'js', groovy: 'jvm', gradle: 'jvm',
+    java: 'jvm', kt: 'jvm', kts: 'jvm', scala: 'jvm', cs: 'jvm', dart: 'jvm', swift: 'jvm',
+    go: 'c', rs: 'c', c: 'c', h: 'c', cc: 'c', cpp: 'c', cxx: 'c', hh: 'c', hpp: 'c', hxx: 'c',
+    py: 'py', pyw: 'py', rb: 'py', erb: 'py', php: 'py', phtml: 'py', pl: 'py', pm: 'py',
+    sh: 'sh', bash: 'sh', zsh: 'sh', ksh: 'sh', fish: 'sh', ps1: 'sh', psm1: 'sh', bat: 'sh', cmd: 'sh',
+    css: 'css', scss: 'css', sass: 'css', less: 'css', styl: 'css',
+    html: 'xml', htm: 'xml', xhtml: 'xml', xml: 'xml', xsl: 'xml', xslt: 'xml',
+    yaml: 'yaml', yml: 'yaml', toml: 'yaml', ini: 'yaml', cfg: 'yaml', conf: 'yaml', properties: 'yaml',
+    sql: 'sql', lua: 'lua', r: 'lua', jl: 'lua', proto: 'xml', graphql: 'js', gql: 'js', tf: 'yaml'
+  };
+  const CODE_NAME = /^(makefile|dockerfile|rakefile|gemfile|jenkinsfile|vagrantfile|justfile|\.gitignore|\.gitattributes|\.gitmodules|\.dockerignore|\.editorconfig|\.npmrc|\.babelrc|\.eslintrc(\..+)?)$/i;
+
+  /** Classifies an upload by name/mime: md | code | txt (or null). */
   function kindOf(file) {
-    const n = file.name;
+    const n = file.name, m = /\.([a-z0-9]+)$/i.exec(n), ext = m ? m[1].toLowerCase() : '';
     if (MD.test(n) || file.type === 'text/markdown') return 'md';
+    if (CODE_EXTS[ext] || CODE_NAME.test(n) ||
+        /^(text\/(javascript|typescript|x-sh|sh|kotlin|rust|sql)|application\/(javascript|typescript|json|xml|xhtml|sql|x-sh))$/.test(file.type)) return 'code';
     if (TXT.test(n) || file.type === 'text/plain') return 'txt';
-    if (HTML.test(n) || file.type === 'text/html') return 'html';
+    return null;
+  }
+
+  /** What a URL holds, by extension: pdf | md | code | null. Shared with the popup. */
+  function urlKind(url) {
+    if (!url || !/^https?:\/\//i.test(url)) return null;
+    const p = (url.split(/[?#]/)[0] || '').replace(/\/+$/, '');
+    if (/\.pdf$/i.test(p)) return 'pdf';
+    const m = /\.([a-z0-9]+)$/i.exec(p), ext = m ? m[1].toLowerCase() : '';
+    if (/^(md|markdown|mdown)$/.test(ext)) return 'md';
+    if (CODE_EXTS[ext]) return 'code';
     return null;
   }
 
   /** @param {File} file md | txt | html   @param {{page,fontScale,title}} opts   @returns {Promise<File>} */
+  /* ---------- source code -> PDF (line numbers, light syntax highlighting) ----------
+   * Own mini-tokenizer: a whole top-level unit (class, function, statement with
+   * trailing lines) always stays on one page if it fits on an empty page.
+   * Fine-grained colour output stays readable on the e-ink tablet. */
+
+  const KW_GROUPS = {
+    js: ('as async await break case catch class const continue debugger default delete do else export extends finally for ' +
+      'function if implements import in instanceof interface let new of return static super switch this throw try ' +
+      'typeof var void while with yield true false null undefined NaN get set enum namespace declare readonly public ' +
+      'private protected abstract type constructor').split(' '),
+    c: ('auto break case char const continue default do double else enum extern float for goto if inline int long register ' +
+      'restrict return short signed sizeof static struct switch typedef union unsigned void volatile while class new delete ' +
+      'this virtual override private public protected template typename namespace using nullptr true false bool catch throw ' +
+      'try operator explicit friend mutable fn let mut impl pub use match mod trait struct where async move ref unsafe').split(' '),
+    jvm: ('abstract assert boolean break byte case catch char class const continue default do double else enum extends final ' +
+      'finally float for goto if implements import instanceof int interface long native new package private protected ' +
+      'public return short static strictfp super switch synchronized this throw throws transient try void volatile while ' +
+      'var val fun object data when null true false open companion override sealed init suspend inline').split(' '),
+    py: ('and as assert async await break class continue def del elif else except finally for from global if import in is ' +
+      'lambda nonlocal not or pass raise return try while with yield True False None self match case').split(' '),
+    sh: ('if then else elif fi for while until do done case esac in function return exit local export readonly declare shift ' +
+      'set unset trap echo source alias break continue true false select time').split(' '),
+    sql: ('add all alter and any as asc authorization between by case check column constraint create cross current_date ' +
+      'current_time default delete desc distinct drop else end escape except exists from grant group having in index inner ' +
+      'insert intersect into join key like not null on or order outer primary references revoke right rollback select set ' +
+      'some table then to union unique update values view when where with commit begin').split(' '),
+    css: ('important media supports keyframes import includes from and not only screen print root var apply extend mixin').split(' '),
+    lua: ('and break do else elseif end false for function goto if in local nil not or repeat return then true until while').split(' ')
+  };
+  const LANGS = {
+    js: { line: ['//'], block: [['/*', '*/']], kw: KW_GROUPS.js, name: 'JavaScript' },
+    jvm: { line: ['//'], block: [['/*', '*/']], kw: KW_GROUPS.jvm, name: 'Java / Kotlin' },
+    c: { line: ['//'], block: [['/*', '*/']], kw: KW_GROUPS.c, name: 'C / C++ / Go' },
+    py: { line: ['#'], block: [['"""', '"""'], ["'''", "'''"]], kw: KW_GROUPS.py, name: 'Python / Ruby' },
+    sh: { line: ['#'], block: [], kw: KW_GROUPS.sh, name: 'Shell' },
+    css: { line: [], block: [['/*', '*/']], kw: KW_GROUPS.css, name: 'CSS / SCSS' },
+    xml: { line: [], block: [['<!--', '-->']], kw: [], name: 'XML / HTML' },
+    yaml: { line: ['#'], block: [], kw: [], name: 'YAML / TOML' },
+    sql: { line: ['--'], block: [['/*', '*/']], kw: KW_GROUPS.sql, ci: true, name: 'SQL' },
+    lua: { line: ['--'], block: [['--[[', ']]']], kw: KW_GROUPS.lua, name: 'Lua' }
+  };
+
+  /** Splits source into lines of {t, cls} segments, cls: kw | str | com | num | null. */
+  function tokenize(text, lang) {
+    const L = LANGS[lang] || { line: [], block: [], kw: [], ci: false };
+    const kws = L.ci ? L.kw.map(function (w) { return w.toLowerCase(); }) : L.kw;
+    const out = [];
+    let pending = null;               /* { end, cls } active multi-line string/comment */
+    text.replace(/\r\n?/g, '\n').split('\n').forEach(function (raw) {
+      const line = raw.replace(/\t/g, '  ');
+      const segs = [];
+      let cur = '';
+      const flush = function () { if (cur) { segs.push({ t: cur, cls: null }); cur = ''; } };
+      let i = 0;
+      while (i < line.length) {
+        if (pending) {
+          flush();
+          const idx = line.indexOf(pending.end, i);
+          const stop = idx < 0 ? line.length : idx + pending.end.length;
+          segs.push({ t: line.slice(i, stop), cls: pending.cls });
+          i = stop;
+          if (idx >= 0) pending = null;
+          continue;
+        }
+        const c0 = line[i];
+        const isQuote = c0 === '"' || c0 === "'" || c0 === '`';
+        const lineTok = L.line.filter(function (tok) { return line.startsWith(tok, i); })[0];
+        const blockTok = L.block.filter(function (tok) { return line.startsWith(tok[0], i); })[0];
+        if (isQuote) {
+          flush();
+          let j = 1, closed = false;
+          while (j < line.length - i) {
+            if (line[i + j] === '\\') { j += 2; continue; }
+            if (line[i + j] === c0) { closed = true; j++; break; }
+            j++;
+          }
+          segs.push({ t: line.substr(i, j), cls: 'str' });
+          if (!closed) pending = { end: c0, cls: 'str' };
+          i += j;
+          continue;
+        }
+        if (lineTok) {
+          flush();
+          segs.push({ t: line.slice(i), cls: 'com' });
+          i = line.length;
+          continue;
+        }
+        if (blockTok) {
+          flush();
+          const idx = line.indexOf(blockTok[1], i + blockTok[0].length);
+          const seg = idx < 0 ? line.slice(i) : line.slice(i, idx + blockTok[1].length);
+          segs.push({ t: seg, cls: 'com' });
+          if (idx < 0) pending = { end: blockTok[1], cls: 'com' };
+          i += seg.length;
+          continue;
+        }
+        const wm = /^[\w$]+/.exec(line.slice(i));
+        if (wm) {
+          flush();
+          const w = wm[0];
+          const lc = L.ci ? w.toLowerCase() : w;
+          segs.push({ t: w, cls: kws.indexOf(lc) >= 0 ? 'kw' : (/^\d/.test(w) ? 'num' : null) });
+          i += w.length;
+          continue;
+        }
+        cur += c0;
+        i++;
+      }
+      flush();
+      out.push(segs);
+    });
+    return out;
+  }
+
+  async function renderCode(text, name, opts) {
+    const PDFLib = window.PDFLib;
+    const pg = PAGES[opts.page] || PAGES.remarkable;
+    const pdf = await PDFLib.PDFDocument.create();
+    const SF = PDFLib.StandardFonts;
+    const fonts = {
+      m: await pdf.embedFont(SF.Courier),
+      mb: await pdf.embedFont(SF.CourierBold),
+      mi: await pdf.embedFont(SF.CourierOblique),
+      r: await pdf.embedFont(SF.Helvetica),
+      rb: await pdf.embedFont(SF.HelveticaBold)
+    };
+    const size = Math.max(5.5, Math.min(11.5, 8.8 * (opts.fontScale || 1)));
+    const lh = size * 1.32;
+    const margin = pg.margin;
+    const gutterW = Math.max(17, fonts.m.widthOfTextAtSize('0000', size) + 10);
+    const left = margin + gutterW + 6, right = pg.w - margin;
+    const cw = fonts.m.widthOfTextAtSize('M', size);
+    const perLine = Math.max(10, Math.floor((right - left) / cw));
+    const black = PDFLib.rgb(0.10, 0.09, 0.08);
+    const colors = {
+      kw: PDFLib.rgb(0.05, 0.16, 0.42),
+      str: PDFLib.rgb(0.42, 0.16, 0.12),
+      com: PDFLib.rgb(0.47, 0.45, 0.42),
+      num: PDFLib.rgb(0.00, 0.34, 0.34)
+    };
+    const clsColor = function (cls) { return cls ? colors[cls] : black; };
+    const clsFont = function (cls) { return cls === 'kw' ? fonts.mb : cls === 'com' ? fonts.mi : fonts.m; };
+
+    /* One visual line = { no: source line number, segs: [{t, cls}] }. Lines that
+       do not fit are wrapped (continuation without line number). */
+    const rows = tokenize(text, (CODE_EXTS[(name.match(/\.([a-z0-9]+)$/i) || [])[1] || '']) || '');
+    const visual = [];
+    rows.forEach(function (segs, li) {
+      let buf = [], used = 0;
+      const pushV = function (no) {
+        visual.push({ no: no, segs: buf });
+        buf = []; used = 0;
+      };
+      segs.forEach(function (s) {
+        let rest = s.t;
+        while (rest.length > perLine - used) {
+          buf.push({ t: rest.slice(0, perLine - used), cls: s.cls });
+          rest = rest.slice(perLine - used);
+          pushV(null);
+        }
+        if (rest.length) { buf.push({ t: rest, cls: s.cls }); used += rest.length; }
+      });
+      buf.push({ t: '', cls: null });
+      pushV(li + 1);
+    });
+
+    /* Group into top-level units: a unit starts at an unindented, non-blank
+       line that is not a closing bracket. A unit never starts on the last
+       lines of a page if it could be moved to a fresh page. */
+    const units = [];
+    let unit = [];
+    visual.forEach(function (v) {
+      const s = v.no !== null ? (v.segs[0] ? v.segs[0].t : '') : '';
+      const startsUnit = v.no !== null && s.trim() && !/^[}\])]/.test(s.trim());
+      const freshUnit = v.no !== null && !s.trim();
+      if (unit.length && (startsUnit || freshUnit)) { units.push(unit); unit = []; }
+      unit.push(v);
+    });
+    if (unit.length) units.push(unit);
+
+    /* first page + title block */
+    let page = pdf.addPage([pg.w, pg.h]);
+    let y = pg.h - margin;
+    const title = (opts.title || name).replace(/[\\/]/g, ' ').trim() || name;
+    const titleSize = Math.min(19, size * 1.9);
+    page.drawText(title, { x: margin, y: y - titleSize, font: fonts.rb, size: titleSize, color: black });
+    y -= titleSize * 1.5;
+    const ext = (name.match(/\.([a-z0-9]+)$/i) || [])[1] || '';
+    const meta = R.t('codeLines', { n: rows.length, lang: (LANGS[CODE_EXTS[ext]] || {}).name || 'TXT' });
+    page.drawText(meta, { x: margin, y: y - size, font: fonts.r, size: size * 0.95, color: colors.com });
+    y -= size * 1.9;
+    page.drawLine({ start: { x: margin, y: y }, end: { x: pg.w - margin, y: y }, thickness: 0.7, color: PDFLib.rgb(0.72, 0.70, 0.67) });
+    y -= size * 1.1;
+    const firstTop = y;
+    const freshHeight = pg.h - margin * 2;
+    const remaining = function () { return y - (margin + size * 2.2); };
+    const nextPage = function () { page = pdf.addPage([pg.w, pg.h]); y = pg.h - margin; };
+
+    units.forEach(function (u) {
+      const h = u.length * lh;
+      if (h <= freshHeight && y < firstTop && remaining() < h && remaining() > lh * 2) nextPage();
+      u.forEach(function (v) {
+        if (remaining() < lh) nextPage();
+        const yLine = y;
+        if (v.no !== null) {
+          const no = String(v.no);
+          page.drawText(no, { x: margin + (gutterW - 8) - fonts.m.widthOfTextAtSize(no, size), y: yLine - size, font: fonts.m, size: size, color: colors.com });
+        }
+        page.drawLine({ start: { x: margin + gutterW, y: yLine + size * 0.25 }, end: { x: margin + gutterW, y: yLine - lh + size * 0.25 }, thickness: 0.5, color: PDFLib.rgb(0.86, 0.85, 0.83) });
+        let x = left;
+        v.segs.forEach(function (s) {
+          if (s.t) page.drawText(s.t, { x: x, y: yLine - size, font: clsFont(s.cls), size: size, color: clsColor(s.cls) });
+          x += s.t.length * cw;
+        });
+        y -= lh;
+      });
+      if (u !== units[units.length - 1]) y -= lh * 0.25;    /* small gap between units */
+    });
+
+    /* footer: file name left, page n/m right */
+    const pages = pdf.getPages();
+    const fSize = Math.max(6.5, size * 0.82);
+    const fn = name.length > 60 ? name.slice(0, 57) + '...' : name;
+    pages.forEach(function (p, pi) {
+      p.drawLine({ start: { x: margin, y: margin + size * 1.5 }, end: { x: pg.w - margin, y: margin + size * 1.5 }, thickness: 0.5, color: PDFLib.rgb(0.80, 0.78, 0.75) });
+      const rightText = (pi + 1) + ' / ' + pages.length;
+      const rw = fonts.r.widthOfTextAtSize(rightText, fSize);
+      p.drawText(rightText, { x: pg.w - margin - rw, y: margin + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
+      p.drawText(fn, { x: margin, y: margin + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
+    });
+
+    pdf.setTitle(title);
+    pdf.setCreator('reMarkable web interface');
+    return pdf;
+  }
+
   async function convert(file, opts) {
     opts = opts || {};
     await R.load.pdfLib();
@@ -412,6 +679,12 @@
     const kind = kindOf(file);
     if (kind === 'md') await R.load.marked();
     let model;
+    if (kind === 'code') {
+      const base = file.name.replace(/\.[^.]+$/, '');
+      const pdf = await renderCode(text, file.name, { page: opts.page, fontScale: opts.fontScale, title: opts.title || base });
+      const bytes = await pdf.save();
+      return new File([bytes], base + '.pdf', { type: 'application/pdf' });
+    }
     if (kind === 'md') {
       if (!window.marked) throw new Error('marked not loaded');
       const html = window.marked.parse(text, { gfm: true, breaks: false });
@@ -420,8 +693,6 @@
         const mm = /^\s*#\s+(.+)$/m.exec(text);
         if (mm) model.title = mm[1].trim();
       }
-    } else if (kind === 'html') {
-      model = htmlToBlocks(text);
     } else {
       model = textToBlocks(text);
     }
@@ -433,5 +704,5 @@
     return new File([bytes], outName + '.pdf', { type: 'application/pdf' });
   }
 
-  R.textpdf = { kindOf: kindOf, convert: convert, pageDate: pageDate };
+  R.textpdf = { kindOf: kindOf, convert: convert, pageDate: pageDate, urlKind: urlKind };
 })();
