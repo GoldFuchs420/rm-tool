@@ -12,8 +12,8 @@
  *   srv.refresh();                     // manuell neu prüfen
  *   srv.readyServers();                // aktuell erreichbare (online) Server
  *   RMXServers.report(url, msg)        // Aufruf-Fehler melden: Server geht
- *                                      // auf offline (rot) + Meldung unter
- *                                      // der Serverliste
+ *                                      // auf offline (rot) + Fehlerzeile(n)
+ *                                      // unter dem Server-Status
  */
 (function (global) {
   "use strict";
@@ -35,7 +35,6 @@
       '<button type="button" class="rmx-srv-toggle" data-rmx-srv-toggle title="Server verwalten / alle anzeigen" aria-label="Server verwalten / alle anzeigen">⚙</button>' +
       "</div>" +
       '<ul class="rmx-srv-list" data-rmx-srv-list></ul>' +
-      '<div class="rmx-srv-msg" data-rmx-srv-msg hidden></div>' +
       '<form class="rmx-srv-add-form hidden" data-rmx-srv-addform>' +
       '<input type="text" class="rmx-srv-add-input" data-rmx-srv-addinput />' +
       '<button type="submit" class="rmx-srv-add-btn">+</button>' +
@@ -47,7 +46,6 @@
     const elList = root.querySelector("[data-rmx-srv-list]");
     const elAddForm = root.querySelector("[data-rmx-srv-addform]");
     const elAddInput = root.querySelector("[data-rmx-srv-addinput]");
-    const elMsg = root.querySelector("[data-rmx-srv-msg]");
     elAddInput.placeholder = T("srvAddPh", "z. B. https://10.11.99.1");
 
     function esc(s) {
@@ -77,7 +75,7 @@
        gelaufen ist (sonst zeigten Popup/Dateimanager Senden bzw. Listen
        kurz sofort an, solange die Server gerade erst geprüft werden). */
     function plainServers() {
-      return servers.map(function (s) { const c = Object.assign({}, s); delete c._status; return c; });
+      return servers.map(function (s) { const c = Object.assign({}, s); delete c._status; delete c._errs; return c; });
     }
     async function saveServers() {
       await chrome.storage.local.set({ servers: plainServers() });
@@ -98,12 +96,14 @@
       return servers.filter(function (s) { return s._status === "online"; });
     }
 
-    /* Meldung unter der Serverliste: der servernahe Grund, warum ein Aufruf
-       gerade fehlgeschlagen ist; die naechste erfolgreiche Pruefung raeumt
-       sie wieder weg. */
-    function setServerMessage(text) {
-      elMsg.hidden = !text;
-      if (text) elMsg.textContent = text;
+    /* Fehlermeldungen pro Server (s._errs, nicht persistiert): jede Zeile
+       steht unter dem Status des betreffenden Servers und nennt den
+       servernahen Grund; mehrere Meldungen ergeben mehrere Zeilen. Die
+       naechste erfolgreiche Pruefung raeumt sie wieder weg. */
+    function addServerError(s, msg) {
+      const errs = s._errs || (s._errs = []);
+      if (errs[errs.length - 1] !== msg) errs.push(msg || "");
+      if (errs.length > 5) errs.splice(0, errs.length - 5);
     }
     function failReason(r) {
       if (r.code) return "HTTP " + r.code;
@@ -112,17 +112,18 @@
     }
     /* Von popup.js (fetch-Upload) und api.js (Dateimanager-Aufrufe) gerufen,
        wenn ein echter Aufruf fehlschlaegt: Server auf offline (rot) setzen
-       und die Ursache unter der Serverliste anzeigen. 401/403 werden hier
+       und die Ursache unter dessen Status anzeigen. 401/403 werden hier
        NICHT gemeldet – das bleibt der gelbe "Login noetig"-Fall. */
-    RMXServers.report = function (url, msg) {
+    function report(url, msg) {
       const s = servers.find(function (x) { return x.url === url; });
       if (!s) return;
       const wasOnline = s._status === "online";
       s._status = "offline";
-      setServerMessage(T("srvConnLost", "Verbindung zu {url} verloren ({msg})", { url: url, msg: msg || "" }));
+      addServerError(s, msg);
       render();
       if (wasOnline) onChange(readyServers());
-    };
+    }
+    RMXServers.report = report;
 
     /* Probe liefert { status, scheme?, code?, netError? }: scheme aus dem
        WWW-Authenticate-Header (z. B. Digest/NTLM → Basic-Login kann nie
@@ -158,7 +159,7 @@
        ist, dass geprueft wird, und waehrenddessen nicht mehr als verfuegbar
        gelten. `onChange` feuert zusaetzlich im checking-Stadium, damit
        popup/dateimanager "Senden" deaktivieren, solange KEIN Server online
-       ist. Scheiternde Server erzeugen eine Meldung unter der Serverliste. */
+       ist. Scheiternde Server bekommen ihre Fehlerzeilen unter dem eigenen Status. */
     let discovering = false;
     async function runDiscovery() {
       if (discovering) return;
@@ -166,17 +167,14 @@
       elReload.classList.add("spinning");
       try {
         const list = servers;
-        list.forEach(function (s) { s._status = "checking"; });
-        setServerMessage("");
+        list.forEach(function (s) { s._status = "checking"; s._errs = null; });
         render();
         onChange(readyServers());
-        const fails = [];
         await Promise.all(list.map(async function (s) {
           const r = await probe(s);
           s._status = r.status;
-          if (r.status === "offline") fails.push(s.url + " (" + failReason(r) + ")");
+          if (r.status === "offline") addServerError(s, failReason(r));
         }));
-        setServerMessage(fails.join(" · "));
         render();
         onChange(readyServers());
       } finally {
@@ -263,7 +261,8 @@
       /* Wenn kein Server online ist, alle zeigen (auch offline), damit die
          Login-Karte und das Hinzufügen jederzeit erreichbar bleiben. */
       const noneOnline = !servers.some(function (s) { return s._status === "online"; });
-      const visible = (editMode || noneOnline) ? servers : servers.filter(function (s) { return s._status !== "offline"; });
+      const visible = (editMode || noneOnline) ? servers
+        : servers.filter(function (s) { return s._status !== "offline" || (s._errs && s._errs.length); });
       const frag = document.createDocumentFragment();
 
       visible.forEach(function (s) {
@@ -301,6 +300,17 @@
         }
 
         row.appendChild(rowDiv);
+        if (s._errs && s._errs.length) {
+          const errs = document.createElement("ul");
+          errs.className = "rmx-srv-errs";
+          s._errs.forEach(function (m) {
+            const li = document.createElement("li");
+            li.className = "rmx-srv-err";
+            li.textContent = m;
+            errs.appendChild(li);
+          });
+          row.appendChild(errs);
+        }
         if (s._status === "auth") row.appendChild(buildLoginCard(s));
         frag.appendChild(row);
       });
@@ -347,7 +357,8 @@
     return {
       refresh: runDiscovery,
       readyServers: readyServers,
-      redraw: render
+      redraw: render,
+      report: report
     };
   };
 })(typeof window !== "undefined" ? window : this);
