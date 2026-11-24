@@ -307,6 +307,43 @@ $("onePerPdf").addEventListener("change", () => {
   updateSendButton();
 });
 
+/* Readability's own unlikelyCandidates/negative regexes are English-only and
+   can miss "related articles" boxes that are (a) named in another language
+   (weiterlesen, mehr zum Thema, ähnliche Artikel, ...) or (b) styled with
+   hashed/obfuscated CSS-module class names that carry no readable keyword
+   at all. Both cases otherwise end up rendered as if they were part of the
+   article, because renderBlock()'s generic fallback pulls every <img> out
+   of any container it doesn't specifically recognise. */
+const RELATED_KEYWORDS = /related|more-?stories|recirc|recommend(ed|ation)?|teaser|read-?more|also-?read|next-?article|more-?articles|outbrain|taboola|weiterlesen|mehr[-_ ]?zum[-_ ]?thema|similar|[aä]hnlich|auch[-_ ]?interessant|das[-_ ]?k[oö]nnte|empfehlung/i;
+
+function looksLikeTeaserGrid(el) {
+  if (!el.querySelectorAll) return false;
+  const links = Array.from(el.querySelectorAll("a"));
+  const withImg = links.filter((a) => a.querySelector("img"));
+  if (withImg.length < 2) return false;
+  // A real paragraph/figure has substantial text per image; a teaser grid
+  // of thumbnail + short headline links barely has any.
+  const textLen = (el.innerText || "").trim().length;
+  return textLen < withImg.length * 90;
+}
+
+function isRelatedBlock(el) {
+  if (!el || el.nodeType !== 1) return false;
+  const sig = String((el.className && el.className.baseVal) || el.className || "") + " " + String(el.id || "");
+  if (RELATED_KEYWORDS.test(sig)) return true;
+  return looksLikeTeaserGrid(el);
+}
+
+/* Only trims from the end: a "related" match in the middle of an article
+   is far more likely to be a false positive (e.g. a legitimate inline
+   recommendation box an author placed deliberately) than one trailing
+   after the last real content block. */
+function stripTrailingRelatedBlocks(blocks) {
+  let end = blocks.length;
+  while (end > 0 && isRelatedBlock(blocks[end - 1])) end--;
+  return end > 0 ? blocks.slice(0, end) : blocks;
+}
+       
 /* ---- PDF-Erzeugung aus dem extrahierten Artikel (Kapitel-Umbruch,
    Bild-Umfluss/Orphan-Schutz) ---- */
 async function buildPdfFromArticle(title, contentHtml, size, sourceUrl) {
@@ -339,10 +376,12 @@ async function buildPdfFromArticle(title, contentHtml, size, sourceUrl) {
 
   const parser = new DOMParser();
   const parsed = parser.parseFromString(`<div>${contentHtml}</div>`, "text/html");
+  
   const root = parsed.body.firstElementChild;
-  const blocks = root && root.children.length ? Array.from(root.children) : [root].filter(Boolean);
-
+  const rawBlocks = root && root.children.length ? Array.from(root.children) : [root].filter(Boolean);
+  const blocks = stripTrailingRelatedBlocks(rawBlocks);
   const imageCache = new Map();
+  
   async function loadImage(src) {
     if (!src || !/^https?:\/\//.test(src)) return null;
     if (imageCache.has(src)) return imageCache.get(src);
