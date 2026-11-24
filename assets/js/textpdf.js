@@ -580,21 +580,20 @@
     const lh = size * 1.32;
     const margin = pg.margin;
     /* Code pages use tighter margins: flush left (the line-number gutter sits
-       at the paper edge), half the regular margin right/top/bottom. The
-       missing left margin is balanced by indenting the code after the gutter. */
+       at the paper edge), half the regular margin right/top/bottom. The gutter
+       width derives from the widest real line number: 0.3 cm of padding on
+       both sides of the numbers, then 0.2 cm from the separator to the code. */
     const cm = Math.round(margin * 0.5);
-    const gutterW = Math.max(17, fonts.m.widthOfTextAtSize('0000', size) + 10);
-    const left = gutterW + 6 + Math.round(margin * 0.5), right = pg.w - cm;
     const cw = fonts.m.widthOfTextAtSize('M', size);
-    const perLine = Math.max(10, Math.floor((right - left) / cw));
     const black = PDFLib.rgb(0.10, 0.09, 0.08);
-    /* token colours as in GitHub's code view (light theme): keywords red,
-       strings navy, comments grey, numbers blue. */
+    /* token colours as in GitHub's code view (light theme), a shade darker
+       for stronger contrast on e-ink: keywords red, strings navy, comments
+       grey, numbers blue. */
     const colors = {
-      kw: PDFLib.rgb(0.812, 0.133, 0.180),
-      str: PDFLib.rgb(0.039, 0.188, 0.412),
-      com: PDFLib.rgb(0.349, 0.388, 0.431),
-      num: PDFLib.rgb(0.020, 0.314, 0.682)
+      kw: PDFLib.rgb(0.545, 0.055, 0.118),
+      str: PDFLib.rgb(0.020, 0.114, 0.302),
+      com: PDFLib.rgb(0.267, 0.294, 0.333),
+      num: PDFLib.rgb(0.012, 0.184, 0.451)
     };
     const clsColor = function (cls) { return cls ? colors[cls] : black; };
     const clsFont = function (cls) { return cls === 'kw' ? fonts.mb : cls === 'com' ? fonts.mi : fonts.m; };
@@ -603,6 +602,12 @@
        do not fit are wrapped (continuation without line number). */
     text = clean(text, 'm');   /* WinAnsi-safe ahead of wrapping/width math */
     const rows = tokenize(text, (CODE_EXTS[(name.match(/\.([a-z0-9]+)$/i) || [])[1] || '']) || '');
+
+    /* gutter from the widest actual line number (e.g. 2378) */
+    const numPad = 8.5, textGap = 5.7;   /* 0.3 cm around numbers, 0.2 cm to the text */
+    const gutterW = Math.max(17, String(rows.length || 1).length * cw + numPad * 2);
+    const left = gutterW + textGap, right = pg.w - cm;
+    const perLine = Math.max(10, Math.floor((right - left) / cw));
     const visual = [];
     rows.forEach(function (segs, li) {
       let buf = [], used = 0;
@@ -663,9 +668,9 @@
         const yLine = y;
         if (v.no !== null) {
           const no = String(v.no);
-          page.drawText(no, { x: margin + (gutterW - 8) - fonts.m.widthOfTextAtSize(no, size), y: yLine - size, font: fonts.m, size: size, color: colors.com });
+          page.drawText(no, { x: gutterW - numPad - fonts.m.widthOfTextAtSize(no, size), y: yLine - size, font: fonts.m, size: size, color: colors.com });
         }
-        page.drawLine({ start: { x: margin + gutterW, y: yLine + size * 0.25 }, end: { x: margin + gutterW, y: yLine - lh + size * 0.25 }, thickness: 0.5, color: PDFLib.rgb(0.86, 0.85, 0.83) });
+        page.drawLine({ start: { x: gutterW, y: yLine + size * 0.25 }, end: { x: gutterW, y: yLine - lh + size * 0.25 }, thickness: 0.5, color: PDFLib.rgb(0.86, 0.85, 0.83) });
         let x = left;
         v.segs.forEach(function (s) {
           if (s.t) page.drawText(s.t, { x: x, y: yLine - size, font: clsFont(s.cls), size: size, color: clsColor(s.cls) });
@@ -685,7 +690,7 @@
       const rightText = (pi + 1) + ' / ' + pages.length;
       const rw = fonts.r.widthOfTextAtSize(rightText, fSize);
       p.drawText(rightText, { x: pg.w - cm - rw, y: cm + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
-      p.drawText(fn, { x: 0, y: cm + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
+      p.drawText(fn, { x: left, y: cm + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
     });
 
     pdf.setTitle(title);
