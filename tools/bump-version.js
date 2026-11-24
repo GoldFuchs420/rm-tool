@@ -17,13 +17,14 @@ if (!["major", "minor", "patch"].includes(kind)) {
 }
 
 const man = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
-const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(man.version);
+const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.]+)?$/.exec(man.version);
 if (!match) {
   console.error("ungueltige Version in manifest.json: " + man.version);
   process.exit(1);
 }
 
-let [major, minor, patch] = match.slice(1).map(Number);
+/* Ein Prerelease-Suffix (z. B. -RC1) entfaellt beim naechsten Bump. */
+let [major, minor, patch] = match.slice(1, 4).map(Number);
 if (kind === "major") { major++; minor = 0; patch = 0; }
 else if (kind === "minor") { minor++; patch = 0; }
 else { patch++; }
