@@ -21,13 +21,18 @@ in der Optik von reMarkables eigenem Ark-Design.
   „Bilder von {Titel} – n". Minimalbreiten-Slider filtert Icons und Zierbilder.
 - **Kombinierbar**: Webseite und Bilder gehen mit einem Klick gemeinsam an alle
   erreichbaren Server; der Status-Expander zeigt je Datei ✓/✗ je Server.
-- **Schriftgröße pro Website** gespeichert; 5 Sprachen (de, en, it, es, fr)
+- **Schriftgröße pro Website und Dokumenttyp** (Artikel, PDF, Code, Markdown)
+  gespeichert; der letzte Wert gilt als Default. 5 Sprachen (de, en, it, es, fr)
   direkt im Popup umschaltbar.
 - **Code-/Markdown-Links**: sources mit Endung `.js`, `.ts`, `.py`, `.sh`, ...
-  oder `.html` landen als formatierter Code im PDF (Zeilennummern, dezentes
-  Syntax-Highlighting, Klassen/Blöcke werden nicht zerteilt); `.md` wird
-  weiter als lesbares Dokument gerendert. Die Schriftgröße kommt aus dem
-  Popup-Slider.
+  oder `.html` landen als formatierter Code im PDF (Zeilennummern,
+  GitHub-artiges Syntax-Highlighting, Klassen/Blöcke werden nicht zerteilt,
+  kompakte Ränder mit Zeilennummern am Seitenrand); der Dateiname trägt die
+  Endung (z. B. `widgets.js.pdf`) und `.md` wird weiter als lesbares Dokument
+  gerendert. Die Schriftgröße kommt aus dem Popup-Slider.
+- **EPUB-Durchreichung**: `.epub`-Dateien und EPUB-Links werden unverändert
+  an das Tablet gesendet — der Geräteimport unterstützt EPUB nativ, eine
+  PDF-Umwandlung entfällt.
 - **Verbindungs-Gating**: Ohne erreichbaren Server wird nur die Serverliste
   gezeigt — kein Senden-Button, der ins Leere läuft.
 

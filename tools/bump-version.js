@@ -17,7 +17,7 @@ if (!["major", "minor", "patch"].includes(kind)) {
 }
 
 const man = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
-const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.]+)?$/.exec(man.version);
+const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.]+))?$/.exec(man.version);
 if (!match) {
   console.error("ungueltige Version in manifest.json: " + man.version);
   process.exit(1);
@@ -29,6 +29,12 @@ if (kind === "major") { major++; minor = 0; patch = 0; }
 else if (kind === "minor") { minor++; patch = 0; }
 else { patch++; }
 man.version = [major, minor, patch].join(".");
+/* Der Anzeigename (version_name) wird mitgezogen, damit Anzeige und interne
+   Version nicht auseinanderlaufen; der Prerelease-Zusatz entfaellt ebenso
+   wie bei der internen Version. */
+if (typeof man.version_name === "string") {
+  man.version_name = man.version;
+}
 
 fs.writeFileSync(MANIFEST, JSON.stringify(man, null, 2) + "\n");
 console.log("manifest.json: Version -> " + man.version);

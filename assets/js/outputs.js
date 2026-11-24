@@ -266,7 +266,9 @@
             }
             const used = usedBy[folder] || (usedBy[folder] = new Set());
             const name = out.finalName(base, folder, used);
-            const type = ext === 'pdf' ? 'application/pdf' : (item.blob.type || 'application/octet-stream');
+            const type = ext === 'pdf' ? 'application/pdf'
+              : ext === 'epub' ? 'application/epub+zip'
+              : (item.blob.type || 'application/octet-stream');
             const data = ext === 'rmdoc' ? await R.rmdoc.rename(item.blob, name) : item.blob;
             await R.api.upload(new File([data], name + '.' + ext, { type: type }), folder, signal);
             item._uploaded = true;

@@ -3,7 +3,11 @@
  *   Markdown is parsed with marked (MIT), HTML with the browser's DOMParser
  *   (inert, nothing is executed or loaded). Source code files (JS, TS, PY,
  *   SH, ...) and HTML are rendered as formatted code with line numbers and
- *   light syntax highlighting. The page layout is own code on top of
+ *   light syntax highlighting. Code titles carry the file extension so the
+ *   document type stays visible on the tablet; code pages use tight margins
+ *   (flush left with a line-number gutter, half margin elsewhere). EPUB files
+ *   are passed through unchanged because the device imports them natively.
+ *   The page layout is own code on top of
  *   pdf-lib (MIT) using the standard PDF fonts (Latin-1 / WinAnsi characters;
  *   emoji and non-Latin scripts are replaced by "?").
  */
@@ -396,7 +400,7 @@
     return pdf;
   }
 
-  const MD = /\.(md|markdown|mdown)$/i, TXT = /\.txt$/i;
+  const MD = /\.(md|markdown|mdown)$/i, TXT = /\.txt$/i, EPUB = /\.epub$/i;
 
   /* Source-code file types: rendered as readable formatted code (the device
      UI does not display code files at all, and HTML is sent as code, too). */
@@ -414,12 +418,13 @@
   };
   const CODE_NAME = /^(makefile|dockerfile|rakefile|gemfile|jenkinsfile|vagrantfile|justfile|\.gitignore|\.gitattributes|\.gitmodules|\.dockerignore|\.editorconfig|\.npmrc|\.babelrc|\.eslintrc(\..+)?)$/i;
 
-  /** Classifies an upload by name/mime: md | code | txt (or null). */
+  /** Classifies an upload by name/mime: md | code | epub | txt (or null). */
   function kindOf(file) {
     const n = file.name, m = /\.([a-z0-9]+)$/i.exec(n), ext = m ? m[1].toLowerCase() : '';
     if (MD.test(n) || file.type === 'text/markdown') return 'md';
     if (CODE_EXTS[ext] || CODE_NAME.test(n) ||
         /^(text\/(javascript|typescript|x-sh|sh|kotlin|rust|sql)|application\/(javascript|typescript|json|xml|xhtml|sql|x-sh))$/.test(file.type)) return 'code';
+    if (/\.epub$/i.test(n) || file.type === 'application/epub+zip') return 'epub';
     if (TXT.test(n) || file.type === 'text/plain') return 'txt';
     return null;
   }
@@ -431,6 +436,7 @@
     if (/\.pdf$/i.test(p)) return 'pdf';
     const m = /\.([a-z0-9]+)$/i.exec(p), ext = m ? m[1].toLowerCase() : '';
     if (/^(md|markdown|mdown)$/.test(ext)) return 'md';
+    if (ext === 'epub') return 'epub';
     if (CODE_EXTS[ext]) return 'code';
     return null;
   }
@@ -565,16 +571,22 @@
     const size = Math.max(5.5, Math.min(11.5, 8.8 * (opts.fontScale || 1)));
     const lh = size * 1.32;
     const margin = pg.margin;
+    /* Code pages use tighter margins: flush left (the line-number gutter sits
+       at the paper edge), half the regular margin right/top/bottom. The
+       missing left margin is balanced by indenting the code after the gutter. */
+    const cm = Math.round(margin * 0.5);
     const gutterW = Math.max(17, fonts.m.widthOfTextAtSize('0000', size) + 10);
-    const left = margin + gutterW + 6, right = pg.w - margin;
+    const left = gutterW + 6 + Math.round(margin * 0.5), right = pg.w - cm;
     const cw = fonts.m.widthOfTextAtSize('M', size);
     const perLine = Math.max(10, Math.floor((right - left) / cw));
     const black = PDFLib.rgb(0.10, 0.09, 0.08);
+    /* token colours as in GitHub's code view (light theme): keywords red,
+       strings navy, comments grey, numbers blue. */
     const colors = {
-      kw: PDFLib.rgb(0.05, 0.16, 0.42),
-      str: PDFLib.rgb(0.42, 0.16, 0.12),
-      com: PDFLib.rgb(0.47, 0.45, 0.42),
-      num: PDFLib.rgb(0.00, 0.34, 0.34)
+      kw: PDFLib.rgb(0.812, 0.133, 0.180),
+      str: PDFLib.rgb(0.039, 0.188, 0.412),
+      com: PDFLib.rgb(0.349, 0.388, 0.431),
+      num: PDFLib.rgb(0.020, 0.314, 0.682)
     };
     const clsColor = function (cls) { return cls ? colors[cls] : black; };
     const clsFont = function (cls) { return cls === 'kw' ? fonts.mb : cls === 'com' ? fonts.mi : fonts.m; };
@@ -618,21 +630,21 @@
 
     /* first page + title block */
     let page = pdf.addPage([pg.w, pg.h]);
-    let y = pg.h - margin;
+    let y = pg.h - cm;
     const title = (opts.title || name).replace(/[\\/]/g, ' ').trim() || name;
     const titleSize = Math.min(19, size * 1.9);
-    page.drawText(title, { x: margin, y: y - titleSize, font: fonts.rb, size: titleSize, color: black });
+    page.drawText(title, { x: left, y: y - titleSize, font: fonts.rb, size: titleSize, color: black });
     y -= titleSize * 1.5;
     const ext = (name.match(/\.([a-z0-9]+)$/i) || [])[1] || '';
     const meta = R.t('codeLines', { n: rows.length, lang: (LANGS[CODE_EXTS[ext]] || {}).name || 'TXT' });
-    page.drawText(meta, { x: margin, y: y - size, font: fonts.r, size: size * 0.95, color: colors.com });
+    page.drawText(meta, { x: left, y: y - size, font: fonts.r, size: size * 0.95, color: colors.com });
     y -= size * 1.9;
-    page.drawLine({ start: { x: margin, y: y }, end: { x: pg.w - margin, y: y }, thickness: 0.7, color: PDFLib.rgb(0.72, 0.70, 0.67) });
+    page.drawLine({ start: { x: 0, y: y }, end: { x: pg.w - cm, y: y }, thickness: 0.7, color: PDFLib.rgb(0.72, 0.70, 0.67) });
     y -= size * 1.1;
     const firstTop = y;
-    const freshHeight = pg.h - margin * 2;
-    const remaining = function () { return y - (margin + size * 2.2); };
-    const nextPage = function () { page = pdf.addPage([pg.w, pg.h]); y = pg.h - margin; };
+    const freshHeight = pg.h - cm * 2;
+    const remaining = function () { return y - (cm + size * 2.2); };
+    const nextPage = function () { page = pdf.addPage([pg.w, pg.h]); y = pg.h - cm; };
 
     units.forEach(function (u) {
       const h = u.length * lh;
@@ -660,11 +672,11 @@
     const fSize = Math.max(6.5, size * 0.82);
     const fn = name.length > 60 ? name.slice(0, 57) + '...' : name;
     pages.forEach(function (p, pi) {
-      p.drawLine({ start: { x: margin, y: margin + size * 1.5 }, end: { x: pg.w - margin, y: margin + size * 1.5 }, thickness: 0.5, color: PDFLib.rgb(0.80, 0.78, 0.75) });
+      p.drawLine({ start: { x: 0, y: cm + size * 1.5 }, end: { x: pg.w - cm, y: cm + size * 1.5 }, thickness: 0.5, color: PDFLib.rgb(0.80, 0.78, 0.75) });
       const rightText = (pi + 1) + ' / ' + pages.length;
       const rw = fonts.r.widthOfTextAtSize(rightText, fSize);
-      p.drawText(rightText, { x: pg.w - margin - rw, y: margin + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
-      p.drawText(fn, { x: margin, y: margin + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
+      p.drawText(rightText, { x: pg.w - cm - rw, y: cm + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
+      p.drawText(fn, { x: 0, y: cm + size * 0.45, font: fonts.r, size: fSize, color: colors.com });
     });
 
     pdf.setTitle(title);
@@ -681,9 +693,17 @@
     let model;
     if (kind === 'code') {
       const base = file.name.replace(/\.[^.]+$/, '');
-      const pdf = await renderCode(text, file.name, { page: opts.page, fontScale: opts.fontScale, title: opts.title || base });
+      /* keep the extension visible: title and file name carry "base.ext" */
+      const ext = (file.name.match(/\.([a-z0-9]+)$/i) || [])[1] || '';
+      const title = (opts.title || base + (ext ? '.' + ext : ''));
+      const pdf = await renderCode(text, file.name, { page: opts.page, fontScale: opts.fontScale, title: title });
       const bytes = await pdf.save();
-      return new File([bytes], base + '.pdf', { type: 'application/pdf' });
+      return new File([bytes], title + '.pdf', { type: 'application/pdf' });
+    }
+    if (kind === 'epub') {
+      /* EPUB is transferred to the tablet unchanged (the device import
+         handles it natively); no PDF conversion happens here. */
+      return file;
     }
     if (kind === 'md') {
       if (!window.marked) throw new Error('marked not loaded');
