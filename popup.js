@@ -11,6 +11,7 @@ let serverComponent = null;  // von RMXServers.mount() (shared/servers.js)
 let articleData = null;      // { title, content } von Readability
 let isPdfSource = false;     // aktuelle Seite ist selbst schon ein PDF
 let pdfSourceBlob = null;    // bei isPdfSource: die geladenen PDF-Bytes
+let textSource = null;       // Code-/Markdown-Datei als Quelle (File-Objekt)
 let articleReady = false;    // true sobald Extraktion/PDF-Erkennung lief
 let fontSize = 16;
 
@@ -197,7 +198,30 @@ async function prepareArticleSection() {
   }
 
   isPdfSource = await detectIfPdf(currentTabInfo.url);
+  textSource = null;
   $("fontSlider").disabled = isPdfSource;
+
+  /* Code- und Markdown-Dateien: Source direkt laden; gerendert wird beim
+     Upload (Schriftgroesse aus dem Popup-Slider wird als fontScale uebergeben). */
+  const uk = (window.RMX && RMX.textpdf) ? RMX.textpdf.urlKind(currentTabInfo.url) : null;
+  if (uk === "code" || uk === "md") {
+    setArtStatus("stLoadFile", null, "Lade Datei\u2026");
+    try {
+      const res = await fetch(currentTabInfo.url, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const body = await res.text();
+      const path = currentTabInfo.url.split(/[?#]/)[0].replace(/\/+$/, "").split("/");
+      let base = decodeURIComponent(path.pop() || "") || "Dokument";
+      base = base.replace(/[\\/:*?\"<>|]/g, "_") || "Dokument";
+      textSource = new File([body], base, { type: "text/plain" });
+      articleReady = true;
+      setArtStatus(uk === "code" ? "stCodeSource" : "stMdSource", { name: base.slice(0, 60) }, base.slice(0, 60));
+    } catch {
+      setArtStatus("stFileFail", null, "Datei konnte nicht geladen werden.");
+    }
+    updateSendButton();
+    return;
+  }
 
   if (isPdfSource) {
     setArtStatus("stLoadingPdf", null, "Lade PDF…");
@@ -979,7 +1003,7 @@ async function sendNow({ article, images } = {}) {
 
   const rows = files.map((f) => {
     const li = statusRow(
-      f.kind === "article" ? (currentTabInfo?.title || t("pageAsPdfHead"))
+      f.kind === "article" ? (textSource ? textSource.name : (currentTabInfo?.title || t("pageAsPdfHead")))
         : f.kind === "images" ? t("imagesFrom", { title: (currentTabInfo?.pageTitle || currentTabInfo?.title || "").trim() || t("imagesHead") })
         : f.base
     );
@@ -1007,6 +1031,12 @@ async function sendNow({ article, images } = {}) {
         if (isPdfSource) {
           blob = pdfSourceBlob;
           filenameBase = sanitizeFilename(currentTabInfo?.title || "Dokument");
+        } else if (textSource) {
+          blob = await RMX.textpdf.convert(textSource, {
+            page: "remarkable",
+            fontScale: Math.min(2.2, Math.max(0.6, fontSize / 16))
+          });
+          filenameBase = sanitizeFilename(textSource.name.replace(/\.[^.]+$/, ""));
         } else {
           blob = await buildPdfFromArticle(articleData.title || "Artikel", articleData.content, fontSize, currentTabInfo?.url);
           filenameBase = sanitizeFilename(articleData.title || "Artikel");

@@ -23,16 +23,23 @@ in der Optik von reMarkables eigenem Ark-Design.
   erreichbaren Server; der Status-Expander zeigt je Datei ✓/✗ je Server.
 - **Schriftgröße pro Website** gespeichert; 5 Sprachen (de, en, it, es, fr)
   direkt im Popup umschaltbar.
+- **Code-/Markdown-Links**: sources mit Endung `.js`, `.ts`, `.py`, `.sh`, ...
+  oder `.html` landen als formatierter Code im PDF (Zeilennummern, dezentes
+  Syntax-Highlighting, Klassen/Blöcke werden nicht zerteilt); `.md` wird
+  weiter als lesbares Dokument gerendert. Die Schriftgröße kommt aus dem
+  Popup-Slider.
 - **Verbindungs-Gating**: Ohne erreichbaren Server wird nur die Serverliste
   gezeigt — kein Senden-Button, der ins Leere läuft.
 
 ### Dateimanager — das reMarkable im Browser
 - Ordner-Navigation, Favoriten, Suche und Filter (Zeitraum 30/14/7 Tage mit
   Kalender-Icon, Dateitypen PDF/EPUB/Notebook je Checkbox).
-- **Import** von PDF, EPUB, RMDoc, JPG/PNG/SVG, Markdown, Text, HTML sowie
-  ZIP/TAR-Archiven: Vorschau entsteht automatisch, Einträge sind jederzeit
-  ergänz- und entfernbar, ein Klick lädt die ganze Liste hoch; Namensoptionen
-  (Datumspräfix, nur einfache Zeichen) wie im Export.
+- **Import** von PDF, EPUB, RMDoc, JPG/PNG/SVG, Markdown, Text, Code-Dateien
+  (JS/TS/PY/SH ... werden als formatiertes PDF mit Zeilennummern umgewandelt,
+  HTML ebenfalls als Code) sowie ZIP/TAR-Archiven: Vorschau entsteht
+  automatisch, Einträge sind jederzeit ergänz- und entfernbar, ein Klick lädt
+  die ganze Liste hoch; Namensoptionen (Datumspräfix, nur einfache Zeichen)
+  wie im Export.
 - **Export** als PDF oder RMDoc, einzeln oder als ZIP/TAR.GZ mit Ordnerstruktur.
 - Inline-PDF-Vorschau, Details-Dialog, Mini-Vorschaubilder in der Dateiliste.
 

@@ -1,6 +1,6 @@
 /*
  * Import dialog: PDF / EPUB / RMDOC are uploaded as they are, everything else is
- * converted to PDF first (images, Markdown, text, HTML, web pages by URL).
+ * converted to PDF first (images, Markdown, text, source code and HTML as code).
  * Flow: add files -> previews are created automatically -> remove or rename
  * entries if needed -> upload the whole list at once.
  */
