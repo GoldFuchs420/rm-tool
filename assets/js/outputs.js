@@ -356,18 +356,21 @@
       }
       function rescaleFont(i, scale) {
         const it = items[i];
-        if (!it || !it.canScaleFont) return;
+        if (!it || !it.canScaleFont) return Promise.resolve(it && it.blob);
         it._pendingScale = scale;
-        if (it._fontBusy) return;   // laeuft schon: der laufende Durchgang holt sich unten den neuesten Wert
-        it._fontBusy = true;
-        (async function loop() {
-          while (it._pendingScale !== undefined) {
-            const target = it._pendingScale;
-            it._pendingScale = undefined;
-            await applyFontScale(i, target);
-          }
-          it._fontBusy = false;
-        })();
+        if (!it._fontPromise) {
+          it._fontPromise = (async function () {
+            let result;
+            while (it._pendingScale !== undefined) {
+              const target = it._pendingScale;
+              it._pendingScale = undefined;
+              result = await applyFontScale(i, target);
+            }
+            it._fontPromise = null;
+            return result;
+          })();
+        }
+        return it._fontPromise;
       }
       host.addEventListener('input', function (e) {
         if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
