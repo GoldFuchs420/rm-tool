@@ -18,8 +18,7 @@
     let mode = 'setup';    // setup | working | results
     let ctrl = null;       // result list controller
     let abort = null;
-    const vals = { page: 'remarkable', merge: false, mergeName: '', tfmt: 'remarkable', fontScale: 1, datePrefix: false, ascii: false };
-    let previewedItem = null;   // Element, das gerade in der grossen Vorschau offen ist (fuer Live-Update beim Schriftgroessen-Regler)
+    const vals = { page: 'remarkable', merge: false, mergeName: '', tfmt: 'remarkable', datePrefix: false, ascii: false };
     const NATIVE = ['pdf', 'epub', 'rmdoc'];
     const extOf = function (n) { const m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
 
@@ -75,7 +74,6 @@
       });
     }
     async function openItemPreview(it) {
-      previewedItem = it;
       try {
         let blob;
         if (it.kind === 'native') blob = it.file;
@@ -83,14 +81,6 @@
         else blob = await R.textpdf.convert(it.file, app.outputs.readTextOptions(dlg, vals));
         app.previewBlob(blob, it.file.name);
       } catch (e) { app.toast(t('importFailed', { msg: e.message }), true); }
-    }
-    /* Regler losgelassen: laeuft die grosse Vorschau gerade fuer ein Textdokument,
-       wird sie mit der neuen Schriftgroesse neu erzeugt. Fuer Bilder/native Dateien
-       passiert nichts, da fontScale dort keine Wirkung hat. */
-    function refreshOpenTextPreview() {
-      if (!previewedItem || previewedItem.kind !== 'text') return;
-      if (!$('#dlg-preview').open) return;
-      openItemPreview(previewedItem);
     }
     const NOISE = /(^|\/)_(export-fehler|export-errors|errori-esportazione|errores-exportacion|erreurs-exportation)\.txt$/i;
     /** Already in the list (same name and size)? Repeated file selection then
@@ -255,7 +245,6 @@
       li.querySelector('.state').innerHTML = (ico ? icon(ico, 18) : (st === 'working' ? '<span class="rmx-spinner" style="width:16px;height:16px"></span>' : '')) + '<span>' + esc(text || '') + '</span>';
     }
 
-    // nachher
     let fails = [];
     let hasConfigurable = false;   // true, sobald renderMain() einstellbare Optionen (Bild/Text) gefunden hat
     async function build(subset) {
@@ -282,10 +271,27 @@
               mergedDone = true;
               images.forEach(function (im) { setItemState(im.id, 'done', '', 'check'); });
             }
+          } else if (it.kind === 'image') {
+            setItemState(it.id, 'working', t('converting'));
+            const pdf = await R.convert.imageToPdf(it.file, { pageMode: page });
+            outs.push(Object.assign({ name: pdf.name, blob: pdf }, meta));
+            setItemState(it.id, 'done', '', 'check');
           } else {
             setItemState(it.id, 'working', t('converting'));
-            const pdf = it.kind === 'image' ? await R.convert.imageToPdf(it.file, { pageMode: page }) : await R.textpdf.convert(it.file, textOpts);
-            outs.push(Object.assign({ name: pdf.name, blob: pdf }, meta));
+            const pdf = await R.textpdf.convert(it.file, textOpts);
+            /* EPUB läuft unveraendert durch R.textpdf.convert (kein PDF, fontScale
+               wirkungslos) - fuer alles andere (md/txt/code/html) wird die
+               Originaldatei + die genutzten Optionen mitgegeben, damit die
+               Ergebniszeile das Dokument spaeter mit anderer Schriftgroesse
+               neu erzeugen kann. */
+            const canScaleFont = R.textpdf.kindOf(it.file) !== 'epub';
+            outs.push(Object.assign({
+              name: pdf.name,
+              blob: pdf,
+              sourceFile: canScaleFont ? it.file : undefined,
+              textOpts: canScaleFont ? Object.assign({}, textOpts) : undefined,
+              canScaleFont: canScaleFont
+            }, meta));
             setItemState(it.id, 'done', '', 'check');
           }
         } catch (e) {
@@ -374,11 +380,6 @@
       const cur = items.filter(function (x) { return String(x.id) === pv.getAttribute('data-im-pv'); })[0];
       if (cur) openItemPreview(cur);
     });
-    dlg.addEventListener('input', function (e) {
-      if (e.target.id !== 'im-fontscale') return;
-      const label = $('#im-fontscale-val');
-      if (label) label.textContent = Math.round(parseFloat(e.target.value) * 100) + '%';
-    });
     dlg.addEventListener('change', function (e) {
       if (e.target.id === 'im-date' || e.target.id === 'im-ascii') {
         readOptions();
@@ -386,12 +387,10 @@
         app.store('rmx.im.ascii', vals.ascii ? '1' : '0');
         return;
       }
-      if (e.target.id === 'im-fontscale') { vals.fontScale = parseFloat(e.target.value) || 1; refreshOpenTextPreview(); return; }
       if (e.target.id === 'im-merge' || e.target.name === 'page') renderMain();
     });
     dlg.addEventListener('cancel', function (e) { if (mode === 'working') { e.preventDefault(); abort.abort(); } });
-    dlg.addEventListener('close', function () { if (ctrl) ctrl.abort(); items = []; ctrl = null; });
-    $('#dlg-preview').addEventListener('close', function () { previewedItem = null; });
+    dlg.addEventListener('close', function () { if (ctrl) ctrl.abort(); items = []; ctrl = null; });    
     
     /* ---------- drag & drop anywhere ---------- */
     const zone = $('#dropzone');
