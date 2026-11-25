@@ -1164,6 +1164,114 @@ async function sendNow({ article, images } = {}) {
   updateSendButton();
 }
 
+/* Eigener Doppelslider: zwei echte Griff-Elemente statt zwei ueberlagerter
+   nativer <input type="range">. Loest zwei Probleme der alten Loesung auf
+   einen Schlag: (1) Lauflinie/Fuellung koennen nie auseinanderdriften, da
+   beide aus derselben CSS-Regel kommen; (2) die Trefferflaeche IST der
+   sichtbare Griff (plus ein Tipp auf die freie Leiste springt zum naechst-
+   gelegenen Griff), statt einer unsichtbaren, schwer zu treffenden nativen
+   Thumb-Spur. Die beiden <input type="range">-Elemente bleiben im DOM als
+   reine Werte-/Event-Quelle erhalten: bestehender Code (onEdgeInput,
+   imgIncluded, refreshMinEdgeRow) liest/schreibt weiterhin ganz normal
+   .value/.max und bekommt weiterhin "input"-Events, ohne etwas von dieser
+   Umstellung zu wissen. */
+function setupDualRange(container, loInput, hiInput) {
+  const track = container.querySelector(".rmx-range2-track");
+  const fill = container.querySelector(".rmx-range2-fill");
+  const thumbs = { lo: container.querySelector('[data-handle="lo"]'), hi: container.querySelector('[data-handle="hi"]') };
+  let dragging = null;
+
+  function pct(v, max) { return max > 0 ? (v / max) * 100 : 0; }
+
+  function render() {
+    const max = Number(loInput.max) || 0;
+    const lo = Number(loInput.value) || 0;
+    const hi = Number(hiInput.value) || 0;
+    const loPct = pct(lo, max), hiPct = pct(hi, max);
+    thumbs.lo.style.left = loPct + "%";
+    thumbs.hi.style.left = hiPct + "%";
+    fill.style.left = loPct + "%";
+    fill.style.right = (100 - hiPct) + "%";
+    thumbs.lo.setAttribute("aria-valuemax", String(max));
+    thumbs.lo.setAttribute("aria-valuenow", String(lo));
+    thumbs.hi.setAttribute("aria-valuemax", String(max));
+    thumbs.hi.setAttribute("aria-valuenow", String(hi));
+  }
+
+  function setValue(handle, raw) {
+    const max = Number(loInput.max) || 0;
+    let v = Math.round(Math.min(max, Math.max(0, raw)));
+    const input = handle === "lo" ? loInput : hiInput;
+    const other = handle === "lo" ? hiInput : loInput;
+    if (handle === "lo") v = Math.min(v, Number(other.value) || 0);
+    else v = Math.max(v, Number(other.value) || 0);
+    if (String(v) === input.value) return;
+    input.value = String(v);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function valueFromClientX(clientX) {
+    const rect = container.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return ratio * (Number(loInput.max) || 0);
+  }
+
+  function onPointerDown(handle, e) {
+    e.preventDefault();
+    dragging = handle;
+    try { thumbs[handle].setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    thumbs[handle].focus();
+  }
+  function onPointerMove(e) {
+    if (!dragging) return;
+    setValue(dragging, valueFromClientX(e.clientX));
+    render();
+  }
+  function onPointerUp(e) {
+    if (!dragging) return;
+    try { thumbs[dragging].releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    dragging = null;
+  }
+  function onKeydown(handle, e) {
+    const max = Number(loInput.max) || 0;
+    const input = handle === "lo" ? loInput : hiInput;
+    const step = Math.max(1, Math.round(max / 100));
+    let v = Number(input.value) || 0;
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") v -= step;
+    else if (e.key === "ArrowRight" || e.key === "ArrowUp") v += step;
+    else if (e.key === "Home") v = 0;
+    else if (e.key === "End") v = max;
+    else if (e.key === "PageDown") v -= step * 5;
+    else if (e.key === "PageUp") v += step * 5;
+    else return;
+    e.preventDefault();
+    setValue(handle, v);
+    render();
+  }
+
+  ["lo", "hi"].forEach(function (handle) {
+    thumbs[handle].addEventListener("pointerdown", function (e) { onPointerDown(handle, e); });
+    thumbs[handle].addEventListener("keydown", function (e) { onKeydown(handle, e); });
+  });
+  container.addEventListener("pointermove", onPointerMove);
+  container.addEventListener("pointerup", onPointerUp);
+  container.addEventListener("pointercancel", onPointerUp);
+  track.addEventListener("pointerdown", function (e) {
+    const v = valueFromClientX(e.clientX);
+    const lo = Number(loInput.value) || 0, hi = Number(hiInput.value) || 0;
+    const handle = Math.abs(v - lo) <= Math.abs(v - hi) ? "lo" : "hi";
+    onPointerDown(handle, e);
+    setValue(handle, v);
+    render();
+  });
+
+  loInput.addEventListener("input", render);
+  hiInput.addEventListener("input", render);
+  render();
+  return { render: render };
+}
+const edgeRangeWidget = setupDualRange($("edgeRange"), $("minEdgeSlider"), $("maxEdgeSlider"));
+
 $("sendBtn").addEventListener("click", () => {
   const hasArticle = $("grpPage").open && articleReady;
   const images = $("grpImages").open ? foundImages.filter((img) => selectedSrcs.has(img.src) && imgIncluded(img)) : [];
