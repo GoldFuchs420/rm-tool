@@ -841,9 +841,7 @@ function refreshMinEdgeRow(bump) {
   if (bump) hi.value = String(Math.max(Number(hi.value), minEdgeMax));
   $("minEdgeMin").textContent = lo.value + " px";
   $("minEdgeMaxVal").textContent = hi.value + " px";
-  const r = $("edgeRange");
-  r.style.setProperty("--lo", (Number(lo.value) / minEdgeMax) * 100 + "%");
-  r.style.setProperty("--hi", (Number(hi.value) / minEdgeMax) * 100 + "%");
+  edgeRangeWidget.render();
 }
 
 function renderImageStrip() {
