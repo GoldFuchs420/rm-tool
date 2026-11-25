@@ -75,11 +75,19 @@
     }
     async function openItemPreview(it) {
       try {
-        let blob;
-        if (it.kind === 'native') blob = it.file;
-        else if (it.kind === 'image') blob = await R.convert.imageToPdf(it.file, { pageMode: vals.page });
-        else blob = await R.textpdf.convert(it.file, app.outputs.readTextOptions(dlg, vals));
-        app.previewBlob(blob, it.file.name);
+        if (it.kind === 'native') { app.previewBlob(it.file, it.file.name); return; }
+        if (it.kind === 'image') { app.previewBlob(await R.convert.imageToPdf(it.file, { pageMode: vals.page }), it.file.name); return; }
+        const canScaleFont = R.textpdf.kindOf(it.file) !== 'epub';
+        const opts = Object.assign({}, app.outputs.readTextOptions(dlg, vals), canScaleFont ? { fontScale: it.previewFontScale || 1 } : {});
+        const blob = await R.textpdf.convert(it.file, opts);
+        if (!canScaleFont) { app.previewBlob(blob, it.file.name); return; }
+        app.previewBlob(blob, it.file.name, {
+          fontScale: it.previewFontScale || 1,
+          onFontChange: async function (scale) {
+            it.previewFontScale = scale;   // bleibt gemerkt, bis diese Datei tatsaechlich hochgeladen wird
+            return R.textpdf.convert(it.file, Object.assign({}, app.outputs.readTextOptions(dlg, vals), { fontScale: scale }));
+          }
+        });
       } catch (e) { app.toast(t('importFailed', { msg: e.message }), true); }
     }
     const NOISE = /(^|\/)_(export-fehler|export-errors|errori-esportazione|errores-exportacion|erreurs-exportation)\.txt$/i;
@@ -278,18 +286,19 @@
             setItemState(it.id, 'done', '', 'check');
           } else {
             setItemState(it.id, 'working', t('converting'));
-            const pdf = await R.textpdf.convert(it.file, textOpts);
+            const canScaleFont = R.textpdf.kindOf(it.file) !== 'epub';
+            const effectiveOpts = Object.assign({}, textOpts, canScaleFont && it.previewFontScale ? { fontScale: it.previewFontScale } : {});
+            const pdf = await R.textpdf.convert(it.file, effectiveOpts);
             /* EPUB läuft unveraendert durch R.textpdf.convert (kein PDF, fontScale
                wirkungslos) - fuer alles andere (md/txt/code/html) wird die
                Originaldatei + die genutzten Optionen mitgegeben, damit die
                Ergebniszeile das Dokument spaeter mit anderer Schriftgroesse
                neu erzeugen kann. */
-            const canScaleFont = R.textpdf.kindOf(it.file) !== 'epub';
             outs.push(Object.assign({
               name: pdf.name,
               blob: pdf,
               sourceFile: canScaleFont ? it.file : undefined,
-              textOpts: canScaleFont ? Object.assign({}, textOpts) : undefined,
+              textOpts: canScaleFont ? effectiveOpts : undefined,
               canScaleFont: canScaleFont
             }, meta));
             setItemState(it.id, 'done', '', 'check');
