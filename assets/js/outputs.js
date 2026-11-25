@@ -63,18 +63,21 @@
 
     /** Page size / font size options for text, Markdown and HTML conversions. */
     out.textOptionsHtml = function (vals) {
+      const scale = vals.fontScale || 1;
       return '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('textFormat')) + '</legend><div class="rmx-inline">' +
         app.choice('radio', 'tfmt', 'remarkable', t('pageRmShort'), '', vals.tfmt === 'remarkable') +
         app.choice('radio', 'tfmt', 'a4', t('pageA4'), '', vals.tfmt === 'a4') + '</div></fieldset>' +
-        '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('fontSize')) + '</legend><div class="rmx-inline">' +
-        app.choice('radio', 'tfont', 'normal', t('fontNormal'), '', vals.tfont === 'normal') +
-        app.choice('radio', 'tfont', 'large', t('fontLarge'), '', vals.tfont === 'large') + '</div></fieldset>';
+        '<div class="rmx-field-row" id="im-fontrow">' +
+        '<label for="im-fontscale" class="responsive-body-sm rmx-muted">' + esc(t('fontSize')) + '</label>' +
+        '<input id="im-fontscale" type="range" min="0.6" max="2.2" step="0.05" value="' + scale + '" />' +
+        '<span id="im-fontscale-val" class="rmx-value-badge">' + Math.round(scale * 100) + '%</span></div>';
     };
     out.readTextOptions = function (root, vals) {
-      ['tfmt', 'tfont'].forEach(function (n) { const el = root.querySelector('input[name="' + n + '"]:checked'); if (el) vals[n] = el.value; });
-      return { page: vals.tfmt, fontScale: vals.tfont === 'large' ? 1.23 : 1 };
+      const tfmt = root.querySelector('input[name="tfmt"]:checked'); if (tfmt) vals.tfmt = tfmt.value;
+      const fs = root.querySelector('#im-fontscale'); if (fs) vals.fontScale = parseFloat(fs.value) || 1;
+      return { page: vals.tfmt, fontScale: vals.fontScale || 1 };
     };
-
+    
     const extOf = function (n) { const m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
     const baseOf = function (n) { return n.replace(/\.[^.]+$/, ''); };
     const fmtSize = function (b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; };
