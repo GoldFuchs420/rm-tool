@@ -530,6 +530,22 @@
   const OP_RUN = /^(>>>=|===|!==|\*\*=|<<=|>>=|>>>|==|!=|<=|>=|&&|\|\||\?\?|\*\*|\+\+|--|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|<<|>>|=>|[=<>!+\-*\/%&|^~?:])/;
   const CTRL_KW = { if: 1, for: 1, while: 1, switch: 1, catch: 1 };
 
+  /* CSS-specific token classes, layered on top of the generic kw/str/com/num:
+     class selectors (.foo), pseudo-classes/elements (:hover, ::-webkit-...),
+     and bare type/tag selectors (div, body, input, ...). Matched by keyword
+     list rather than real CSS grammar, so edge cases exist - see the note
+     after the diff. */
+  const PSEUDO_SET = new Set(('hover active focus focus-visible focus-within visited link target root empty ' +
+    'first-child last-child nth-child nth-last-child first-of-type last-of-type nth-of-type nth-last-of-type ' +
+    'only-child only-of-type not is where has disabled enabled checked required optional read-only read-write ' +
+    'placeholder-shown before after placeholder selection first-line first-letter backdrop marker ' +
+    'file-selector-button valid invalid out-of-range in-range indeterminate default defined').split(' '));
+  const TAG_SET = new Set(('html body head div span p a ul ol li table thead tbody tfoot tr td th input button select ' +
+    'option textarea label form header footer nav main section article aside figure figcaption img svg path ' +
+    'canvas video audio source iframe script style link meta title h1 h2 h3 h4 h5 h6 strong em b i u small code ' +
+    'pre blockquote dl dt dd fieldset legend details summary dialog').split(' '));
+  const CSS_OP_RUN = /^(~=|\|=|\^=|\$=|\*=|>|~|\+|=|\|)/;
+ 
   /** Splits source into lines of {t, cls, bold?} segments, cls: kw | str | com | num | call | null. */
   function tokenize(text, lang) {
     const L = LANGS[lang] || { line: [], block: [], kw: [], ci: false };
@@ -598,6 +614,23 @@
           i += seg.length;
           continue;
         }
+        if (lang === 'css') {
+          if (c0 === '.') {
+            const m = /^\.-?[A-Za-z_][\w-]*/.exec(line.slice(i));
+            if (m) { flush(); segs.push({ t: m[0], cls: 'sel-class' }); i += m[0].length; continue; }
+          }
+          if (c0 === ':') {
+            const m = /^::?-?[A-Za-z][\w-]*/.exec(line.slice(i));
+            if (m) {
+              const bare = m[0].replace(/^:+/, '').toLowerCase();
+              if (PSEUDO_SET.has(bare) || /^-(webkit|moz|ms|o)-/.test(bare)) {
+                flush(); segs.push({ t: m[0], cls: 'pseudo' }); i += m[0].length; continue;
+              }
+            }
+          }
+          const cssOp = CSS_OP_RUN.exec(line.slice(i));
+          if (cssOp) { flush(); segs.push({ t: cssOp[0], cls: null, bold: true }); i += cssOp[0].length; continue; }
+        }
         if (lang === 'js' && c0 === '/' && canStartRegex(line.slice(0, i))) {
           const end = scanRegexLiteral(line, i);
           if (end > i) {
@@ -626,6 +659,7 @@
           const nextChar = line[i + w.length];
           const prevChar = i > 0 ? line[i - 1] : '';
           if (!isKw && (afterNew || (prevChar === '.' && nextChar === '('))) cls = 'call';
+          else if (!isKw && lang === 'css' && TAG_SET.has(w.toLowerCase())) cls = 'tag';
           segs.push({ t: w, cls: cls });
           afterNew = isKw && lc === 'new';
           if (isKw && CTRL_KW[lc]) armCtrl = true;
@@ -672,7 +706,10 @@
       str: PDFLib.rgb(0.42, 0.16, 0.12),
       com: PDFLib.rgb(0.47, 0.45, 0.42),
       num: PDFLib.rgb(0.00, 0.34, 0.34),
-      call: PDFLib.rgb(0.58, 0.40, 0.16)
+      call: PDFLib.rgb(0.58, 0.40, 0.16),
+      'sel-class': PDFLib.rgb(0.70, 0.35, 0.05),
+      pseudo: PDFLib.rgb(0.42, 0.26, 0.14),
+      tag: PDFLib.rgb(0.42, 0.20, 0.55)
     };
     const clsColor = function (cls) { return cls ? colors[cls] : black; };
     const clsFont = function (seg) { return (seg.cls === 'kw' || seg.bold) ? fonts.mb : seg.cls === 'com' ? fonts.mi : fonts.m; };
