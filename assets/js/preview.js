@@ -40,16 +40,59 @@
       const b = e.target.closest('[data-pv]');
       if (b && cur && b.getAttribute('data-pv') === 'close') dlgP.close();
     });
+    dlgP.addEventListener('input', function (e) {
+      if (e.target.id !== 'pv-fontscale') return;
+      const scale = parseFloat(e.target.value) || 1;
+      const val = $('#pv-fontscale-val');
+      if (val) val.textContent = Math.round(scale * 100) + '%';
+      e.target.style.setProperty('--fill', (((scale - 0.6) / 1.6) * 100) + '%');
+    });
+    dlgP.addEventListener('change', async function (e) {
+      if (e.target.id !== 'pv-fontscale' || !cur || !cur.onFontChange) return;
+      const mine = cur;
+      const scale = parseFloat(e.target.value) || 1;
+      const slider = e.target;
+      const spin = $('#pv-font-spin');
+      slider.disabled = true;
+      if (spin) spin.hidden = false;
+      try {
+        const blob = await mine.onFontChange(scale);
+        if (cur !== mine) return;
+        mine.scale = scale;
+        if (mine.viewer) mine.viewer.destroy();
+        mine.viewer = await R.pdfview.show($('#pv-pages'), blob);
+      } catch (err) {
+        if (cur === mine) app.toast(t('importFailed', { msg: err.message }), true);
+      } finally {
+        if (cur === mine) {
+          const pct = ((mine.scale - 0.6) / 1.6) * 100;
+          slider.value = String(mine.scale);
+          slider.style.setProperty('--fill', pct + '%');
+          const val = $('#pv-fontscale-val');
+          if (val) val.textContent = Math.round(mine.scale * 100) + '%';
+          slider.disabled = false;
+          if (spin) spin.hidden = true;
+        }
+      }
+    });
 
     /** o: {title, name, loader(signal) -> Promise<Blob>} */
     app.openPreview = async function (o) {
       cleanup();
       const ctrl = new AbortController();
-      cur = { ctrl: ctrl, viewer: null, name: o.name || 'preview.pdf' };
+      cur = { ctrl: ctrl, viewer: null, name: o.name || 'preview.pdf', onFontChange: o.onFontChange, scale: o.fontScale || 1 };
       const mine = cur;
+      const startScale = o.fontScale || 1;
+      const startPct = ((startScale - 0.6) / 1.6) * 100;
+      const fontRow = o.onFontChange
+        ? '<div class="rmx-pv-font"><label for="pv-fontscale" class="responsive-body-sm rmx-muted">' + esc(t('fontSize')) + '</label>' +
+          '<input id="pv-fontscale" class="rmx-scale-slider" type="range" min="0.6" max="2.2" step="0.05" value="' + startScale + '" style="--fill:' + startPct + '%">' +
+          '<span id="pv-fontscale-val" class="rmx-value-badge">' + Math.round(startScale * 100) + '%</span>' +
+          '<span class="rmx-spinner rmx-inline-spin" id="pv-font-spin" hidden></span></div>'
+        : '';
       dlgP.innerHTML = app.dlgHead('dlg-preview-title', o.title || t('preview'), 'data-pv="close"') +
         '<div class="rmx-dialog__body rmx-pv-body"><div class="rmx-pv-status responsive-body-sm" id="pv-msg" role="status"><span class="rmx-spinner"></span><span>' + esc(t('previewLoading')) + '</span></div>' +
-        '<div class="rmx-pv-pages" id="pv-pages" hidden></div></div>';
+        '<div class="rmx-pv-pages" id="pv-pages" hidden></div>' + fontRow + '</div>';
       dlgP.setAttribute('aria-labelledby', 'dlg-preview-title');
       if (!dlgP.open) dlgP.showModal();
       try {
