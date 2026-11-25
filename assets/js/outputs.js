@@ -182,9 +182,9 @@
           '</div>' +
           (scale !== null ? '<div class="opanel opanel--font">' +
             '<label class="responsive-body-sm rmx-muted">' + esc(t('fontSize')) + '</label>' +
-            '<input type="range" class="ofont-slider" min="0.6" max="2.2" step="0.05" value="' + scale + '">' +
+            '<input type="range" class="ofont-slider rmx-scale-slider" min="0.6" max="2.2" step="0.05" value="' + scale + '" style="--fill:' + (((scale - 0.6) / 1.6) * 100) + '%">' +
             '<span class="ofont-val rmx-value-badge">' + Math.round(scale * 100) + '%</span>' +
-            '<span class="ofont-spin rmx-spinner" hidden></span></div>' : '') +
+            '<span class="ofont-spin rmx-spinner rmx-inline-spin" hidden></span></div>' : '') +
           '</div></div>' +
           (it.folderPath && it.folderPath.length ? '<div class="opath responsive-body-sm rmx-muted">' + icon('folderFull', 16) + '<span>' + esc(it.folderPath.join(' / ')) + '</span></div>' : '') +
           '<div class="state responsive-body-sm"></div></li>';
@@ -313,7 +313,7 @@
         app.previewBlob(items[i].blob, nameOf(i));
       });
 
-            /* Regler losgelassen: PDF mit neuer Schriftgroesse neu erzeugen. Waehrend-
+      /* Regler losgelassen: PDF mit neuer Schriftgroesse neu erzeugen. Waehrend-
          dessen sind Download und Regler fuer genau diese Zeile gesperrt - andere
          Zeilen bleiben unberuehrt, da jede ihre eigene Originaldatei/Optionen hat.
          Kommt waehrend einer laufenden Neuerstellung ein weiterer Change-Event fuer
@@ -322,9 +322,10 @@
       async function applyFontScale(i, scale) {
         const it = items[i];
         const row = li(i);
-        if (!it || !row) return;
+        if (!it || !row) return it ? it.blob : null;
         const dlBtn = row.querySelector('[data-o="dl"]');
         const slider = row.querySelector('.ofont-slider');
+        const label = row.querySelector('.ofont-val');
         const spin = row.querySelector('.ofont-spin');
         if (dlBtn) dlBtn.disabled = true;
         if (slider) slider.disabled = true;
@@ -339,15 +340,19 @@
           if (extOf(it.name) === 'pdf') paintThumb(row.querySelector('.othumb'), pdf);
         } catch (e) {
           app.toast(t('importFailed', { msg: e.message }), true);
-          const fallback = (it.textOpts && it.textOpts.fontScale) || 1;
-          if (slider) slider.value = String(fallback);
-          const val = row.querySelector('.ofont-val');
-          if (val) val.textContent = Math.round(fallback * 100) + '%';
         } finally {
+          /* immer mit dem tatsaechlich aktiven Wert sync halten - auch wenn der
+             Aufruf aus der grossen Vorschau kam (eigener Regler dort) oder die
+             Konvertierung fehlgeschlagen ist (dann bleibt der alte Wert aktiv) */
+          const current = (it.textOpts && it.textOpts.fontScale) || 1;
+          const pct = ((current - 0.6) / 1.6) * 100;
+          if (slider) { slider.value = String(current); slider.style.setProperty('--fill', pct + '%'); }
+          if (label) label.textContent = Math.round(current * 100) + '%';
           if (dlBtn) dlBtn.disabled = false;
           if (slider) slider.disabled = false;
           if (spin) spin.hidden = true;
         }
+        return it.blob;
       }
       function rescaleFont(i, scale) {
         const it = items[i];
@@ -369,6 +374,8 @@
         const row = e.target.closest('li');
         const val = row && row.querySelector('.ofont-val');
         if (val) val.textContent = Math.round(parseFloat(e.target.value) * 100) + '%';
+        const pct = ((parseFloat(e.target.value) - 0.6) / 1.6) * 100;
+        e.target.style.setProperty('--fill', pct + '%');
       });
       host.addEventListener('change', function (e) {
         if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
