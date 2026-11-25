@@ -22,7 +22,13 @@ let minEdgeMax = 0;   // groesste kleinste Bildkante in Pixel (Slider-Maximum)
 let sending = false;         // verhindert parallele Sende-Vorgänge
 
 const $ = (id) => document.getElementById(id);
-
+// nachher, neu hinzufügen
+function updateSliderFill(el) {
+  if (!el) return;
+  const min = parseFloat(el.min) || 0, max = parseFloat(el.max) || 100, val = parseFloat(el.value) || min;
+  const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+  el.style.setProperty("--fill", pct + "%");
+}
 /* Mehrsprachigkeit: dieselbe Tabelle wie der Dateimanager (assets/js/i18n.js).
    Statische Texte stehen mit data-i18n im HTML und werden unten uebersetzt. */
 const t = (key, vars, fallback) => {
@@ -109,6 +115,7 @@ async function applyFontForDocType() {
   await loadSettingsForHost(currentTabInfo?.hostname);
   $("fontSlider").value = String(fontSize);
   $("fontSizeValue").textContent = String(fontSize);
+  updateSliderFill($("fontSlider"));
 }
 
 function sanitizeFilename(s) {
@@ -291,6 +298,7 @@ async function prepareArticleSection() {
 $("fontSlider").addEventListener("input", () => {
   fontSize = parseInt($("fontSlider").value, 10);
   $("fontSizeValue").textContent = String(fontSize);
+  updateSliderFill($("fontSlider"));
 });
 $("fontSlider").addEventListener("change", () => saveSettingsForHost(currentTabInfo?.hostname));
 $("grpPage").addEventListener("toggle", updateSendButton);
@@ -1178,7 +1186,8 @@ $("openManager").addEventListener("click", () => {
   await loadSettingsForHost(currentTabInfo?.hostname);
   $("fontSlider").value = String(fontSize);
   $("fontSizeValue").textContent = String(fontSize);
-
+  updateSliderFill($("fontSlider"));
+   
   buildLangSelect();
   serverComponent = RMXServers.mount($("serverPanel"), { onChange: updateSendButton });
   updateSendButton(); /* bis zum ersten Check gilt: kein Server → nur Serverpanel */
