@@ -146,7 +146,6 @@
     createFoldersHint: ["Die Geräteschnittstelle kennt kein „Ordner anlegen“. Der Versuch nutzt eine speziell gebaute .rmdoc-Datei und ist ungetestet.", "The device interface has no \"create folder\". The attempt uses a specially built .rmdoc file and is untested.", "L'interfaccia del dispositivo non prevede “crea cartella”. Il tentativo usa un file .rmdoc speciale ed è non testato.", "La interfaz del dispositivo no permite «crear carpeta». El intento usa un archivo .rmdoc especial y no está probado.", "L'interface de l'appareil ne permet pas de « créer un dossier ». La tentative utilise un fichier .rmdoc spécial et n'est pas testée."],
     createFailed: ["Das Gerät hat den Ordner nicht angelegt.", "The device did not create the folder.", "Il dispositivo non ha creato la cartella.", "El dispositivo no creó la carpeta.", "L'appareil n'a pas créé le dossier."],
     createJunk: ["Das Gerät hat „{name}“ als Dokument statt als Ordner angelegt (bitte manuell löschen).", "The device created \"{name}\" as a document instead of a folder (please delete it manually).", "Il dispositivo ha creato “{name}” come documento invece di una cartella (eliminalo manualmente).", "El dispositivo creó «{name}» como documento en lugar de carpeta (elimínalo manualmente).", "L'appareil a créé « {name} » comme document au lieu d'un dossier (à supprimer manuellement)."],
-
     exportAsPdf: ["Als PDF exportieren", "Export as PDF", "Esporta come PDF", "Exportar como PDF", "Exporter en PDF"],
     exportAsRmdoc: ["Als RMDoc exportieren", "Export as RMDoc", "Esporta come RMDoc", "Exportar como RMDoc", "Exporter en RMDoc"],
     exportAsArchive: ["Als Archiv exportieren ({type})", "Export as archive ({type})", "Esporta come archivio ({type})", "Exportar como archivo ({type})", "Exporter en archive ({type})"],
@@ -209,7 +208,7 @@
     sendPdfCount: ["In {n} PDF senden", "Send in {n} PDF", "Invia in {n} PDF", "Enviar en {n} PDF", "Envoyer en {n} PDF"],
     fPreset14: ["Letzte 14 Tage", "Last 14 days", "Ultimi 14 giorni", "\u00daltimos 14 d\u00edas", "14 derniers jours"],
     fDateReset: ["Zeitraum zur\u00fccksetzen", "Reset date range", "Azzera intervallo di date", "Restablecer rango de fechas", "R\u00e9initialiser la p\u00e9riode"],
-    startConvert: [ "Weiter", "Continue", "", "", ""]
+    startConvert: [ "Weiter", "Continue", "Continuiamo", "Continuemos", "Continuons"]
   };
 
   const codes = R.langs.map(function (l) { return l[0]; });
