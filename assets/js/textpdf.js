@@ -494,10 +494,7 @@
   };
 
   /* Regex-Literale (/.../flags) sind in JS von Division ("a / b") nicht
-     unterscheidbar, ohne den vorangehenden Token anzuschauen. Ohne diese
-     Unterscheidung interpretiert der Tokenizer ein eingebettetes Zeichen
-     wie \" innerhalb eines Regex-Literals (z. B. /[\"]/g) faelschlich als
-     String-Start, was die Einfaerbung fuer den Rest der Datei verschiebt. */
+     unterscheidbar, ohne den vorangehenden Token anzuschauen. */
   const REGEX_PRE_WORD = /(^|[^\w$])(return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await)$/;
   function canStartRegex(prefix) {
     const trimmed = prefix.replace(/\s+$/, '');
@@ -506,10 +503,6 @@
     if (/[\w$)\]}]/.test(lastChar)) return REGEX_PRE_WORD.test(trimmed);
     return true;
   }
-  /** Scannt ab einem öffnenden '/' ein Regex-Literal inkl. Zeichenklasse
-      ([...]) und Flags. Gibt die Endposition zurück, oder -1, wenn in
-      dieser Zeile kein schliessendes '/' gefunden wurde (dann lieber
-      konservativ als normales Zeichen behandeln statt zu raten). */
   function scanRegexLiteral(line, start) {
     let j = start + 1;
     let inClass = false;
@@ -527,18 +520,31 @@
     }
     return -1;
   }
- 
-  /** Splits source into lines of {t, cls} segments, cls: kw | str | com | num | null. */
+
+  /* Operatoren werden als eigene Segmente erkannt (statt unstrukturiert im
+     Fliesstext zu verschwinden), damit sie gezielt fett dargestellt werden
+     koennen, solange man sich im Kopf einer Kontrollstruktur
+     (if/for/while/switch/catch, innerhalb der runden Klammern) oder in
+     einem case-/default-Label befindet. */
+  const OP_CHARS = '=<>!+-*/%&|^~?:';
+  const OP_RUN = /^(>>>=|===|!==|\*\*=|<<=|>>=|>>>|==|!=|<=|>=|&&|\|\||\?\?|\*\*|\+\+|--|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|<<|>>|=>|[=<>!+\-*\/%&|^~?:])/;
+  const CTRL_KW = { if: 1, for: 1, while: 1, switch: 1, catch: 1 };
+
+  /** Splits source into lines of {t, cls, bold?} segments, cls: kw | str | com | num | call | null. */
   function tokenize(text, lang) {
     const L = LANGS[lang] || { line: [], block: [], kw: [], ci: false };
     const kws = L.ci ? L.kw.map(function (w) { return w.toLowerCase(); }) : L.kw;
     const out = [];
-    let pending = null;               /* { end, cls } active multi-line string/comment */
+    let pending = null;      /* { end, cls } active multi-line string/comment */
+    let ctrlParen = 0;       /* >0 while inside the (...) of if/for/while/switch/catch */
+    let armCtrl = false;     /* just saw if/for/while/switch/catch, waiting for '(' */
+    let afterNew = false;    /* just saw 'new', next identifier is a class name */
     text.replace(/\r\n?/g, '\n').split('\n').forEach(function (raw) {
       const line = raw.replace(/\t/g, '  ');
       const segs = [];
       let cur = '';
       const flush = function () { if (cur) { segs.push({ t: cur, cls: null }); cur = ''; } };
+      let caseActive = /^\s*(case\b|default\s*:)/.test(line);
       let i = 0;
       while (i < line.length) {
         if (pending) {
@@ -551,6 +557,16 @@
           continue;
         }
         const c0 = line[i];
+        if (c0 === '(') {
+          if (armCtrl) { ctrlParen = 1; armCtrl = false; }
+          else if (ctrlParen > 0) ctrlParen++;
+          cur += c0; i++; continue;
+        }
+        if (c0 === ')') {
+          if (ctrlParen > 0) ctrlParen--;
+          cur += c0; i++; continue;
+        }
+        if (c0 === ':' && caseActive) { caseActive = false; cur += c0; i++; continue; }
         const isQuote = c0 === '"' || c0 === "'" || c0 === '`';
         const lineTok = L.line.filter(function (tok) { return line.startsWith(tok, i); })[0];
         const blockTok = L.block.filter(function (tok) { return line.startsWith(tok[0], i); })[0];
@@ -591,12 +607,28 @@
             continue;
           }
         }
+        if (OP_CHARS.indexOf(c0) >= 0) {
+          const m = OP_RUN.exec(line.slice(i));
+          if (m) {
+            flush();
+            segs.push({ t: m[0], cls: null, bold: ctrlParen > 0 || caseActive });
+            i += m[0].length;
+            continue;
+          }
+        }
         const wm = /^[\w$]+/.exec(line.slice(i));
         if (wm) {
           flush();
           const w = wm[0];
           const lc = L.ci ? w.toLowerCase() : w;
-          segs.push({ t: w, cls: kws.indexOf(lc) >= 0 ? 'kw' : (/^\d/.test(w) ? 'num' : null) });
+          const isKw = kws.indexOf(lc) >= 0;
+          let cls = isKw ? 'kw' : (/^\d/.test(w) ? 'num' : null);
+          const nextChar = line[i + w.length];
+          const prevChar = i > 0 ? line[i - 1] : '';
+          if (!isKw && (afterNew || (prevChar === '.' && nextChar === '('))) cls = 'call';
+          segs.push({ t: w, cls: cls });
+          afterNew = isKw && lc === 'new';
+          if (isKw && CTRL_KW[lc]) armCtrl = true;
           i += w.length;
           continue;
         }
@@ -636,14 +668,15 @@
        for stronger contrast on e-ink: keywords red, strings navy, comments
        grey, numbers blue. */
     const colors = {
-      kw: PDFLib.rgb(0.545, 0.055, 0.118),
-      str: PDFLib.rgb(0.020, 0.114, 0.302),
-      com: PDFLib.rgb(0.267, 0.294, 0.333),
-      num: PDFLib.rgb(0.012, 0.184, 0.451)
+      kw: PDFLib.rgb(0.05, 0.16, 0.42),
+      str: PDFLib.rgb(0.42, 0.16, 0.12),
+      com: PDFLib.rgb(0.47, 0.45, 0.42),
+      num: PDFLib.rgb(0.00, 0.34, 0.34),
+      call: PDFLib.rgb(0.58, 0.40, 0.16)
     };
     const clsColor = function (cls) { return cls ? colors[cls] : black; };
-    const clsFont = function (cls) { return cls === 'kw' ? fonts.mb : cls === 'com' ? fonts.mi : fonts.m; };
-
+    const clsFont = function (seg) { return (seg.cls === 'kw' || seg.bold) ? fonts.mb : seg.cls === 'com' ? fonts.mi : fonts.m; };
+   
     /* One visual line = { no: source line number, segs: [{t, cls}] }. Lines that
        do not fit are wrapped (continuation without line number). */
     text = clean(text, 'm');   /* WinAnsi-safe ahead of wrapping/width math */
@@ -719,7 +752,7 @@
         page.drawLine({ start: { x: gutterW, y: yLine + size * 0.25 }, end: { x: gutterW, y: yLine - lh + size * 0.25 }, thickness: 0.5, color: PDFLib.rgb(0.86, 0.85, 0.83) });
         let x = left;
         v.segs.forEach(function (s) {
-          if (s.t) page.drawText(s.t, { x: x, y: yLine - size, font: clsFont(s.cls), size: size, color: clsColor(s.cls) });
+          if (s.t) page.drawText(s.t, { x: x, y: yLine - size, font: clsFont(s), size: size, color: clsColor(s.cls) });
           x += s.t.length * cw;
         });
         y -= lh;
