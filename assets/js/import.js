@@ -151,7 +151,12 @@
         await addFiles(files);
         if (!items.length) return;
         renderMain();
-        run();
+        /* Nur automatisch starten, wenn es nichts einzustellen gibt (reine
+           PDF/EPUB/RMDOC-Uploads). Sobald Bild- oder Text-Optionen angezeigt
+           werden (inkl. Schriftgroessen-Regler), wartet der Dialog auf den
+           Start-Button in renderFoot() - sonst wuerde run() den Optionen-
+           Bereich sofort durch die Ergebnisliste ueberschreiben. */
+        if (!hasConfigurable) run();
       } else {
         /* results: fold the new files in at any time and append them to the list */
         adding = adding.then(async function () {
@@ -218,6 +223,7 @@
       if (texts.length && texts.length === items.length) {
         opts += app.outputs.textOptionsHtml(vals);
       }
+      hasConfigurable = !!opts;
       main.innerHTML = list + add + opts;
       paintLeads();
       /* Flatten option (missing folders are created or not) only makes sense with
@@ -238,7 +244,7 @@
         ? app.btn(t('cancel'), 'data-im="stop"')
         : mode === 'results'
           ? app.btn(t('uploadAll'), 'data-im="uploadall"', 'primary')
-          : '';
+          : (mode === 'setup' && items.length && hasConfigurable ? app.btn(t('startConvert'), 'data-im="start"', 'primary') : '');
     }
 
     /* ---------- build / upload ---------- */
@@ -249,7 +255,9 @@
       li.querySelector('.state').innerHTML = (ico ? icon(ico, 18) : (st === 'working' ? '<span class="rmx-spinner" style="width:16px;height:16px"></span>' : '')) + '<span>' + esc(text || '') + '</span>';
     }
 
+    // nachher
     let fails = [];
+    let hasConfigurable = false;   // true, sobald renderMain() einstellbare Optionen (Bild/Text) gefunden hat
     async function build(subset) {
       readOptions();
       const list = subset || items;
@@ -354,6 +362,7 @@
         case 'close': if (ctrl) ctrl.abort(); if (abort) abort.abort(); dlg.close(); break;
         case 'stop': if (ctrl) ctrl.abort(); if (abort) abort.abort(); dlg.close(); break;
         case 'add': $('#import-input').click(); break;
+        case 'start': run(); break;
         case 'uploadall': uploadAll(); break;
       }
     });
