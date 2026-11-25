@@ -167,6 +167,7 @@
         const dlText = ext === 'pdf' ? 'PDF' : ext === 'rmdoc' ? 'RMDoc' : ext.toUpperCase();
         const dlTitle = ext === 'pdf' ? t('downloadPdf') : ext === 'rmdoc' ? t('downloadRmdoc') : t('download') + ' ' + dlText;
         const rmTitle = t('remove') + ': ' + baseOf(it.name);
+        const scale = it.canScaleFont ? ((it.textOpts && it.textOpts.fontScale) || 1) : null;
         return '<li data-i="' + i + '" data-ext="' + esc(ext) + '" data-state="idle"><div class="orow">' +
           leadHtml(ext) +
           '<div class="obody">' +
@@ -178,7 +179,13 @@
           '<span class="rmx-flex"></span>' +
           pill('dl', 'importIcon', dlText, dlTitle, ext === 'pdf' ? 'pdf' : ext === 'rmdoc' ? 'rmdoc' : 'plain') +
           '<button type="button" class="rmx-iconbtn rmx-iconbtn--danger" data-o="rm" aria-label="' + esc(rmTitle) + '" title="' + esc(rmTitle) + '">' + icon('trash', 20) + '</button>' +
-          '</div></div></div>' +
+          '</div>' +
+          (scale !== null ? '<div class="opanel opanel--font">' +
+            '<label class="responsive-body-sm rmx-muted">' + esc(t('fontSize')) + '</label>' +
+            '<input type="range" class="ofont-slider" min="0.6" max="2.2" step="0.05" value="' + scale + '">' +
+            '<span class="ofont-val rmx-value-badge">' + Math.round(scale * 100) + '%</span>' +
+            '<span class="ofont-spin rmx-spinner" hidden></span></div>' : '') +
+          '</div></div>' +
           (it.folderPath && it.folderPath.length ? '<div class="opath responsive-body-sm rmx-muted">' + icon('folderFull', 16) + '<span>' + esc(it.folderPath.join(' / ')) + '</span></div>' : '') +
           '<div class="state responsive-body-sm"></div></li>';
       };
@@ -305,6 +312,71 @@
         const i = parseInt(pv.closest('li').getAttribute('data-i'), 10);
         app.previewBlob(items[i].blob, nameOf(i));
       });
+
+            /* Regler losgelassen: PDF mit neuer Schriftgroesse neu erzeugen. Waehrend-
+         dessen sind Download und Regler fuer genau diese Zeile gesperrt - andere
+         Zeilen bleiben unberuehrt, da jede ihre eigene Originaldatei/Optionen hat.
+         Kommt waehrend einer laufenden Neuerstellung ein weiterer Change-Event fuer
+         dieselbe Zeile (schnelles Nachjustieren), wird nur der jeweils neueste
+         Wert im Anschluss verarbeitet statt mehrere Renderings zu ueberlappen. */
+      async function applyFontScale(i, scale) {
+        const it = items[i];
+        const row = li(i);
+        if (!it || !row) return;
+        const dlBtn = row.querySelector('[data-o="dl"]');
+        const slider = row.querySelector('.ofont-slider');
+        const spin = row.querySelector('.ofont-spin');
+        if (dlBtn) dlBtn.disabled = true;
+        if (slider) slider.disabled = true;
+        if (spin) spin.hidden = false;
+        try {
+          const opts = Object.assign({}, it.textOpts, { fontScale: scale });
+          const pdf = await R.textpdf.convert(it.sourceFile, opts);
+          it.blob = pdf;
+          it.textOpts.fontScale = scale;
+          const sizeEl = row.querySelector('.osize');
+          if (sizeEl) sizeEl.textContent = fmtSize(pdf.size);
+          if (extOf(it.name) === 'pdf') paintThumb(row.querySelector('.othumb'), pdf);
+        } catch (e) {
+          app.toast(t('importFailed', { msg: e.message }), true);
+          const fallback = (it.textOpts && it.textOpts.fontScale) || 1;
+          if (slider) slider.value = String(fallback);
+          const val = row.querySelector('.ofont-val');
+          if (val) val.textContent = Math.round(fallback * 100) + '%';
+        } finally {
+          if (dlBtn) dlBtn.disabled = false;
+          if (slider) slider.disabled = false;
+          if (spin) spin.hidden = true;
+        }
+      }
+      function rescaleFont(i, scale) {
+        const it = items[i];
+        if (!it || !it.canScaleFont) return;
+        it._pendingScale = scale;
+        if (it._fontBusy) return;   // laeuft schon: der laufende Durchgang holt sich unten den neuesten Wert
+        it._fontBusy = true;
+        (async function loop() {
+          while (it._pendingScale !== undefined) {
+            const target = it._pendingScale;
+            it._pendingScale = undefined;
+            await applyFontScale(i, target);
+          }
+          it._fontBusy = false;
+        })();
+      }
+      host.addEventListener('input', function (e) {
+        if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
+        const row = e.target.closest('li');
+        const val = row && row.querySelector('.ofont-val');
+        if (val) val.textContent = Math.round(parseFloat(e.target.value) * 100) + '%';
+      });
+      host.addEventListener('change', function (e) {
+        if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
+        const row = e.target.closest('li');
+        const i = parseInt(row.getAttribute('data-i'), 10);
+        rescaleFont(i, parseFloat(e.target.value) || 1);
+      });
+      
       return ctrl;
     };
   });
