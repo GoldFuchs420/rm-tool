@@ -209,6 +209,7 @@
     sendPdfCount: ["In {n} PDF senden", "Send in {n} PDF", "Invia in {n} PDF", "Enviar en {n} PDF", "Envoyer en {n} PDF"],
     fPreset14: ["Letzte 14 Tage", "Last 14 days", "Ultimi 14 giorni", "\u00daltimos 14 d\u00edas", "14 derniers jours"],
     fDateReset: ["Zeitraum zur\u00fccksetzen", "Reset date range", "Azzera intervallo di date", "Restablecer rango de fechas", "R\u00e9initialiser la p\u00e9riode"],
+    startConvert: [ "Weiter", "Continue" ]
   };
 
   const codes = R.langs.map(function (l) { return l[0]; });
