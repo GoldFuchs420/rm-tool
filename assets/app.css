@@ -531,3 +531,12 @@ body.rmx-nosrv .rmx-footer { display: none; }
 .rmx-scale-slider::-moz-range-thumb, .ofont-slider::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--ark-interaction-primary-default); box-shadow: 0 1px 2px rgb(0 0 0 / .25); cursor: pointer; }
 .rmx-scale-slider:disabled, .ofont-slider:disabled { opacity: .5; cursor: progress; }
 .rmx-inline-spin, .ofont-spin { width: 14px; height: 14px; border-width: 2px; }
+
+.omode { display: inline-flex; border: 1px solid var(--ark-divider-muted); border-radius: 6px; overflow: hidden; flex: none; }
+.omode-btn {
+  border: 0; background: none; padding: 4px 10px; font-size: .75rem; font-weight: 600;
+  color: var(--ark-text-muted); cursor: pointer;
+}
+.omode-btn + .omode-btn { border-left: 1px solid var(--ark-divider-muted); }
+.omode-btn.is-active { background: var(--ark-interaction-primary-default); color: var(--ark-interaction-primary-foreground); }
+.omode-btn:disabled { opacity: .6; cursor: progress; }
