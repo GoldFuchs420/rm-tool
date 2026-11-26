@@ -413,7 +413,7 @@
      UI does not display code files at all, and HTML is sent as code, too). */
   const CODE_EXTS = {
     js: 'js', mjs: 'js', cjs: 'js', jsx: 'js', ts: 'js', tsx: 'js', mts: 'js', cts: 'js',
-    vue: 'js', svelte: 'js', astro: 'js', json: 'js', jsonc: 'js', groovy: 'jvm', gradle: 'jvm',
+    vue: 'js', svelte: 'js', astro: 'js', json: 'json', jsonc: 'json', groovy: 'jvm', gradle: 'jvm',
     java: 'jvm', kt: 'jvm', kts: 'jvm', scala: 'jvm', cs: 'jvm', dart: 'jvm', swift: 'jvm',
     go: 'c', rs: 'c', c: 'c', h: 'c', cc: 'c', cpp: 'c', cxx: 'c', hh: 'c', hpp: 'c', hxx: 'c',
     py: 'py', pyw: 'py', rb: 'py', erb: 'py', php: 'py', phtml: 'py', pl: 'py', pm: 'py',
@@ -490,7 +490,8 @@
     xml: { line: [], block: [['<!--', '-->']], kw: [], name: 'XML / HTML' },
     yaml: { line: ['#'], block: [], kw: [], name: 'YAML / TOML' },
     sql: { line: ['--'], block: [['/*', '*/']], kw: KW_GROUPS.sql, ci: true, name: 'SQL' },
-    lua: { line: ['--'], block: [['--[[', ']]']], kw: KW_GROUPS.lua, name: 'Lua' }
+    lua: { line: ['--'], block: [['--[[', ']]']], kw: KW_GROUPS.lua, name: 'Lua' },
+    json: { line: [], block: [], kw: ['true', 'false', 'null'], name: 'JSON' }
   };
 
   /* Regex-Literale (/.../flags) sind in JS von Division ("a / b") nicht
@@ -614,6 +615,45 @@
           i += seg.length;
           continue;
         }
+        if (lang === 'xml') {
+          const tagOpen = /^<\/?[A-Za-z][\w:-]*/.exec(line.slice(i));
+          if (tagOpen) { flush(); segs.push({ t: tagOpen[0], cls: 'tag' }); i += tagOpen[0].length; continue; }
+          if (c0 === '/' && line[i + 1] === '>') { flush(); segs.push({ t: '/>', cls: 'tag' }); i += 2; continue; }
+          if (c0 === '>') { flush(); segs.push({ t: '>', cls: 'tag' }); i += 1; continue; }
+          /* attribute name: an identifier immediately followed by '=' (ignoring
+             whitespace) - a cheap stand-in for "we are inside a tag", since the
+             tokenizer has no real parse tree to check that against. */
+          const attrName = /^[A-Za-z_:][\w:.-]*(?=\s*=)/.exec(line.slice(i));
+          if (attrName) { flush(); segs.push({ t: attrName[0], cls: 'call' }); i += attrName[0].length; continue; }
+        }
+        if (lang === 'json' && c0 === '"') {
+          flush();
+          let j = 1, closed = false;
+          while (j < line.length - i) {
+            if (line[i + j] === '\\') { j += 2; continue; }
+            if (line[i + j] === '"') { closed = true; j++; break; }
+            j++;
+          }
+          const strText = line.substr(i, j);
+          /* Lookahead on the same line: a string followed by ':' is a key: an
+             object container key (purple) if a '{' or '[' comes next, an
+             ordinary property key (blue) otherwise. A plain string value (no
+             ':' after it) keeps the normal string colour. Multi-line opening
+             braces (key on one line, '{' on the next) aren't caught by this -
+             same kind of single-line heuristic as the other additions here. */
+          let k = i + j;
+          while (k < line.length && /\s/.test(line[k])) k++;
+          let cls = 'str';
+          if (line[k] === ':') {
+            let m = k + 1;
+            while (m < line.length && /\s/.test(line[m])) m++;
+            cls = (line[m] === '{' || line[m] === '[') ? 'json-key-obj' : 'json-key';
+          }
+          segs.push({ t: strText, cls: cls });
+          if (!closed) pending = { end: '"', cls: 'str' };
+          i += j;
+          continue;
+        }
         if (lang === 'css') {
           if (c0 === '.') {
             const m = /^\.-?[A-Za-z_][\w-]*/.exec(line.slice(i));
@@ -709,7 +749,9 @@
       call: PDFLib.rgb(0.58, 0.40, 0.16),
       'sel-class': PDFLib.rgb(0.70, 0.35, 0.05),
       pseudo: PDFLib.rgb(0.42, 0.26, 0.14),
-      tag: PDFLib.rgb(0.42, 0.20, 0.55)
+      tag: PDFLib.rgb(0.42, 0.20, 0.55),
+      'json-key': PDFLib.rgb(0.07, 0.22, 0.60),
+      'json-key-obj': PDFLib.rgb(0.42, 0.20, 0.55)
     };
     const clsColor = function (cls) { return cls ? colors[cls] : black; };
     const clsFont = function (seg) { return (seg.cls === 'kw' || seg.bold) ? fonts.mb : seg.cls === 'com' ? fonts.mi : fonts.m; };
@@ -818,7 +860,12 @@
     opts = opts || {};
     await R.load.pdfLib();
     const text = await file.text();
-    const kind = kindOf(file);
+    let kind = kindOf(file);
+    /* HTML is the one kind where the person can choose between two legitimate
+       renderings: the cleaned-up page view (default) or the raw, syntax-
+       highlighted source. opts.renderAs only has an effect for this kind -
+       for every other kind the normal kindOf() classification still decides. */
+    if (kind === 'html' && opts.renderAs === 'code') kind = 'code';
     if (kind === 'md') await R.load.marked();
     let model;
     if (kind === 'code') {
