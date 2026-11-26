@@ -168,6 +168,7 @@
         const dlTitle = ext === 'pdf' ? t('downloadPdf') : ext === 'rmdoc' ? t('downloadRmdoc') : t('download') + ' ' + dlText;
         const rmTitle = t('remove') + ': ' + baseOf(it.name);
         const scale = it.canScaleFont ? ((it.textOpts && it.textOpts.fontScale) || 1) : null;
+        const mode = it.isHtml ? ((it.textOpts && it.textOpts.renderAs) || 'page') : null;
         return '<li data-i="' + i + '" data-ext="' + esc(ext) + '" data-state="idle"><div class="orow">' +
           leadHtml(ext) +
           '<div class="obody">' +
@@ -181,6 +182,10 @@
           '<button type="button" class="rmx-iconbtn rmx-iconbtn--danger" data-o="rm" aria-label="' + esc(rmTitle) + '" title="' + esc(rmTitle) + '">' + icon('trash', 20) + '</button>' +
           '</div>' +
           (scale !== null ? '<div class="opanel opanel--font">' +
+            (mode !== null ? '<div class="omode" role="group" aria-label="' + esc(t('htmlViewMode')) + '">' +
+              '<button type="button" class="omode-btn' + (mode === 'page' ? ' is-active' : '') + '" data-mode="page">' + esc(t('htmlAsPage')) + '</button>' +
+              '<button type="button" class="omode-btn' + (mode === 'code' ? ' is-active' : '') + '" data-mode="code">' + esc(t('htmlAsCode')) + '</button>' +
+              '</div>' : '') +
             '<label class="responsive-body-sm rmx-muted">' + esc(t('fontSize')) + '</label>' +
             '<input type="range" class="ofont-slider rmx-scale-slider" min="0.6" max="2.2" step="0.05" value="' + scale + '" style="--fill:' + (((scale - 0.6) / 1.6) * 100) + '%">' +
             '<span class="ofont-val rmx-value-badge">' + Math.round(scale * 100) + '%</span>' +
@@ -294,32 +299,11 @@
           return ok;
         }
       };
-
-      host.addEventListener('click', function (e) {
-        const b = e.target.closest('[data-o]');
-        if (!b) return;
-        const i = parseInt(b.closest('li').getAttribute('data-i'), 10);
-        const a = b.getAttribute('data-o');
-        if (a === 'dl') app.saveBlob(items[i].blob, nameOf(i));
-        else if (a === 'pv') app.previewBlob(items[i].blob, nameOf(i));
-        else if (a === 'rm') ctrl.removeItem(i);
-      });
-      host.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        const pv = e.target.closest ? e.target.closest('[data-o="pv"]') : null;
-        if (!pv) return;
-        e.preventDefault();
-        const i = parseInt(pv.closest('li').getAttribute('data-i'), 10);
-        app.previewBlob(items[i].blob, nameOf(i));
-      });
-
-      /* Regler losgelassen: PDF mit neuer Schriftgroesse neu erzeugen. Waehrend-
-         dessen sind Download und Regler fuer genau diese Zeile gesperrt - andere
-         Zeilen bleiben unberuehrt, da jede ihre eigene Originaldatei/Optionen hat.
-         Kommt waehrend einer laufenden Neuerstellung ein weiterer Change-Event fuer
-         dieselbe Zeile (schnelles Nachjustieren), wird nur der jeweils neueste
-         Wert im Anschluss verarbeitet statt mehrere Renderings zu ueberlappen. */
-      async function applyFontScale(i, scale) {
+      
+      /* patch: a partial textOpts object, e.g. {fontScale: 1.2} or {renderAs: 'code'}.
+         Used by both the font slider and the HTML page/code switch - same lock/
+         regenerate/sync machinery either way, just different fields changing. */
+      async function applyTextOpts(i, patch) {
         const it = items[i];
         const row = li(i);
         if (!it || !row) return it ? it.blob : null;
@@ -327,44 +311,48 @@
         const slider = row.querySelector('.ofont-slider');
         const label = row.querySelector('.ofont-val');
         const spin = row.querySelector('.ofont-spin');
+        const modeBtns = row.querySelectorAll('.omode-btn');
         if (dlBtn) dlBtn.disabled = true;
         if (slider) slider.disabled = true;
+        modeBtns.forEach(function (b) { b.disabled = true; });
         if (spin) spin.hidden = false;
         try {
-          const opts = Object.assign({}, it.textOpts, { fontScale: scale });
+          const opts = Object.assign({}, it.textOpts, patch);
           const pdf = await R.textpdf.convert(it.sourceFile, opts);
           it.blob = pdf;
-          it.textOpts.fontScale = scale;
+          Object.assign(it.textOpts, patch);
           const sizeEl = row.querySelector('.osize');
           if (sizeEl) sizeEl.textContent = fmtSize(pdf.size);
           if (extOf(it.name) === 'pdf') paintThumb(row.querySelector('.othumb'), pdf);
         } catch (e) {
           app.toast(t('importFailed', { msg: e.message }), true);
         } finally {
-          /* immer mit dem tatsaechlich aktiven Wert sync halten - auch wenn der
-             Aufruf aus der grossen Vorschau kam (eigener Regler dort) oder die
-             Konvertierung fehlgeschlagen ist (dann bleibt der alte Wert aktiv) */
+          /* always resync with the value that's actually active - whether the
+             call came from the big preview's own slider, or the conversion
+             failed (then the previous value is still the active one) */
           const current = (it.textOpts && it.textOpts.fontScale) || 1;
           const pct = ((current - 0.6) / 1.6) * 100;
           if (slider) { slider.value = String(current); slider.style.setProperty('--fill', pct + '%'); }
           if (label) label.textContent = Math.round(current * 100) + '%';
+          const curMode = (it.textOpts && it.textOpts.renderAs) || 'page';
+          modeBtns.forEach(function (b) { b.disabled = false; b.classList.toggle('is-active', b.getAttribute('data-mode') === curMode); });
           if (dlBtn) dlBtn.disabled = false;
           if (slider) slider.disabled = false;
           if (spin) spin.hidden = true;
         }
         return it.blob;
       }
-      function rescaleFont(i, scale) {
+      function queueTextOptsChange(i, patch) {
         const it = items[i];
         if (!it || !it.canScaleFont) return Promise.resolve(it && it.blob);
-        it._pendingScale = scale;
+        it._pendingPatch = Object.assign({}, it._pendingPatch, patch);
         if (!it._fontPromise) {
           it._fontPromise = (async function () {
             let result;
-            while (it._pendingScale !== undefined) {
-              const target = it._pendingScale;
-              it._pendingScale = undefined;
-              result = await applyFontScale(i, target);
+            while (it._pendingPatch) {
+              const target = it._pendingPatch;
+              it._pendingPatch = null;
+              result = await applyTextOpts(i, target);
             }
             it._fontPromise = null;
             return result;
@@ -372,18 +360,38 @@
         }
         return it._fontPromise;
       }
-      
       function openRowPreview(i) {
         const it = items[i];
         if (it.canScaleFont) {
           app.previewBlob(it.blob, nameOf(i), {
             fontScale: (it.textOpts && it.textOpts.fontScale) || 1,
-            onFontChange: function (scale) { return rescaleFont(i, scale); }
+            onFontChange: function (scale) { return queueTextOptsChange(i, { fontScale: scale }); }
           });
         } else {
           app.previewBlob(it.blob, nameOf(i));
         }
       }
+      host.addEventListener('input', function (e) {
+        if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
+        const row = e.target.closest('li');
+        const val = row && row.querySelector('.ofont-val');
+        if (val) val.textContent = Math.round(parseFloat(e.target.value) * 100) + '%';
+        const pct = ((parseFloat(e.target.value) - 0.6) / 1.6) * 100;
+        e.target.style.setProperty('--fill', pct + '%');
+      });
+      host.addEventListener('change', function (e) {
+        if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
+        const row = e.target.closest('li');
+        const i = parseInt(row.getAttribute('data-i'), 10);
+        queueTextOptsChange(i, { fontScale: parseFloat(e.target.value) || 1 });
+      });
+      host.addEventListener('click', function (e) {
+        const b = e.target.closest('.omode-btn');
+        if (!b) return;
+        const row = b.closest('li');
+        const i = parseInt(row.getAttribute('data-i'), 10);
+        queueTextOptsChange(i, { renderAs: b.getAttribute('data-mode') });
+      });
       host.addEventListener('click', function (e) {
         const b = e.target.closest('[data-o]');
         if (!b) return;
