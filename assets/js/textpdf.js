@@ -556,6 +556,9 @@
     let ctrlParen = 0;       /* >0 while inside the (...) of if/for/while/switch/catch */
     let armCtrl = false;     /* just saw if/for/while/switch/catch, waiting for '(' */
     let afterNew = false;    /* just saw 'new', next identifier is a class name */
+    let insideTag = false;   /* xml/html only: between <tagname and its closing > or /> */
+    let styleAttrNext = false; /* xml/html only: the next quoted string is a style="" value */
+    
     text.replace(/\r\n?/g, '\n').split('\n').forEach(function (raw) {
       const line = raw.replace(/\t/g, '  ');
       const segs = [];
@@ -595,8 +598,10 @@
             if (line[i + j] === c0) { closed = true; j++; break; }
             j++;
           }
-          segs.push({ t: line.substr(i, j), cls: 'str' });
-          if (!closed) pending = { end: c0, cls: 'str' };
+          const strCls = (lang === 'xml' && styleAttrNext) ? 'css-attr' : 'str';
+          segs.push({ t: line.substr(i, j), cls: strCls });
+          styleAttrNext = false;
+          if (!closed) pending = { end: c0, cls: strCls };
           i += j;
           continue;
         }
@@ -617,14 +622,24 @@
         }
         if (lang === 'xml') {
           const tagOpen = /^<\/?[A-Za-z][\w:-]*/.exec(line.slice(i));
-          if (tagOpen) { flush(); segs.push({ t: tagOpen[0], cls: 'tag' }); i += tagOpen[0].length; continue; }
-          if (c0 === '/' && line[i + 1] === '>') { flush(); segs.push({ t: '/>', cls: 'tag' }); i += 2; continue; }
-          if (c0 === '>') { flush(); segs.push({ t: '>', cls: 'tag' }); i += 1; continue; }
-          /* attribute name: an identifier immediately followed by '=' (ignoring
-             whitespace) - a cheap stand-in for "we are inside a tag", since the
-             tokenizer has no real parse tree to check that against. */
-          const attrName = /^[A-Za-z_:][\w:.-]*(?=\s*=)/.exec(line.slice(i));
-          if (attrName) { flush(); segs.push({ t: attrName[0], cls: 'call' }); i += attrName[0].length; continue; }
+          if (tagOpen) { flush(); segs.push({ t: tagOpen[0], cls: 'tag' }); insideTag = true; i += tagOpen[0].length; continue; }
+          if (insideTag && c0 === '/' && line[i + 1] === '>') { flush(); segs.push({ t: '/>', cls: 'tag' }); insideTag = false; i += 2; continue; }
+          if (insideTag && c0 === '>') { flush(); segs.push({ t: '>', cls: 'tag' }); insideTag = false; i += 1; continue; }
+          if (insideTag) {
+            const attrEq = /^[A-Za-z_:][\w:.-]*(?=\s*=)/.exec(line.slice(i));
+            if (attrEq) {
+              flush();
+              segs.push({ t: attrEq[0], cls: 'call' });
+              styleAttrNext = attrEq[0].toLowerCase() === 'style';
+              i += attrEq[0].length;
+              continue;
+            }
+            /* a bare identifier inside a tag with no '=' after it: a boolean
+               attribute (disabled, checked, required, ...) - detected by where
+               it sits, not by a fixed keyword list, so any such attribute works. */
+            const attrBare = /^[A-Za-z_:][\w:.-]*/.exec(line.slice(i));
+            if (attrBare) { flush(); segs.push({ t: attrBare[0], cls: 'bool-attr' }); i += attrBare[0].length; continue; }
+          }
         }
         if (lang === 'json' && c0 === '"') {
           flush();
@@ -701,8 +716,8 @@
           else if (/^\d/.test(w)) cls = 'num';
           else if (afterNew) cls = 'call';
           else if (lang === 'css' && TAG_SET.has(w.toLowerCase())) cls = 'tag';
-          else if (nextChar === '(') cls = 'call';   // einfaches foo( UND .foo( sind beides Aufrufe
-          else cls = 'var';                           // normale Variable / Eigenschaftszugriff ohne Aufruf
+          else if (nextChar === '(') cls = 'call';   // foo( and .foo( are both calls
+          else cls = 'var';
           segs.push({ t: w, cls: cls });
           afterNew = isKw && lc === 'new';
           if (isKw && CTRL_KW[lc]) armCtrl = true;
@@ -755,9 +770,11 @@
       pseudo: PDFLib.rgb(0.42, 0.26, 0.14),
       tag: PDFLib.rgb(0.42, 0.20, 0.55),
       'json-key': PDFLib.rgb(0.07, 0.22, 0.60),
-      'json-key-obj': PDFLib.rgb(0.42, 0.20, 0.55)
+      'json-key-obj': PDFLib.rgb(0.42, 0.20, 0.55),
+      'bool-attr': PDFLib.rgb(0.70, 0.35, 0.05),
+      'css-attr': PDFLib.rgb(0.55, 0.08, 0.08)
     };
-    const clsColor = function (cls) { return cls ? colors[cls] : black; };
+    const clsColor = function (cls) { return (cls && colors[cls]) ? colors[cls] : black; };
     const clsFont = function (seg) { return (seg.cls === 'kw' || seg.bold) ? fonts.mb : seg.cls === 'com' ? fonts.mi : fonts.m; };
    
     /* One visual line = { no: source line number, segs: [{t, cls}] }. Lines that
