@@ -860,6 +860,84 @@
     return pdf;
   }
 
+  /* ---------- HTML "page" rendering: an actual rendered screenshot, not reading-mode
+   * text. The browser itself lays the HTML out (inline <style>/style="" apply exactly
+   * as on screen), via the SVG foreignObject trick - no external library needed. See
+   * the caveats above: no external stylesheets/images, no <script>, pixel-cut pages. */
+  function loadImageEl(src) {
+    return new Promise(function (resolve, reject) {
+      const img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('HTML could not be rendered')); };
+      img.src = src;
+    });
+  }
+  async function rasteriseHtml(html, width) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const host = document.createElement('div');
+    host.style.cssText = 'all:initial; display:block; width:' + width + 'px; background:#fff; color:#111; font:14px/1.5 sans-serif;';
+    Array.prototype.forEach.call(doc.querySelectorAll('style'), function (s) { host.appendChild(s.cloneNode(true)); });
+    const body = document.createElement('div');
+    body.innerHTML = doc.body ? doc.body.innerHTML : html;
+    host.appendChild(body);
+    const stage = document.createElement('div');
+    stage.style.cssText = 'position:fixed; left:-100000px; top:0;';
+    stage.appendChild(host);
+    document.body.appendChild(stage);
+    try {
+      const height = Math.max(1, host.scrollHeight);
+      const xml = new XMLSerializer().serializeToString(host);
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' +
+        '<foreignObject width="100%" height="100%">' + xml + '</foreignObject></svg>';
+      const img = await loadImageEl('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg));
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      return canvas;
+    } finally {
+      stage.remove();
+    }
+  }
+  function canvasSliceToJpeg(canvas, y, h) {
+    const slice = document.createElement('canvas');
+    slice.width = canvas.width; slice.height = h;
+    const ctx = slice.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, slice.width, h);
+    ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+    return new Promise(function (resolve, reject) {
+      slice.toBlob(function (blob) {
+        if (!blob) return reject(new Error('Page export failed'));
+        blob.arrayBuffer().then(function (ab) { resolve(new Uint8Array(ab)); }, reject);
+      }, 'image/jpeg', 0.9);
+    });
+  }
+  async function renderHtmlScreenshot(text, opts) {
+    const PDFLib = window.PDFLib;
+    const pg = PAGES[opts.page] || PAGES.remarkable;
+    /* fontScale here means "zoom": a narrower render width makes the page's own
+       responsive CSS reflow larger relative to the final PDF page - an approximation
+       of bigger/smaller, not true per-character font scaling (there is no font here
+       to scale, only pixels). */
+    const width = Math.max(480, Math.round(1000 / (opts.fontScale || 1)));
+    const canvas = await rasteriseHtml(text, width);
+    const scale = pg.w / width;
+    const pageHeightPx = Math.max(1, Math.round(pg.h / scale));
+    const pdf = await PDFLib.PDFDocument.create();
+    for (let y = 0; y < canvas.height; y += pageHeightPx) {
+      const h = Math.min(pageHeightPx, canvas.height - y);
+      const jpeg = await canvasSliceToJpeg(canvas, y, h);
+      const image = await pdf.embedJpg(jpeg);
+      const page = pdf.addPage([pg.w, h * scale]);
+      page.drawImage(image, { x: 0, y: 0, width: pg.w, height: h * scale });
+    }
+    if (pdf.getPageCount() === 0) pdf.addPage([pg.w, pg.h]);
+    pdf.setTitle(opts.title || 'Dokument');
+    pdf.setCreator('reMarkable web interface');
+    return pdf;
+  }
+
   async function convert(file, opts) {
     opts = opts || {};
     await R.load.pdfLib();
@@ -885,6 +963,15 @@
       /* EPUB is transferred to the tablet unchanged (the device import
          handles it natively); no PDF conversion happens here. */
       return file;
+    }
+    if (kind === 'html') {
+      /* renderAs 'code' already turned into kind 'code' above and never
+         reaches here - this is only the "page" default: an actual rendered
+         screenshot (real boxes/colors/layout), not reading-mode text. */
+      const base = file.name.replace(/\.[^.]+$/, '');
+      const pdf = await renderHtmlScreenshot(text, { page: opts.page, fontScale: opts.fontScale, title: opts.title || base });
+      const bytes = await pdf.save();
+      return new File([bytes], base + '.pdf', { type: 'application/pdf' });
     }
     if (kind === 'md') {
       if (!window.marked) throw new Error('marked not loaded');
