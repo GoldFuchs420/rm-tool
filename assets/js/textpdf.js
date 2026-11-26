@@ -695,11 +695,14 @@
           const w = wm[0];
           const lc = L.ci ? w.toLowerCase() : w;
           const isKw = kws.indexOf(lc) >= 0;
-          let cls = isKw ? 'kw' : (/^\d/.test(w) ? 'num' : null);
           const nextChar = line[i + w.length];
-          const prevChar = i > 0 ? line[i - 1] : '';
-          if (!isKw && (afterNew || (prevChar === '.' && nextChar === '('))) cls = 'call';
-          else if (!isKw && lang === 'css' && TAG_SET.has(w.toLowerCase())) cls = 'tag';
+          let cls;
+          if (isKw) cls = 'kw';
+          else if (/^\d/.test(w)) cls = 'num';
+          else if (afterNew) cls = 'call';
+          else if (lang === 'css' && TAG_SET.has(w.toLowerCase())) cls = 'tag';
+          else if (nextChar === '(') cls = 'call';   // einfaches foo( UND .foo( sind beides Aufrufe
+          else cls = 'var';                           // normale Variable / Eigenschaftszugriff ohne Aufruf
           segs.push({ t: w, cls: cls });
           afterNew = isKw && lc === 'new';
           if (isKw && CTRL_KW[lc]) armCtrl = true;
@@ -746,7 +749,8 @@
       str: PDFLib.rgb(0.42, 0.16, 0.12),
       com: PDFLib.rgb(0.47, 0.45, 0.42),
       num: PDFLib.rgb(0.00, 0.34, 0.34),
-      call: PDFLib.rgb(0.58, 0.40, 0.16),
+      call: PDFLib.rgb(0.08, 0.40, 0.75),
+      var: PDFLib.rgb(0.70, 0.35, 0.05),
       'sel-class': PDFLib.rgb(0.70, 0.35, 0.05),
       pseudo: PDFLib.rgb(0.42, 0.26, 0.14),
       tag: PDFLib.rgb(0.42, 0.20, 0.55),
