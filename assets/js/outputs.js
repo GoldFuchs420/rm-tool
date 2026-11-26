@@ -372,19 +372,34 @@
         }
         return it._fontPromise;
       }
-      host.addEventListener('input', function (e) {
-        if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
-        const row = e.target.closest('li');
-        const val = row && row.querySelector('.ofont-val');
-        if (val) val.textContent = Math.round(parseFloat(e.target.value) * 100) + '%';
-        const pct = ((parseFloat(e.target.value) - 0.6) / 1.6) * 100;
-        e.target.style.setProperty('--fill', pct + '%');
+      
+      function openRowPreview(i) {
+        const it = items[i];
+        if (it.canScaleFont) {
+          app.previewBlob(it.blob, nameOf(i), {
+            fontScale: (it.textOpts && it.textOpts.fontScale) || 1,
+            onFontChange: function (scale) { return rescaleFont(i, scale); }
+          });
+        } else {
+          app.previewBlob(it.blob, nameOf(i));
+        }
+      }
+      host.addEventListener('click', function (e) {
+        const b = e.target.closest('[data-o]');
+        if (!b) return;
+        const i = parseInt(b.closest('li').getAttribute('data-i'), 10);
+        const a = b.getAttribute('data-o');
+        if (a === 'dl') app.saveBlob(items[i].blob, nameOf(i));
+        else if (a === 'pv') openRowPreview(i);
+        else if (a === 'rm') ctrl.removeItem(i);
       });
-      host.addEventListener('change', function (e) {
-        if (!e.target.classList || !e.target.classList.contains('ofont-slider')) return;
-        const row = e.target.closest('li');
-        const i = parseInt(row.getAttribute('data-i'), 10);
-        rescaleFont(i, parseFloat(e.target.value) || 1);
+      host.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const pv = e.target.closest ? e.target.closest('[data-o="pv"]') : null;
+        if (!pv) return;
+        e.preventDefault();
+        const i = parseInt(pv.closest('li').getAttribute('data-i'), 10);
+        openRowPreview(i);
       });
       
       return ctrl;
