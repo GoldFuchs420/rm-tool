@@ -287,19 +287,18 @@
           } else {
             setItemState(it.id, 'working', t('converting'));
             const canScaleFont = R.textpdf.kindOf(it.file) !== 'epub';
-            const effectiveOpts = Object.assign({}, textOpts, canScaleFont && it.previewFontScale ? { fontScale: it.previewFontScale } : {});
+            const isHtml = R.textpdf.kindOf(it.file) === 'html';
+            const effectiveOpts = Object.assign({}, textOpts,
+              canScaleFont && it.previewFontScale ? { fontScale: it.previewFontScale } : {},
+              isHtml ? { renderAs: it.renderAs || 'page' } : {});
             const pdf = await R.textpdf.convert(it.file, effectiveOpts);
-            /* EPUB läuft unveraendert durch R.textpdf.convert (kein PDF, fontScale
-               wirkungslos) - fuer alles andere (md/txt/code/html) wird die
-               Originaldatei + die genutzten Optionen mitgegeben, damit die
-               Ergebniszeile das Dokument spaeter mit anderer Schriftgroesse
-               neu erzeugen kann. */
             outs.push(Object.assign({
               name: pdf.name,
               blob: pdf,
               sourceFile: canScaleFont ? it.file : undefined,
               textOpts: canScaleFont ? effectiveOpts : undefined,
-              canScaleFont: canScaleFont
+              canScaleFont: canScaleFont,
+              isHtml: isHtml
             }, meta));
             setItemState(it.id, 'done', '', 'check');
           }
