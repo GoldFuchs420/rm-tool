@@ -62,14 +62,11 @@
     };
 
     /** Page size / font size options for text, Markdown and HTML conversions. */
-    out.textOptionsHtml = function (vals) {
-      return '<fieldset class="rmx-fieldset"><legend class="responsive-body-md">' + esc(t('textFormat')) + '</legend><div class="rmx-inline">' +
-        app.choice('radio', 'tfmt', 'remarkable', t('pageRmShort'), '', vals.tfmt === 'remarkable') +
-        app.choice('radio', 'tfmt', 'a4', t('pageA4'), '', vals.tfmt === 'a4') + '</div></fieldset>';
+    out.textOptionsHtml = function () {
+      return '';   // Seitenformat ist fest auf A4 - das passt fuer Text/Code/HTML immer am besten, nichts mehr zum Auswaehlen
     };
-    out.readTextOptions = function (root, vals) {
-      const tfmt = root.querySelector('input[name="tfmt"]:checked'); if (tfmt) vals.tfmt = tfmt.value;
-      return { page: vals.tfmt, fontScale: 1 };
+    out.readTextOptions = function () {
+      return { page: 'a4', fontScale: 1 };
     };
     
     const extOf = function (n) { const m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
