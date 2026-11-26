@@ -18,7 +18,7 @@
     let mode = 'setup';    // setup | working | results
     let ctrl = null;       // result list controller
     let abort = null;
-    const vals = { page: 'remarkable', merge: false, mergeName: '', tfmt: 'remarkable', datePrefix: false, ascii: false };
+    const vals = { page: 'remarkable', merge: false, mergeName: '', datePrefix: false, ascii: false };
     const NATIVE = ['pdf', 'epub', 'rmdoc'];
     const extOf = function (n) { const m = /\.([^.]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
 
