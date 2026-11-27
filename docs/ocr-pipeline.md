@@ -41,7 +41,7 @@ Existenz, sondern nur, dass jede Datei hier dokumentiert ist.
 | `npm install onnxruntime-web`, dann `cp -r node_modules/onnxruntime-web/dist/* assets/vendor/onnxruntime-web/` (kompletter `dist/`-Ordner — die WASM-Binärdateien gehören dazu) | `assets/vendor/onnxruntime-web/` |
 | `https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/model.onnx` (10,4 MB int8 — **nicht** die 40-MB-fp32-Variante) | `assets/models/de-htr-v2/model.onnx` |
 | `https://huggingface.co/PellelNitram/xournalpp-htr-simple-htr/resolve/main/model.onnx` | `assets/models/simple-htr/model.onnx` |
-| `npm install ink-on`, dann den `exports."./core"`-Pfad aus `node_modules/ink-on/package.json` kopieren (typischerweise `dist/core/`) | `assets/vendor/ink-on/core/` |
+| `npm install ink-on`, dann die Dateien aus `exports."./core"` kopieren (`dist-lib/core.js` + `dist-lib/chunks/`; `core.js` landet als `core/index.js`) | `assets/vendor/ink-on/core/` |
 | `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/encoder_int8.onnx` | `assets/models/comer/encoder_int8.onnx` |
 | `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/decoder_int8.onnx` | `assets/models/comer/decoder_int8.onnx` |
 | `https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js` | `assets/vendor/katex/katex.min.js` |
