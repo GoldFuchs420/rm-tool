@@ -40,15 +40,36 @@ Existenz, sondern nur, dass jede Datei hier dokumentiert ist.
 | `npm install remarkable-rm`, dann `cp node_modules/remarkable-rm/dist/index.global.js …` **oder** `https://cdn.jsdelivr.net/npm/remarkable-rm/dist/index.global.js` | `assets/vendor/remarkable-rm/index.global.js` |
 | `npm install onnxruntime-web`, dann `cp -r node_modules/onnxruntime-web/dist/* assets/vendor/onnxruntime-web/` (kompletter `dist/`-Ordner — die WASM-Binärdateien gehören dazu) | `assets/vendor/onnxruntime-web/` |
 | `https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/model.onnx` (10,4 MB int8 — **nicht** die 40-MB-fp32-Variante) | `assets/models/de-htr-v2/model.onnx` |
-| `https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/config.json` | `assets/models/de-htr-v2/config.json` |
 | `https://huggingface.co/PellelNitram/xournalpp-htr-simple-htr/resolve/main/model.onnx` | `assets/models/simple-htr/model.onnx` |
 | `npm install ink-on`, dann den `exports."./core"`-Pfad aus `node_modules/ink-on/package.json` kopieren (typischerweise `dist/core/`) | `assets/vendor/ink-on/core/` |
 | `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/encoder_int8.onnx` | `assets/models/comer/encoder_int8.onnx` |
 | `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/decoder_int8.onnx` | `assets/models/comer/decoder_int8.onnx` |
-| `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/vocab.json` | `assets/models/comer/vocab.json` |
 | `https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js` | `assets/vendor/katex/katex.min.js` |
 | `https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css` | `assets/vendor/katex/katex.min.css` |
 | `https://cdn.jsdelivr.net/npm/katex/dist/fonts/` (kompletter Ordner) | `assets/vendor/katex/fonts/` |
+
+Zwischenzeitlich **im Repository** (kleine Textdateien, kein manueller Schritt
+mehr nötig): `assets/models/de-htr-v2/config.json` und
+`assets/models/comer/vocab.json`.
+
+### A1. Ohne npm/git: Setup-Seite der Erweiterung
+
+Alle Dateien aus Abschnitt A lassen sich auch **komplett ohne npm, git und
+Kommandozeile** beschaffen — direkt im Browser:
+
+1. Dateimanager öffnen und oben rechts auf **OCR-Setup** klicken
+   (oder `setup.html` der Erweiterung direkt öffnen).
+2. Die Seite lädt jede Gruppe aus ihrer offiziellen Quelle (jsDelivr,
+   Hugging Face) und zeigt den Fortschritt je Zeile.
+3. Zeilen, die nicht automatisch geladen werden können (GitHub-Release-
+   Downloads der CoMER-Modelle senden teils keine CORS-Header): Link öffnen,
+   Datei speichern und über die Dateiauswahl der Zeile zuordnen.
+4. **ZIP-Paket erstellen** klicken. Das Archiv enthält alle Dateien mit der
+   korrekten Ordnerstruktur (`assets/…`) und wird in den Erweiterungsordner
+   entpackt.
+
+Die Zuordnung Allowlist → Setup-Eintrag wird von Check 21 der Testsuite
+sichergestellt (`setup.html` / `assets/js/ocr-setup.js`).
 
 **Lizenzen** (Details in `assets/vendor/THIRD_PARTY_NOTICES.txt`):
 `remarkable-rm` MIT (c) Stewart McSporran (Scratchydisk); gebündelte

@@ -22,6 +22,7 @@
  * 18. Content-Security-Policy des Manifests (MV3-Defaults darf nicht gelockert werden)
  * 19. OCR-Pipeline: Geometrie/Dekodierung der neuen Module (vm-Sandbox)
  * 20. OCR-Pipeline: manuell beschaffte Assets sind dokumentiert, Allowlist aktuell
+ * 21. OCR-Setup-Seite deckt jede Allowlist-Gruppe ab (npm-freier Bezug)
  */
 "use strict";
 
@@ -42,11 +43,9 @@ const MANUAL_ASSETS = [
   "assets/vendor/remarkable-rm/index.global.js",
   "assets/vendor/onnxruntime-web/",
   "assets/models/de-htr-v2/model.onnx",
-  "assets/models/de-htr-v2/config.json",
   "assets/models/simple-htr/model.onnx",
   "assets/models/comer/encoder_int8.onnx",
   "assets/models/comer/decoder_int8.onnx",
-  "assets/models/comer/vocab.json",
   "assets/vendor/ink-on/core/",
   "assets/vendor/katex/"
 ];
@@ -264,10 +263,10 @@ const jsFiles = [
   "assets/js/rmlines.js", "assets/js/rmsegment.js", "assets/js/rmrender.js",
   "assets/js/ocr-ctc.js", "assets/js/ocr-dehtr.js", "assets/js/ocr-simplehtr.js",
   "assets/js/rmregions.js", "assets/js/rmimages.js", "assets/js/rmmarkdown.js",
-  "assets/js/ocrpipeline.js"
+  "assets/js/ocrpipeline.js", "assets/js/ocr-setup.js"
 ];
 const MODULE_FILES = ["assets/js/ocr-formula.mjs", "assets/vendor/onnxruntime-web-shim.mjs"];
-const htmlFiles = ["filemanager.html", "popup.html"];
+const htmlFiles = ["filemanager.html", "popup.html", "setup.html"];
 
 const allRefs = new Map(); // key -> [file:line]
 jsFiles.forEach(function (f) {
@@ -989,6 +988,23 @@ check("jede Allowlist-Datei ist in docs/ocr-pipeline.md dokumentiert", function 
 check("Allowlist enthält keine Datei, die im Repository liegt (sonst veraltet)", function () {
   const stale = MANUAL_ASSETS.filter(function (m) { return exists(m); });
   assert(stale.length === 0, "liegt im Repo, ist also nicht mehr manuell: " + stale.join(", "));
+});
+
+/* ---------- 21. OCR-Setup-Seite (setup.html) ---------- */
+
+console.log("\n[21] OCR-Setup-Seite deckt die Allowlist ab");
+
+check("jede MANUAL_ASSETS-Gruppe hat einen Eintrag in assets/js/ocr-setup.js", function () {
+  const src = read("assets/js/ocr-setup.js");
+  const paths = [];
+  let m;
+  const re = /path:\s*'([^']+)'/g;
+  while ((m = re.exec(src))) paths.push(m[1]);
+  assert(paths.length > 0, "keine path:-Einträge gefunden");
+  const uncovered = MANUAL_ASSETS.filter(function (a) {
+    return !paths.some(function (p) { return a.indexOf(p) === 0 || p.indexOf(a.replace(/\/$/, "")) === 0; });
+  });
+  assert(uncovered.length === 0, "ohne Setup-Eintrag: " + uncovered.join(", "));
 });
 
 /* ---------- Ergebnis ---------- */
