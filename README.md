@@ -63,6 +63,10 @@ in der Optik von reMarkables eigenem Ark-Design.
   direkt aus dem `.rmdoc`-Archiv gelesen.
 - **Ergebnis**: ein einziges Markdown-Dokument, sortiert nach y-Position.
   Setup, Verifikation und offene Verifikationsschritte: `docs/ocr-pipeline.md`.
+- **Setup ohne npm/git**: fehlende Modell- und Vendor-Dateien lädt die
+  Setup-Seite der Erweiterung (Dateimanager → **OCR-Setup**, bzw.
+  `setup.html`) direkt aus den offiziellen Quellen und packt sie als ZIP;
+  Anleitung in `docs/ocr-pipeline.md`, Abschnitt A1.
 
 ### Server-Verwaltung — bei beiden Ansichten
 - Mehrere Server (Standard `https://10.11.99.1`), Erreichbarkeits-Check mit
@@ -100,7 +104,7 @@ selbst konfigurierten Servern.
    grün ist, erscheinen Senden-Button und Dateimanager (Ablage-Symbol 🗂).
 
 Die Testsuite läuft ohne Abhängigkeiten direkt mit Node:
-`node tests/run.js` (59 Checks; automatisch auch in CI bei jedem Push/PR).
+`node tests/run.js` (60 Checks; automatisch auch in CI bei jedem Push/PR).
 
 ---
 
@@ -204,8 +208,9 @@ dass alle Sprachen dieselben Schlüssel und Platzhalter haben.
 pdf-lib, PDF.js, JSZip, pako, marked, tslib (alle `assets/vendor/licenses/`).
 Die OCR-Pipeline lädt zusätzlich `remarkable-rm`, `onnxruntime-web`, `ink-on`
 und KaTeX sowie die ONNX-Modelle — diese großen npm-Builds/Modelle werden
-einmalig manuell beschafft und liegen nicht im Repository (siehe
-`docs/ocr-pipeline.md`). Dazu Lizenztexte für Bibliotheken, die beim
+einmalig beschafft und liegen nicht im Repository; ohne npm/git übernimmt das
+die Setup-Seite (**OCR-Setup** im Dateimanager), Details in
+`docs/ocr-pipeline.md`. Dazu Lizenztexte für Bibliotheken, die beim
 Austausch vorgesehener Komponenten relevant werden. reMarkables
 Ark-Design-System, Logo und Schriften stammen aus der Geräte-Firmware und
 sind Eigentum der reMarkable AG.
