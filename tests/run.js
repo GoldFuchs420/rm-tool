@@ -20,6 +20,8 @@
  * 16. CSS-Klammerbalance
  * 17. i18n-Sprachparitaet: Platzhalter ({n}, {name}, ...) und Sprachliste
  * 18. Content-Security-Policy des Manifests (MV3-Defaults darf nicht gelockert werden)
+ * 19. OCR-Pipeline: Geometrie/Dekodierung der neuen Module (vm-Sandbox)
+ * 20. OCR-Pipeline: manuell beschaffte Assets sind dokumentiert, Allowlist aktuell
  */
 "use strict";
 
@@ -31,6 +33,27 @@ const { execFileSync } = require("child_process");
 const ROOT = path.join(__dirname, "..");
 let pass = 0;
 let failures = [];
+
+/* Manuell beschaffte Pipeline-Assets (Modelle + npm-Builds, siehe
+   docs/ocr-pipeline.md): grosse Binärdateien bzw. npm-Builds, bewusst NICHT
+   im Repository. Die Tests prüfen ihre Existenz nicht - nur dass jede Datei
+   in docs/ocr-pipeline.md dokumentiert bleibt (Abschnitt 20). */
+const MANUAL_ASSETS = [
+  "assets/vendor/remarkable-rm/index.global.js",
+  "assets/vendor/onnxruntime-web/",
+  "assets/models/de-htr-v2/model.onnx",
+  "assets/models/de-htr-v2/config.json",
+  "assets/models/simple-htr/model.onnx",
+  "assets/models/comer/encoder_int8.onnx",
+  "assets/models/comer/decoder_int8.onnx",
+  "assets/models/comer/vocab.json",
+  "assets/vendor/ink-on/core/",
+  "assets/vendor/katex/"
+];
+
+function isManualAsset(p) {
+  return MANUAL_ASSETS.some(function (m) { return p === m || p.indexOf(m) === 0; });
+}
 
 function check(name, fn) {
   try {
@@ -235,8 +258,15 @@ const jsFiles = [
   "assets/js/api.js", "assets/js/app.js", "assets/js/archive.js", "assets/js/convert.js",
   "assets/js/import.js", "assets/js/outputs.js", "assets/js/pdfview.js",
   "assets/js/preview.js", "assets/js/rmdoc.js", "assets/js/rmx-bridge.js", "assets/js/textpdf.js",
-  "assets/js/thumbs.js", "assets/js/util.js"
+  "assets/js/thumbs.js", "assets/js/util.js",
+  /* OCR-Pipeline (docs/ocr-pipeline.md); ocr-formula.mjs ist ein ES-Modul und
+     wird über MODULE_FILES gesondert behandelt (Import-Bindings, ESM-Syntax). */
+  "assets/js/rmlines.js", "assets/js/rmsegment.js", "assets/js/rmrender.js",
+  "assets/js/ocr-ctc.js", "assets/js/ocr-dehtr.js", "assets/js/ocr-simplehtr.js",
+  "assets/js/rmregions.js", "assets/js/rmimages.js", "assets/js/rmmarkdown.js",
+  "assets/js/ocrpipeline.js"
 ];
+const MODULE_FILES = ["assets/js/ocr-formula.mjs", "assets/vendor/onnxruntime-web-shim.mjs"];
 const htmlFiles = ["filemanager.html", "popup.html"];
 
 const allRefs = new Map(); // key -> [file:line]
@@ -309,13 +339,14 @@ htmlFiles.forEach(function (f) {
   });
 });
 
-check("R.load-Pfade in assets/js/util.js vorhanden", function () {
+check("R.load-Pfade in assets/js/util.js vorhanden (manuelle Pipeline-Assets ausgenommen)", function () {
   const src = read("assets/js/util.js");
   const re = /'((?:\/|assets\/)[^']+\.js)'/g;
   const missing = [];
   let m;
   while ((m = re.exec(src))) {
     const p = m[1].replace(/^\//, "");
+    if (isManualAsset(p)) continue; // siehe MANUAL_ASSETS / docs/ocr-pipeline.md
     if (!exists(p)) missing.push(p);
   }
   assert(missing.length === 0, "fehlt: " + missing.join(", "));
@@ -349,7 +380,7 @@ check("manifest.json ist gültiges MV3-Manifest", function () {
 console.log("\n[6] Syntax (node --check)");
 
 check("alle eigenen JS-Dateien haben gültige Syntax", function () {
-  const files = [...jsFiles, "shared/filename.js", "assets/js/i18n.js", "tools/bump-version.js", __filename];
+  const files = [...jsFiles, ...MODULE_FILES, "shared/filename.js", "assets/js/i18n.js", "tools/bump-version.js", __filename];
   const broken = [];
   files.forEach(function (f) {
     if (!exists(f)) return; // schon oben gemeldet
@@ -448,7 +479,7 @@ function codeSkeleton(src) {
   return out;
 }
 
-const ownJs = [...jsFiles, "shared/filename.js", "assets/js/i18n.js"];
+const ownJs = [...jsFiles, ...MODULE_FILES, "shared/filename.js", "assets/js/i18n.js"];
 const cssFiles = ["assets/app.css", "assets/index.css", "popup.css", "shared/servers.css"];
 const appCssFiles = ["assets/app.css", "popup.css", "shared/servers.css"];
 
@@ -554,6 +585,17 @@ check("jeder Funktionsaufruf hat eine Deklaration, Global oder Built-in", functi
   const varRe = /\b(?:var|let|const)\s+([A-Za-z_$][\w$]*)/g;
   let m;
   while ((m = varRe.exec(clean))) KNOWN.add(m[1]);
+  /* ES-Modul-Importe (ocr-formula.mjs) gelten als deklariert */
+  const importRe = /\bimport\s*\{([^}]+)\}\s*from/g;
+  ownJs.forEach(function (f) {
+    let im;
+    while ((im = importRe.exec(read(f)))) {
+      im[1].split(",").forEach(function (p) {
+        p = p.trim().split(/\s+as\s+/).pop().trim();
+        if (/^[A-Za-z_$][\w$]*$/.test(p)) KNOWN.add(p);
+      });
+    }
+  });
   const callRe = /(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g;
   const missing = new Set();
   while ((m = callRe.exec(clean))) {
@@ -665,17 +707,18 @@ check("keine Referenz verweist auf eine fehlende Datei", function () {
   });
   if (man.action && man.action.default_popup) refs.add(man.action.default_popup);
   if (man.background && man.background.service_worker) refs.add(man.background.service_worker);
-  const missing = [...refs].filter(function (u) { return !exists(u); });
+  const missing = [...refs].filter(function (u) { return !exists(u) && !isManualAsset(u); });
   assert(missing.length === 0, "fehlt: " + missing.join(", "));
 });
 
 console.log("\n[14] Ungenutzte Dateien");
 
 check("jede Paketdatei wird vom Code, HTML, CSS oder manifest referenziert", function () {
-  /* Corpus = alle Paketdateien ausser Tests, README und Lizenztexten.
+  /* Corpus = alle Paketdateien ausser Tests, Tools, Docs, README und Lizenztexten.
      Referenzquelle ist auch manifest.json selbst (Icons, Popup, Worker). */
-  /* tools/ und tests/ sind Entwicklungs-Werkzeuge, kein Teil des Erweiterungspakets. */
-  const NONCODE = [/^tests\//, /^tools\//, /^README\.md$/, /^assets\/vendor\/licenses\//, /THIRD_PARTY_NOTICES\.txt$/];
+  /* tools/, tests/ und docs/ sind Entwicklungs-Werkzeuge/Dokumentation, kein
+     Teil des Erweiterungspakets. */
+  const NONCODE = [/^tests\//, /^tools\//, /^docs\//, /^README\.md$/, /^assets\/vendor\/licenses\//, /THIRD_PARTY_NOTICES\.txt$/];
   const refs = [];
   function walk(dir) {
     fs.readdirSync(path.join(ROOT, dir === "" ? "." : dir), { withFileTypes: true }).forEach(function (e) {
@@ -769,6 +812,183 @@ check("CSP der Extension-Pages erlaubt kein unsafe-eval/inline und keine Remote-
   assert(src.indexOf("'self'") >= 0, "ohne 'self': " + ep);
   assert(src.indexOf("'unsafe-eval'") < 0 && src.indexOf("'unsafe-inline'") < 0, "unsichere Quelle: " + ep);
   assert(!/https?:\/\//.test(src), "Remote-Scripts: " + ep);
+});
+
+/* ---------- 19. OCR-Pipeline: Geometrie & Dekodierung (vm-Sandbox) ---------- */
+
+/* Reine Logik-Module der OCR-Pipeline (docs/ocr-pipeline.md, Stufen 1-6)
+   ohne DOM/Netzwerk testen: alle Dateien in EINE Sandbox laden, damit die
+   R.rmlines/rmsegment/rmregions-Querverweise zwischen den Modulen greifen. */
+const ocrSandbox = { console: console };
+ocrSandbox.window = ocrSandbox;
+vm.createContext(ocrSandbox);
+[
+  "assets/js/rmlines.js", "assets/js/rmsegment.js", "assets/js/ocr-ctc.js",
+  "assets/js/rmregions.js", "assets/js/rmmarkdown.js"
+].forEach(function (f) {
+  vm.runInContext(read(f), ocrSandbox, { filename: f });
+});
+
+function mkStroke(pts) {
+  return { type: "stroke", points: pts.map(function (p) { return { x: p[0], y: p[1], width: 1 }; }) };
+}
+
+console.log("\n[19] OCR-Pipeline: rmlines.js (Stufe 1)");
+
+check("strokesOf liefert nur stroke-Items, über alle Layer hinweg, flach", function () {
+  const R = ocrSandbox.RMX;
+  const s1 = mkStroke([[0, 0], [10, 10]]), s2 = mkStroke([[5, 5]]), s3 = mkStroke([[1, 2]]);
+  const page = { layers: [
+    { name: "Notiz", items: [s1, { type: "other" }, s2] },
+    { name: "Skizze", items: [s3] }
+  ] };
+  const out = R.rmlines.strokesOf(page);
+  assert(out.length === 3, "Länge: " + out.length);
+  assert(out[0] === s1 && out[1] === s2 && out[2] === s3, "Reihenfolge/falsche Items");
+  assert(R.rmlines.strokesOf({ layers: [] }).length === 0, "leere Seite");
+  assert(R.rmlines.strokesOf({}).length === 0, "Seite ohne layers");
+});
+
+check("bounds: leere Liste -> null, sonst korrektes Rechteck ohne Infinity", function () {
+  const R = ocrSandbox.RMX;
+  assert(R.rmlines.bounds([]) === null, "leere Liste");
+  const b = R.rmlines.bounds([mkStroke([[2, 3], [8, 5]]), mkStroke([[4, 1], [6, 9]])]);
+  assert(b.minX === 2 && b.minY === 1 && b.maxX === 8 && b.maxY === 9, JSON.stringify(b));
+  const keys = Object.keys(b).sort().join(",");
+  assert(keys === "maxX,maxY,minX,minY", "Schlüssel: " + keys);
+});
+
+console.log("\n[19] OCR-Pipeline: rmsegment.js (Stufe 2)");
+
+check("lines: zwei getrennte Tintenbänder -> zwei Zeilen, sortiert, alle Striche zugeordnet", function () {
+  const R = ocrSandbox.RMX;
+  const top1 = [mkStroke([[0, 10], [30, 10]]), mkStroke([[0, 12], [30, 12]])];
+  const top2 = [mkStroke([[0, 60], [30, 60]]), mkStroke([[0, 62], [30, 62]])];
+  const lines = R.rmsegment.lines(top1.concat(top2));
+  assert(lines.length === 2, "Zeilen: " + lines.length);
+  assert(lines[0].top < lines[1].top, "nicht von oben nach unten sortiert");
+  assert(lines[0].strokes.length === 2 && lines[1].strokes.length === 2,
+    "Zuordnung: " + lines.map(function (l) { return l.strokes.length; }).join("/"));
+  assert(lines[0].bottom < lines[1].top, "Bänder überlappen vollständig");
+});
+
+check("lines: leere Eingabe -> leere Liste", function () {
+  assert(ocrSandbox.RMX.rmsegment.lines([]).length === 0, "leere Eingabe");
+});
+
+check("words: horizontale Lücke > gapFactor*Zeilenhöhe trennt Wörter, sortiert links->rechts", function () {
+  const R = ocrSandbox.RMX;
+  // Zwei Buchstaben-Cluster (Lücke 6, nicht > Schwellwert) plus ein fernes
+  // Wort (Lücke 80); Strichhöhe 10 -> Schwellwert 0.6*10 = 6.
+  const strokes = [
+    mkStroke([[100, 0], [110, 10]]),
+    mkStroke([[0, 0], [8, 10]]),
+    mkStroke([[14, 0], [20, 10]])
+  ];
+  const words = R.rmsegment.words(strokes);
+  assert(words.length === 2, "Wörter: " + words.length);
+  assert(words[0].left < words[1].left, "nicht von links nach rechts sortiert");
+  assert(words[0].strokes.length === 2 && words[1].strokes.length === 1,
+    "Zuordnung: " + words.map(function (w) { return w.strokes.length; }).join("/"));
+  assert(words[0].left === 0 && words[0].right === 20 && words[1].left === 100, "Grenzen falsch");
+});
+
+check("words: leere Eingabe -> leere Liste", function () {
+  assert(ocrSandbox.RMX.rmsegment.words([]).length === 0, "leere Eingabe");
+});
+
+console.log("\n[19] OCR-Pipeline: ocr-ctc.js (Stufen 3/4)");
+
+check("ctcDecode: greedy Argmax, Blank (0) verworfen, Wiederholungen zusammengefasst", function () {
+  const R = ocrSandbox.RMX;
+  // 3 Klassen: 0 = Blank, 1 = 'a', 2 = 'b'
+  const logits = new Float32Array([
+    0.1, 5, 0.2,   // t0: 'a'
+    0.1, 4, 0.2,   // t1: 'a' (Wiederholung -> keine Ausgabe)
+    5, 0.1, 0.2,   // t2: Blank
+    0.1, 0.2, 5,   // t3: 'b'
+    5, 0.1, 0.2    // t4: Blank
+  ]);
+  assert(R.ocrCtc.decode(logits, 5, 3, ["a", "b"]) === "ab", "erhalten: " + R.ocrCtc.decode(logits, 5, 3, ["a", "b"]));
+  assert(R.ocrCtc.decode(new Float32Array([5, 0, 0, 5, 0, 0]), 2, 3, ["a", "b"]) === "", "nur Blanks");
+  assert(R.ocrCtc.decode(new Float32Array([0, 5, 0, 5, 0, 0, 0, 5, 0]), 3, 3, ["a", "b"]) === "aa", "gleiches Zeichen nach Blank bleibt");
+});
+
+console.log("\n[19] OCR-Pipeline: rmregions.js (Stufe 5)");
+
+check("classifyLayers ordnet über Ebenennamen zu (Formel/Bild, Rest Text)", function () {
+  const R = ocrSandbox.RMX;
+  const t = mkStroke([[0, 0], [1, 1]]), f = mkStroke([[2, 2], [3, 3]]), i = mkStroke([[4, 4], [5, 5]]);
+  const page = { layers: [
+    { name: "Notizen", items: [t] },
+    { name: " Formel ", items: [f] },
+    { name: "Bild", items: [i] }
+  ] };
+  const out = R.rmregions.classifyLayers(page);
+  assert(out.text.length === 1 && out.text[0] === t, "text: " + out.text.length);
+  assert(out.formula.length === 1 && out.formula[0] === f, "formula: " + out.formula.length);
+  assert(out.image.length === 1 && out.image[0] === i, "image: " + out.image.length);
+});
+
+check("classifyLayers: Index-Fallback greift nur bei namenlosen Ebenen", function () {
+  const R = ocrSandbox.RMX;
+  const a = mkStroke([[0, 0]]), b = mkStroke([[1, 1]]), c = mkStroke([[2, 2]]);
+  const page = { layers: [
+    { name: "", items: [a] },
+    { name: "", items: [b] },
+    { name: "", items: [c] }
+  ] };
+  const out = R.rmregions.classifyLayers(page, { formulaLayerIndex: 1, imageLayerIndex: 2 });
+  assert(out.text.length === 1 && out.text[0] === a, "text: " + out.text.length);
+  assert(out.formula.length === 1 && out.formula[0] === b, "formula-Fallback");
+  assert(out.image.length === 1 && out.image[0] === c, "image-Fallback");
+  // Benannte Ebenen ignorieren den Fallback:
+  const named = R.rmregions.classifyLayers({ layers: [{ name: "Formel", items: [a] }] }, { imageLayerIndex: 0 });
+  assert(named.formula.length === 1 && named.image.length === 0, "Name schlägt Fallback");
+});
+
+check("imageMarkers: getrennte Markierungen -> einzelne Bereiche, oben -> unten", function () {
+  const R = ocrSandbox.RMX;
+  const markers = R.rmregions.imageMarkers([
+    mkStroke([[0, 100], [40, 100]]),
+    mkStroke([[0, 10], [40, 10]])
+  ]);
+  assert(markers.length === 2, "Markierungen: " + markers.length);
+  assert(markers[0].top < markers[1].top, "nicht sortiert");
+});
+
+console.log("\n[19] OCR-Pipeline: rmmarkdown.js (Stufe 6)");
+
+check("assembleMarkdown sortiert nach y-Position und formatiert Formeln/Bilder", function () {
+  const R = ocrSandbox.RMX;
+  const md = R.rmmarkdown.assembleMarkdown(
+    [{ top: 30, text: "Hallo Welt" }],
+    [{ top: 10, latex: "x ^ { 2 }   +  1" }, { top: 50, latex: "" }],
+    [{ top: 20, file: "blob:abc" }]
+  );
+  const parts = md.split("\n\n");
+  assert(parts.length === 3, "Blöcke: " + JSON.stringify(md));
+  assert(parts[0] === "$$x ^ { 2 } + 1$$", "Formel: " + parts[0]);
+  assert(parts[1] === "![](blob:abc)", "Bild: " + parts[1]);
+  assert(parts[2] === "Hallo Welt", "Text: " + parts[2]);
+  assert(md.indexOf("$$") === 0, "Formel zuerst (top 10)");
+});
+
+/* ---------- 20. OCR-Pipeline: manuell beschaffte Assets ---------- */
+
+console.log("\n[20] OCR-Pipeline: MANUAL_ASSETS-Allowlist");
+
+check("jede Allowlist-Datei ist in docs/ocr-pipeline.md dokumentiert", function () {
+  const doc = read("docs/ocr-pipeline.md");
+  const undocumented = MANUAL_ASSETS.filter(function (m) {
+    return doc.indexOf(m) < 0 && doc.indexOf(m.replace(/\/$/, "")) < 0;
+  });
+  assert(undocumented.length === 0, "nicht dokumentiert: " + undocumented.join(", "));
+});
+
+check("Allowlist enthält keine Datei, die im Repository liegt (sonst veraltet)", function () {
+  const stale = MANUAL_ASSETS.filter(function (m) { return exists(m); });
+  assert(stale.length === 0, "liegt im Repo, ist also nicht mehr manuell: " + stale.join(", "));
 });
 
 /* ---------- Ergebnis ---------- */
