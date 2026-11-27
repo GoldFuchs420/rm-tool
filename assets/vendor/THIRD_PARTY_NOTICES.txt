@@ -20,7 +20,7 @@ All libraries are bundled unmodified and are loaded from this device
    Franz Buchinger, Antonio Afonso
    License: MIT or GPL-3.0-or-later (used here under the MIT license)
    https://stuk.github.io/jszip/
-   Used to create ZIP archives for the export.
+   Used to create ZIP archives for the export and to read .rmdoc archives.
 
 3. pako 1.0.11               assets/vendor/pako.min.js
    Copyright (C) 2014-2017 by Vitaly Puzrin and Andrei Tuputcyn
@@ -43,8 +43,41 @@ All libraries are bundled unmodified and are loaded from this device
    a .js instead of .mjs extension so that simple web servers deliver them as JavaScript.
    Loaded on demand only, not at page start.
 
+OCR pipeline (docs/ocr-pipeline.md) - these components are NOT shipped in the
+repository; they are fetched once manually (large npm builds / model weights)
+and are listed here so the licence situation stays complete:
+
+6. remarkable-rm            assets/vendor/remarkable-rm/index.global.js (manual)
+   Copyright (c) Stewart McSporran (Scratchydisk)   License: MIT
+   https://www.npmjs.com/package/remarkable-rm
+   Parses reMarkable .rm files (v5/v6) in the browser, fully offline.
+   Bundles Google Noto Sans fonts (SIL Open Font License 1.1); those are
+   only used by its Node-only renderToPng/renderToJpeg, not by parse().
+
+7. onnxruntime-web          assets/vendor/onnxruntime-web/ (manual)
+   Copyright (c) Microsoft Corporation   License: MIT
+   https://github.com/microsoft/onnxruntime
+   ONNX inference engine (WASM) for the handwriting and formula models.
+   Requires the 'wasm-unsafe-eval' CSP entry in manifest.json.
+
+8. KaTeX                    assets/vendor/katex/ (manual)
+   Copyright (c) Khan Academy   License: MIT
+   https://github.com/KaTeX/KaTeX
+   Renders recognised formula LaTeX for the formula-to-image step.
+
+9. ink-on (CoMER)           assets/vendor/ink-on/core/ (manual)
+   Copyright (c) kimseungdae   License: Apache-2.0
+   https://www.npmjs.com/package/ink-on
+   Stroke-based formula recognition (CoMER, ECCV 2022) as int8 ONNX.
+
+Models (fetched once manually, see docs/ocr-pipeline.md):
+   - naeyn/de-htr-web-v2 (German handwriting, lines) - Apache-2.0;
+     training-data attribution: ScaDS.AI German Handwriting Dataset (CC BY 4.0)
+   - PellelNitram/xournalpp-htr-simple-htr (English handwriting, words) - MIT
+   - ink-on CoMER encoder/decoder int8 + vocab - Apache-2.0
+
 Own code (assets/js/*.js, assets/app.css, popup.html, filemanager.html):
-   TAR writer, API client, UI. Design tokens, fonts and base stylesheet
-   (assets/index.css, reMarkableSans/Serif.woff2, rm_logo.svg) are taken
-   unchanged from the original reMarkable web interface and remain
+   TAR writer, API client, UI, OCR pipeline. Design tokens, fonts and base
+   stylesheet (assets/index.css, reMarkableSans/Serif.woff2, rm_logo.svg)
+   are taken unchanged from the original reMarkable web interface and remain
    (c) reMarkable AS.

@@ -26,7 +26,16 @@
     pdfLib: function () { return script('/assets/vendor/pdf-lib.min.js', function () { return window.PDFLib; }); },   // MIT, (c) 2019 Andrew Dillon
     jszip: function () { return script('/assets/vendor/jszip.min.js', function () { return window.JSZip; }); },       // MIT, (c) 2009-2016 Stuart Knightley et al.
     pako: function () { return script('/assets/vendor/pako.min.js', function () { return window.pako; }); },          // MIT/Zlib, (c) 2014-2017 Vitaly Puzrin, Andrei Tuputcyn
-    marked: function () { return script('/assets/vendor/marked.min.js', function () { return window.marked; }); }     // MIT, (c) 2018+ MarkedJS, (c) 2011-2018 Christopher Jeffrey
+    marked: function () { return script('/assets/vendor/marked.min.js', function () { return window.marked; }); },     // MIT, (c) 2018+ MarkedJS, (c) 2011-2018 Christopher Jeffrey
+    // OCR-Pipeline (docs/ocr-pipeline.md), beide Dateien werden manuell
+    // beschafft (große npm-Builds) und liegen nicht im Repository:
+    rmRm: function () { return script('/assets/vendor/remarkable-rm/index.global.js', function () { return window.RemarkableRM; }); }, // MIT, (c) Stewart McSporran (Scratchydisk)
+    ort: function () {                                                                                                  // MIT, (c) Microsoft Corporation
+      return script('/assets/vendor/onnxruntime-web/ort.min.js', function () { return window.ort; }).then(function () {
+        window.ort.env.wasm.wasmPaths = '/assets/vendor/onnxruntime-web/';
+        return window.ort;
+      });
+    }
   };
 
   let safe = null;

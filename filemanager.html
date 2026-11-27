@@ -29,6 +29,28 @@
     <script defer src="/assets/js/thumbs.js"></script>
     <script defer src="/assets/js/outputs.js"></script>
     <script defer src="/assets/js/import.js"></script>
+    <!-- OCR-Pipeline (Stufen 1-6, siehe docs/ocr-pipeline.md): .rm-Parsing,
+         Segmentierung, Rasterung, CTC-Dekodierung, OCR (DE·HTR/SimpleHTR),
+         Bereichs-Markierung, Bild-Extraktion, Markdown-Zusammenbau.
+         Die zugehörigen Vendor-Bibliotheken und Modelle werden lazy geladen
+         und müssen einmalig manuell beschafft werden (docs/ocr-pipeline.md). -->
+    <script defer src="/assets/js/rmlines.js"></script>
+    <script defer src="/assets/js/rmsegment.js"></script>
+    <script defer src="/assets/js/rmrender.js"></script>
+    <script defer src="/assets/js/ocr-ctc.js"></script>
+    <script defer src="/assets/js/ocr-dehtr.js"></script>
+    <script defer src="/assets/js/ocr-simplehtr.js"></script>
+    <script defer src="/assets/js/rmregions.js"></script>
+    <script defer src="/assets/js/rmimages.js"></script>
+    <script defer src="/assets/js/rmmarkdown.js"></script>
+    <script defer src="/assets/js/ocrpipeline.js"></script>
+    <!-- Formel-Erkennung (CoMER via ink-on) als ES-Modul; die Import-Map
+         brückt ink-ons "onnxruntime-web"-Import auf den lazy geladenen
+         UMD-Build (window.ort), siehe assets/vendor/onnxruntime-web-shim.mjs. -->
+    <script type="importmap">
+      { "imports": { "onnxruntime-web": "/assets/vendor/onnxruntime-web-shim.mjs" } }
+    </script>
+    <script type="module" src="/assets/js/ocr-formula.mjs"></script>
     <script defer src="/assets/js/app.js"></script>
   </head>
   <body data-theme="light-neutral">
