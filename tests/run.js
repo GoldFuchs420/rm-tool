@@ -39,15 +39,9 @@ let failures = [];
    docs/ocr-pipeline.md): grosse Binärdateien bzw. npm-Builds, bewusst NICHT
    im Repository. Die Tests prüfen ihre Existenz nicht - nur dass jede Datei
    in docs/ocr-pipeline.md dokumentiert bleibt (Abschnitt 20). */
-const MANUAL_ASSETS = [
-  "assets/vendor/remarkable-rm/index.global.js",
-  "assets/vendor/onnxruntime-web/",
-  "assets/models/de-htr-v2/model.onnx",
-  "assets/models/simple-htr/model.onnx",
-  "assets/models/comer/encoder_int8.onnx",
-  "assets/models/comer/decoder_int8.onnx",
-  "assets/vendor/ink-on/core/",
-  "assets/vendor/katex/"
+const MANUAL_ASSETS = [];
+const RUNTIME_ASSETS = [
+  "assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.wasm"
 ];
 
 function isManualAsset(p) {
@@ -731,7 +725,11 @@ check("jede Paketdatei wird vom Code, HTML, CSS oder manifest referenziert", fun
   const corpus = refs.filter(function (f) { return !NONCODE.some(function (r) { return r.test(f); }); }).map(function (f) { return read(f); }).join("\n");
   const unused = refs.filter(function (f) {
     /* manifest.json wird implizit von Chrome geladen, nicht referenziert. */
-    if (NONCODE.some(function (r) { return r.test(f); }) || f === "manifest.json") return false;
+    if (
+  NONCODE.some(function (r) { return r.test(f); }) ||
+  f === "manifest.json" ||
+  RUNTIME_ASSETS.indexOf(f) >= 0
+) return false;
     const base = f.split("/").pop();
     return corpus.indexOf(f) < 0 && corpus.indexOf(base) < 0;
   });
