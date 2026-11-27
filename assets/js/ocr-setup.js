@@ -34,10 +34,19 @@
   }
 
   function inkonFiles(names) {
+    /* exports["./core"] zeigt auf dist-lib/core (das Bundle lädt seine
+       Chunks relativ über ./chunks/...). Die Kern-Datei wird als
+       core/index.js abgelegt (Pfad, den ocr-formula.mjs importiert),
+       die Chunks bleiben relativ korrekt. */
     return names.filter(function (n) {
-      return n.indexOf('dist/core/') === 0 && /\.js$/.test(n);
+      return /^dist-lib\/core\.js$/.test(n) ||
+        (n.indexOf('dist-lib/chunks/') === 0 && /\.js$/.test(n));
     }).map(function (n) {
-      return { path: 'assets/vendor/ink-on/core/' + n.slice(10), url: jsdelivr + 'ink-on@' + INKON_VERSION + '/' + n };
+      const rel = n.slice('dist-lib/'.length);
+      const target = /^core\.js$/.test(rel)
+        ? 'assets/vendor/ink-on/core/index.js'
+        : 'assets/vendor/ink-on/core/' + rel;
+      return { path: target, url: jsdelivr + 'ink-on@' + INKON_VERSION + '/' + n };
     });
   }
 
@@ -111,15 +120,28 @@
     return r.blob();
   }
 
+  /* Löst die jsDelivr-Paketliste (verschachtelter Baum) zu vollständigen
+     Pfaden auf; flache Listen funktionieren genauso. */
+  function flatFiles(entries, prefix, out) {
+    (entries || []).forEach(function (e) {
+      const p = prefix + e.name;
+      if (e.type === 'directory') flatFiles(e.files, p + '/', out);
+      else out.push(p);
+    });
+    return out;
+  }
+
   /* Löst einen Eintrag zur konkreten Dateiliste auf (List-API oder Einzel-URL). */
   async function expand(item) {
     if (!item.list) return [{ path: item.path, url: item.url }];
     let names = null;
     try {
       const j = await fetchJson(item.list);
-      names = (j.files || []).filter(function (f) { return f.type === 'file'; }).map(function (f) { return f.name; });
+      names = flatFiles(j.files, '', []);
     } catch (e) { /* Fallback unten */ }
-    return names ? item.pick(names) : (item.fallback ? item.fallback() : []);
+    let files = names ? item.pick(names) : (item.fallback ? item.fallback() : []);
+    if (!files.length && item.fallback) files = item.fallback();
+    return files;
   }
 
   function el(tag, text) {
