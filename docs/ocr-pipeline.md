@@ -36,7 +36,7 @@ zur Laufzeit, kein npm, kein git, kein manueller Download. Geliefert werden:
 | Baustein | Dateien im Repo |
 |---|---|
 | `.rm`-Parser | `assets/vendor/remarkable-rm/index.global.js` |
-| ONNX-Laufzeit | `assets/vendor/onnxruntime-web/` (`ort.min.js`, `ort-wasm-simd-threaded.wasm`) |
+| ONNX-Laufzeit | `assets/vendor/onnxruntime-web/` (`ort.min.js`, `ort-wasm-simd-threaded.wasm`), onnxruntime-web 1.27.0 |
 | DE-Handschrift | `assets/models/de-htr-v2/` (`model.onnx` int8, `config.json`) |
 | EN-Handschrift | `assets/models/simple-htr/model.onnx` |
 | Formeln (CoMER) | `assets/models/comer/` (`encoder_int8.onnx`, `decoder_int8.onnx`, `vocab.json`), `assets/vendor/ink-on/core/` |
