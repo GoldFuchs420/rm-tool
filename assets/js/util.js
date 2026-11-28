@@ -31,7 +31,17 @@
     // beschafft (große npm-Builds) und liegen nicht im Repository:
     rmRm: function () { return script('/assets/vendor/remarkable-rm/index.global.js', function () { return window.RemarkableRM; }); }, // MIT, (c) Stewart McSporran (Scratchydisk)
     ort: function () {                                                                                                  // MIT, (c) Microsoft Corporation
-      return script('/assets/vendor/onnxruntime-web/ort.min.js', function () { return window.ort; }).then(function () {
+      /* ESM-Build (wasm-only), wie in der Referenz-App von de-htr-web-v2.
+         Das UMD-Bundle ort.min.js ist seit 1.27 der JSEP-Build und erwartet
+         zusaetzliche ort-wasm-simd-threaded.jsep.{mjs,wasm}; der wasm-only-Build
+         kommt mit den bereits vorhandenen ort-wasm-simd-threaded.{mjs,wasm} aus. */
+      if (window.ort) return Promise.resolve(window.ort);
+      if (!scripts['ort-esm']) {
+        scripts['ort-esm'] = import('/assets/vendor/onnxruntime-web/ort.wasm.min.mjs').then(function (m) {
+          window.ort = m;
+        }).catch(function (e) { delete scripts['ort-esm']; throw e; });
+      }
+      return scripts['ort-esm'].then(function () {
         window.ort.env.wasm.wasmPaths = '/assets/vendor/onnxruntime-web/';
         return window.ort;
       });

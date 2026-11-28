@@ -36,7 +36,7 @@ zur Laufzeit, kein npm, kein git, kein manueller Download. Geliefert werden:
 | Baustein | Dateien im Repo |
 |---|---|
 | `.rm`-Parser | `assets/vendor/remarkable-rm/index.global.js` |
-| ONNX-Laufzeit | `assets/vendor/onnxruntime-web/` (`ort.min.js`, `ort-wasm-simd-threaded.wasm`), onnxruntime-web 1.27.0 |
+| ONNX-Laufzeit | `assets/vendor/onnxruntime-web/` (`ort.wasm.min.mjs`, `ort-wasm-simd-threaded.wasm`), onnxruntime-web 1.27.0 |
 | DE-Handschrift | `assets/models/de-htr-v2/` (`model-fp32.onnx`, `config.json`) |
 | EN-Handschrift | `assets/models/simple-htr/model.onnx` |
 | Formeln (CoMER) | `assets/models/comer/` (`encoder_int8.onnx`, `decoder_int8.onnx`, `vocab.json`), `assets/vendor/ink-on/core/` |
@@ -123,7 +123,7 @@ ink-on-Chunk den ort-Shim direkt (siehe B.4) statt über eine Import-Map.
    brückt. Eine Import-Map wäre der einfachere Weg, aber die MV3-CSP
    blockiert Inline-Import-Maps in Extension-Pages (`script-src 'self'`
    erlaubt kein Inline-Script). Der Shim löst Zugriffe per Proxy erst bei
-   Gebrauch auf, weil `ort.min.js` später lädt als der Modul-Import;
+   Gebrauch auf, weil `ort.wasm.min.mjs` später lädt als der Modul-Import;
    Einstellungen an `ort.env.wasm` (Threads, SIMD) puffert er zwischen und
    wendet sie beim ersten echten ort-Zugriff an. Gegenüber ink-on@0.1.0
    ist im Chunk nur die Import-Zeile geändert.
