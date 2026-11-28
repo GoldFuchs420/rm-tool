@@ -463,6 +463,9 @@
       return '<button type="button" class="rmx-iconbtn" ' + attr + '="' + id + '" data-key="' + key + ':' + id + '" aria-label="' + esc(title) + ': ' + nm + '" title="' + esc(title) + '">' + icon(ico, 22) + '</button>';
     };
     return (doc ? pill('pdf', 'PDF', t('downloadPdf')) + pill('rmdoc', 'RMDoc', t('downloadRmdoc')) : '') +
+      (doc && String(it.fileType).toLowerCase() === 'notebook'
+        ? '<button type="button" class="rmx-pill rmx-pill--rmdoc" data-tr="' + id + '" data-key="tr:' + id + '" aria-label="' + esc(t('transcript')) + ': ' + nm + '" title="' + esc(t('transcript')) + '">' + icon('code', 16) + '<span>' + esc(t('transcript')) + '</span></button>'
+        : '') +
       (doc ? '<span class="iconpair">' + ib('data-pv', 'pv', 'eye', t('preview')) + ib('data-info', 'info', 'infoIcon', t('info')) + '</span>'
            : ib('data-info', 'info', 'infoIcon', t('info')));
   }
@@ -729,6 +732,8 @@
     const target = e.target;
     const chk = target.closest('[data-chk]');
     if (chk) { e.stopPropagation(); toggleSelect(chk.getAttribute('data-chk')); return; }
+    const trBtn = target.closest('[data-tr]');
+    if (trBtn) { e.stopPropagation(); if (app.openTranscript) app.openTranscript(trBtn.getAttribute('data-tr')); return; }
     const pvBtn = target.closest('[data-pv]');
     if (pvBtn) { e.stopPropagation(); if (app.previewDocument) app.previewDocument(pvBtn.getAttribute('data-pv')); return; }
     const infoBtn = target.closest('[data-info]');

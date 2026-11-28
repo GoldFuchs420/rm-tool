@@ -28,48 +28,62 @@ Bibliotheken lazy über `R.load.*` in `assets/js/util.js` (wie `pdf.js`,
 
 ---
 
-## A. Manuell zu beschaffende Dateien
+## A. Mitgelieferte Dateien (im Repository)
 
-Kein CDN-Laden zur Laufzeit — alles läuft offline. Die folgenden Dateien
-sind **nicht** im Repository (große npm-Builds bzw. Modell-Gewichte) und
-müssen einmalig manuell abgelegt werden. Die Testsuite prüft nicht ihre
-Existenz, sondern nur, dass jede Datei hier dokumentiert ist.
+Die Pipeline läuft komplett mit Dateien aus dem Repository — kein CDN-Laden
+zur Laufzeit, kein npm, kein git, kein manueller Download. Geliefert werden:
 
-| Quelle | Ziel |
+| Baustein | Dateien im Repo |
 |---|---|
-| `npm install remarkable-rm`, dann `cp node_modules/remarkable-rm/dist/index.global.js …` **oder** `https://cdn.jsdelivr.net/npm/remarkable-rm/dist/index.global.js` | `assets/vendor/remarkable-rm/index.global.js` |
-| `npm install onnxruntime-web`, dann `cp -r node_modules/onnxruntime-web/dist/* assets/vendor/onnxruntime-web/` (kompletter `dist/`-Ordner — die WASM-Binärdateien gehören dazu) | `assets/vendor/onnxruntime-web/` |
-| `https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/model.onnx` (10,4 MB int8 — **nicht** die 40-MB-fp32-Variante) | `assets/models/de-htr-v2/model.onnx` |
-| `https://huggingface.co/PellelNitram/xournalpp-htr-simple-htr/resolve/main/model.onnx` | `assets/models/simple-htr/model.onnx` |
-| `npm install ink-on`, dann die Dateien aus `exports."./core"` kopieren (`dist-lib/core.js` + `dist-lib/chunks/`; `core.js` landet als `core/index.js`) | `assets/vendor/ink-on/core/` |
-| `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/encoder_int8.onnx` | `assets/models/comer/encoder_int8.onnx` |
-| `https://github.com/kimseungdae/ink-on/releases/download/v0.1.0/decoder_int8.onnx` | `assets/models/comer/decoder_int8.onnx` |
-| `https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js` | `assets/vendor/katex/katex.min.js` |
-| `https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css` | `assets/vendor/katex/katex.min.css` |
-| `https://cdn.jsdelivr.net/npm/katex/dist/fonts/` (kompletter Ordner) | `assets/vendor/katex/fonts/` |
+| `.rm`-Parser | `assets/vendor/remarkable-rm/index.global.js` |
+| ONNX-Laufzeit | `assets/vendor/onnxruntime-web/` (`ort.min.js`, `ort-wasm-simd-threaded.wasm`) |
+| DE-Handschrift | `assets/models/de-htr-v2/` (`model.onnx` int8, `config.json`) |
+| EN-Handschrift | `assets/models/simple-htr/model.onnx` |
+| Formeln (CoMER) | `assets/models/comer/` (`encoder_int8.onnx`, `decoder_int8.onnx`, `vocab.json`), `assets/vendor/ink-on/core/` |
+| Formel-Rendering | `assets/vendor/katex/` (`katex.min.js`, `katex.min.css`) |
 
-Zwischenzeitlich **im Repository** (kleine Textdateien, kein manueller Schritt
-mehr nötig): `assets/models/de-htr-v2/config.json` und
-`assets/models/comer/vocab.json`.
+Vor dem Start prüft der Transcript-Dialog die für die gewählte Sprache
+nötigen Dateien per HEAD-Request und nennt im Fehlerfall genau, was fehlt
+und woher es stammt (offizielle Quelle: jsDelivr / Hugging Face).
 
-### A1. Ohne npm/git: Setup-Seite der Erweiterung
+**Aktuell unvollständig** (bricht die Erkennung noch ab, bis ergänzt):
 
-Alle Dateien aus Abschnitt A lassen sich auch **komplett ohne npm, git und
-Kommandozeile** beschaffen — direkt im Browser:
+- `assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.mjs` — das
+  Emscripten-Glue-Skript, das `ort.min.js` zur Laufzeit dynamisch lädt.
+  Quelle: `https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort-wasm-simd-threaded.mjs`
+- `assets/vendor/katex/fonts/` — nur für `renderFormulas: true` (Formeln
+  als Bilder). Der Transcript-Export belässt Formeln als `$$LaTeX$$` und
+  braucht die Fonts deshalb nicht; für den Konsole-Test in Abschnitt C
+  (`renderFormulas: true`) wären sie nötig.
 
-1. Dateimanager öffnen und oben rechts auf **OCR-Setup** klicken
-   (oder `setup.html` der Erweiterung direkt öffnen).
-2. Die Seite lädt jede Gruppe aus ihrer offiziellen Quelle (jsDelivr,
-   Hugging Face) und zeigt den Fortschritt je Zeile.
-3. Zeilen, die nicht automatisch geladen werden können (GitHub-Release-
-   Downloads der CoMER-Modelle senden teils keine CORS-Header): Link öffnen,
-   Datei speichern und über die Dateiauswahl der Zeile zuordnen.
-4. **ZIP-Paket erstellen** klicken. Das Archiv enthält alle Dateien mit der
-   korrekten Ordnerstruktur (`assets/…`) und wird in den Erweiterungsordner
-   entpackt.
+---
 
-Die Zuordnung Allowlist → Setup-Eintrag wird von Check 21 der Testsuite
-sichergestellt (`setup.html` / `assets/js/ocr-setup.js`).
+## A2. Transcript: Notizbuch als Markdown exportieren
+
+`assets/js/ocr-export.js` hängt die Funktion an den Dateimanager:
+
+1. **Transkript**-Knopf an Notebook-Einträgen (Reihenfolge:
+   PDF | RMDoc | Transkript | Vorschau | Details).
+2. Dialog mit Erkennungssprache (Deutsch/Englisch, Standard Deutsch);
+   Start bricht nicht die restliche UI.
+3. Ablauf je Lauf: Dateien prüfen (Diagnose) → `.rmdoc` über `R.api.download`
+   laden → per JSZip lokal entpacken → Seiten aus `cPages` der
+   `.content`-Datei in Lesereihenfolge bestimmen (Fallback: alphabetisch) →
+   je Seite `R.ocrPipeline.recognizePage()` (bestehende Pipeline, kein
+   duplizierter Code) → Markdown zusammenbauen → Datei herunterladen.
+4. Formeln bleiben als `$$LaTeX$$` im Text (`renderFormulas: false`),
+   eingebettete Bilder werden aus dem Archiv geholt und — falls vorhanden —
+   als ZIP (`<Name>.md` + `images/`) exportiert, sonst als einzelne
+   `.md`-Datei. Bildverweise zeigen relativ auf `images/…`.
+5. Fortschritt aus fertigen Seiten (aktuelle Seite / Gesamtzahl), Abbrechen
+   zwischen Seiten, fehlgeschlagene Seiten werden gesammelt gemeldet und
+   brechen den Lauf nicht ab; bei Teilerfolg enthält das Dokument alle
+   erfolgreich erkannten Seiten.
+
+Die reine Logik (Seitenfinderung, Bild-Zuordnung, Markdown-Bau, Dateiname)
+liegt in `R.ocrExport` und wird in der Testsuite (Abschnitt 20) geprüft.
+
+---
 
 **Lizenzen** (Details in `assets/vendor/THIRD_PARTY_NOTICES.txt`):
 `remarkable-rm` MIT (c) Stewart McSporran (Scratchydisk); gebündelte
@@ -160,7 +174,7 @@ laufen.
 | Stufe 4: Tensor-Namen (`INPUT_NAME`/`OUTPUT_NAME` in `ocr-simplehtr.js`) | `assets/models/simple-htr/model.onnx` in [netron.app](https://netron.app) öffnen, Konstanten ersetzen |
 | Stufe 4: Zeichensatz-Reihenfolge (`IAM_ALPHABET`) | Bekanntes Testwort (z. B. „TEST" in Blockschrift) erkennen lassen; bei erkennbar verschobener Ausgabe Reihenfolge aus dem `xournalpp_htr`-Trainingscode nachrecherchieren |
 | Stufe 5: Ebenennamen | `doc.pages[0].layers.map(l => l.name)` gegen echte Daten prüfen; fehlen Namen, Fallback-Indizes (`formulaLayerIndex`/`imageLayerIndex`) nutzen |
-| Stufe 6: `ink-on/core`-Pfad | `node_modules/ink-on/package.json`, Eintrag `"exports"."./core"`, Ordner komplett kopieren |
+| Stufe 6: `ink-on/core` | Dateien liegen im Repo (`core/index.js` + `core/chunks/`); Formel-Stufe gegen eine echte Formel testen |
 
 ---
 
@@ -196,9 +210,12 @@ laufen.
 | 3 | DE·HTR-Integration (Deutsch, zeilenbasiert) | ✅ Code im Repo |
 | 4 | SimpleHTR-Integration (Englisch, wortbasiert) | ⚠️ Tensor-Namen & Zeichensatz zu verifizieren |
 | 5 | Bereichs-Markierung + Bild-Extraktion | ⚠️ Ebenennamen-Annahme zu verifizieren |
-| 6 | CoMER/`ink-on` (Formeln → LaTeX) + Markdown | ⚠️ `ink-on/core`-Pfad nach `npm install` bestätigen |
+| 6 | CoMER/`ink-on` (Formeln → LaTeX) + Markdown | ⚠️ Formel-Stufe gegen echte Formeln testen |
+| — | Transcript-Export (`ocr-export.js`) | ✅ Code im Repo; End-to-End mit echtem mehrseitigen Notizbuch testen |
 
-Die drei ⚠️-Punkte sind Verifikationsschritte gegen echte Dateien (Anleitung
+Die ⚠️-Punkte sind Verifikationsschritte gegen echte Dateien (Anleitung
 oben), keine offene Implementierung. Alle Stufen sind architektonisch
 vollständig, modularisiert, dedupliziert und durch die Testsuite
-(`tests/run.js`, Abschnitte 19–20) abgesichert.
+(`tests/run.js`, Abschnitte 19–20) abgesichert. Bevor die erste
+Transkription läuft, fehlen nur noch die zwei unter Abschnitt A
+markierten Dateien (ONNX-Glue-Skript, optional KaTeX-Fonts).

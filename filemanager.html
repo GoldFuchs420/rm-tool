@@ -32,8 +32,8 @@
     <!-- OCR-Pipeline (Stufen 1-6, siehe docs/ocr-pipeline.md): .rm-Parsing,
          Segmentierung, Rasterung, CTC-Dekodierung, OCR (DE·HTR/SimpleHTR),
          Bereichs-Markierung, Bild-Extraktion, Markdown-Zusammenbau.
-         Die zugehörigen Vendor-Bibliotheken und Modelle werden lazy geladen
-         und müssen einmalig manuell beschafft werden (docs/ocr-pipeline.md). -->
+         Die zugehörigen Vendor-Bibliotheken und Modelle liegen im
+         Repository und werden lazy geladen. -->
     <script defer src="/assets/js/rmlines.js"></script>
     <script defer src="/assets/js/rmsegment.js"></script>
     <script defer src="/assets/js/rmrender.js"></script>
@@ -44,6 +44,8 @@
     <script defer src="/assets/js/rmimages.js"></script>
     <script defer src="/assets/js/rmmarkdown.js"></script>
     <script defer src="/assets/js/ocrpipeline.js"></script>
+    <!-- Transcript: Notizbuch -> Markdown (nutzt die Pipeline oben), -->
+    <script defer src="/assets/js/ocr-export.js"></script>
     <!-- Formel-Erkennung (CoMER via ink-on) als ES-Modul; die Import-Map
          brückt ink-ons "onnxruntime-web"-Import auf den lazy geladenen
          UMD-Build (window.ort), siehe assets/vendor/onnxruntime-web-shim.mjs. -->
@@ -60,7 +62,6 @@
       </a>
       <div class="rmx-hdr-tools">
         <div id="langsel"></div>
-        <a href="/setup.html" target="_blank" title="OCR-Setup: fehlende Pipeline-Dateien ohne npm/git laden">OCR-Setup</a>
       </div>
     </header>
 
@@ -83,6 +84,7 @@
            accept=".pdf,.epub,.rmdoc,.jpg,.jpeg,.png,.svg,.webp,.md,.markdown,.txt,.html,.htm,.zip,.tar,.gz,.tgz" />
 
     <dialog id="dlg-export" class="rmx-dialog" aria-labelledby="dlg-export-title"></dialog>
+    <dialog id="dlg-transcript" class="rmx-dialog" aria-labelledby="dlg-transcript-title"></dialog>
     <dialog id="dlg-import" class="rmx-dialog" aria-labelledby="dlg-import-title"></dialog>
 
     <dialog id="dlg-detail" class="rmx-dialog" aria-labelledby="dlg-detail-title"></dialog>
