@@ -24,7 +24,7 @@
   ];
   const REQUIRED_LANG = {
     de: [
-      { path: '/assets/models/de-htr-v2/model.onnx', url: 'https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/model.onnx' },
+      { path: '/assets/models/de-htr-v2/model-fp32.onnx', url: 'https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/model-fp32.onnx' },
       { path: '/assets/models/de-htr-v2/config.json', url: 'https://huggingface.co/naeyn/de-htr-web-v2/resolve/main/config.json' }
     ],
     en: [

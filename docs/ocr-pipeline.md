@@ -37,7 +37,7 @@ zur Laufzeit, kein npm, kein git, kein manueller Download. Geliefert werden:
 |---|---|
 | `.rm`-Parser | `assets/vendor/remarkable-rm/index.global.js` |
 | ONNX-Laufzeit | `assets/vendor/onnxruntime-web/` (`ort.min.js`, `ort-wasm-simd-threaded.wasm`), onnxruntime-web 1.27.0 |
-| DE-Handschrift | `assets/models/de-htr-v2/` (`model.onnx` int8, `config.json`) |
+| DE-Handschrift | `assets/models/de-htr-v2/` (`model-fp32.onnx`, `config.json`) |
 | EN-Handschrift | `assets/models/simple-htr/model.onnx` |
 | Formeln (CoMER) | `assets/models/comer/` (`encoder_int8.onnx`, `decoder_int8.onnx`, `vocab.json`), `assets/vendor/ink-on/core/` |
 | Formel-Rendering | `assets/vendor/katex/` (`katex.min.js`, `katex.min.css`) |
@@ -199,6 +199,11 @@ laufen.
   Schriften (Kurrent, Sütterlin) werden nicht unterstützt.
 - **SimpleHTR:** Nur Einzelwort-Erkennung, greedy CTC, 78-Zeichen-
   Zeichensatz (keine nicht-lateinischen Schriften).
+- **DE·HTR int8:** Die int8-Variante des Modells nutzt `ConvInteger`-Knoten,
+  die das WASM-EP von onnxruntime-web nicht implementiert (Fehler
+  `NOT_IMPLEMENTED` bei der Session-Erstellung). Die Pipeline verwendet
+  deshalb `model-fp32.onnx` (40 MB, identische Schnittstelle, 8,0 % CER
+  statt 8,01 %); das int8-Modell bleibt für künftige Laufzeiten im Repo.
 - **Formeln:** Nur ~36 % exakte Erkennung (CROHME 2014, int8, beam=3),
   ~66 % höchstens 2 Token-Fehler daneben — Formeln manuell gegenlesen.
   `ink-on` ist ein junges, kaum verbreitetes Paket (v0.1.0) — vor
