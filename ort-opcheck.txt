@@ -1,0 +1,16 @@
+== vendored (main, 1.27.0) ==
+total 13544
+-rw-r--r-- 1 runner runner    24180 Nov 28 07:52 ort-wasm-simd-threaded.mjs
+-rw-r--r-- 1 runner runner 13479978 Nov 28 07:52 ort-wasm-simd-threaded.wasm
+-rw-r--r-- 1 runner runner   360434 Nov 28 07:52 ort.min.js
+-- ort.min.js enthaelt ConvInteger:
+0
+-- wasm enthaelt ConvInteger:
+1
+-- wasm enthaelt MatMulInteger:
+2
+== 1.19.2 (jsDelivr) ==
+-- ort.min.js enthaelt ConvInteger:
+0
+-- wasm enthaelt ConvInteger:
+1
