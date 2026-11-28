@@ -37,9 +37,12 @@
 
   /* ---------- reine Helfer (vm-testbar über R.ocrExport) ---------- */
 
-  /** Eine .rm-Seite: <uuid>.rm im Archiv-Wurzelverzeichnis (v6-Notizbuch). */
+  /** Eine .rm-Seite: der letzte Pfadabschnitt endet auf .rm. Je nach Quelle
+     liegen die Seiten im Archiv-Wurzelverzeichnis (<uuid>.rm) oder in einem
+     Dokument-Unterordner (<docid>/<pageid>.rm, so liefern reMarkable-Proxys
+     das Archiv aus). */
   function isPageEntry(name) {
-    return /^[^/]+\.rm$/i.test(String(name));
+    return /^[^/]+\.rm$/i.test(String(name).split('/').pop());
   }
 
   /**
@@ -61,7 +64,7 @@
           list.forEach(function (p) {
             const id = p && (p.id || p.Id);
             if (!id) return;
-            const hit = pages.find(function (n) { return n.toLowerCase() === String(id).toLowerCase() + '.rm'; });
+            const hit = pages.find(function (n) { return String(n).split('/').pop().toLowerCase() === String(id).toLowerCase() + '.rm'; });
             if (hit) order.push(hit);
           });
           if (!order.length) order = null;
@@ -232,7 +235,7 @@
         return finish('trFailed');
       }
       let contentText = null;
-      const contentPath = Object.keys(zip.files).find(function (n) { return /^[^/]+\.content$/i.test(n); });
+      const contentPath = Object.keys(zip.files).find(function (n) { return /^[^/]+\.content$/i.test(String(n).split('/').pop()); });
       if (contentPath) {
         try { contentText = await zip.file(contentPath).async('string'); } catch (e) { contentText = null; }
       }
@@ -253,7 +256,7 @@
         }
         status('trPage', { i: i + 1, n: pages.length });
         setBar(i / pages.length);
-        const pageId = pages[i].replace(/\.rm$/i, '');
+        const pageId = pages[i].split('/').pop().replace(/\.rm$/i, '');
         try {
           const rmBuf = await zip.file(pages[i]).async('arraybuffer');
           const res = await R.ocrPipeline.recognizePage(rmBuf, { rmdocFile: blob, pageId: pageId, lang: lang, renderFormulas: false });
