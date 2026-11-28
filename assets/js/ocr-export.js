@@ -18,9 +18,9 @@
      zeigt der Dialog die offizielle Bezugsquelle an. */
   const REQUIRED_RUNTIME = [
     { path: '/assets/vendor/remarkable-rm/index.global.js', url: 'https://cdn.jsdelivr.net/npm/remarkable-rm/dist/' + 'index.global' + '.js' },
-    { path: '/assets/vendor/onnxruntime-web/ort.min.js', url: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min' + '.js' },
-    { path: '/assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.mjs', url: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort-wasm-simd-threaded.mjs' },
-    { path: '/assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.wasm', url: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort-wasm-simd-threaded.wasm' }
+    { path: '/assets/vendor/onnxruntime-web/ort.min.js', url: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort.min' + '.js' },
+    { path: '/assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.mjs', url: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort-wasm-simd-threaded.mjs' },
+    { path: '/assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.wasm', url: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/ort-wasm-simd-threaded.wasm' }
   ];
   const REQUIRED_LANG = {
     de: [
