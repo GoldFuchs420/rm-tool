@@ -1117,7 +1117,7 @@
     initExportDialog();
     initFilterbar();
     Object.assign(app, {
-      R: R, t: t, $: $, esc: esc, icon: icon, toast: toast, saveBlob: saveBlob, store: store, state: state, choice: choice,
+      R: R, t: t, $: $, esc: esc, icon: icon, toast: toast, saveBlob: saveBlob, store: store, state: state, choice: choice, stripExt: stripExt,
       isFolder: isFolder, pk: pk, children: children, chainOf: chainOf, pathLabel: pathLabel, leaves: leaves,
       allFolderIds: allFolderIds, reloadFolder: reloadFolder, render: render, typeLabel: typeLabel, ago: ago, ymd: ymd, asciiName: asciiName,
       toggleSelect: toggleSelect, typeKey: typeKey, refreshSelectionUI: refreshSelectionUI, chev: CHEV,
