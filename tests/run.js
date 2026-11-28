@@ -21,8 +21,8 @@
  * 17. i18n-Sprachparitaet: Platzhalter ({n}, {name}, ...) und Sprachliste
  * 18. Content-Security-Policy des Manifests (MV3-Defaults darf nicht gelockert werden)
  * 19. OCR-Pipeline: Geometrie/Dekodierung der neuen Module (vm-Sandbox)
- * 20. OCR-Pipeline: manuell beschaffte Assets sind dokumentiert, Allowlist aktuell
- * 21. OCR-Setup-Seite deckt jede Allowlist-Gruppe ab (npm-freier Bezug)
+ * 20. Transcript-Export: Seitenfinderung, Markdown-Bau, Bild-Zuordnung,
+ *     obsolete Setup-Workflows sind entfernt
  */
 "use strict";
 
@@ -35,18 +35,12 @@ const ROOT = path.join(__dirname, "..");
 let pass = 0;
 let failures = [];
 
-/* Manuell beschaffte Pipeline-Assets (Modelle + npm-Builds, siehe
-   docs/ocr-pipeline.md): grosse Binärdateien bzw. npm-Builds, bewusst NICHT
-   im Repository. Die Tests prüfen ihre Existenz nicht - nur dass jede Datei
-   in docs/ocr-pipeline.md dokumentiert bleibt (Abschnitt 20). */
-const MANUAL_ASSETS = [];
+/* Lokale Pipeline-Laufzeitdateien (im Repository, siehe docs/ocr-pipeline.md):
+   Modell- und WASM-Dateien werden von ort.min.js erst zur Laufzeit
+   zusammengesetzt, daher sind sie hier vom "ungenutzt"-Check ausgenommen. */
 const RUNTIME_ASSETS = [
   "assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.wasm"
 ];
-
-function isManualAsset(p) {
-  return MANUAL_ASSETS.some(function (m) { return p === m || p.indexOf(m) === 0; });
-}
 
 function check(name, fn) {
   try {
@@ -257,10 +251,10 @@ const jsFiles = [
   "assets/js/rmlines.js", "assets/js/rmsegment.js", "assets/js/rmrender.js",
   "assets/js/ocr-ctc.js", "assets/js/ocr-dehtr.js", "assets/js/ocr-simplehtr.js",
   "assets/js/rmregions.js", "assets/js/rmimages.js", "assets/js/rmmarkdown.js",
-  "assets/js/ocrpipeline.js", "assets/js/ocr-setup.js"
+  "assets/js/ocrpipeline.js", "assets/js/ocr-export.js"
 ];
 const MODULE_FILES = ["assets/js/ocr-formula.mjs", "assets/vendor/onnxruntime-web-shim.mjs"];
-const htmlFiles = ["filemanager.html", "popup.html", "setup.html"];
+const htmlFiles = ["filemanager.html", "popup.html"];
 
 const allRefs = new Map(); // key -> [file:line]
 jsFiles.forEach(function (f) {
@@ -339,7 +333,6 @@ check("R.load-Pfade in assets/js/util.js vorhanden (manuelle Pipeline-Assets aus
   let m;
   while ((m = re.exec(src))) {
     const p = m[1].replace(/^\//, "");
-    if (isManualAsset(p)) continue; // siehe MANUAL_ASSETS / docs/ocr-pipeline.md
     if (!exists(p)) missing.push(p);
   }
   assert(missing.length === 0, "fehlt: " + missing.join(", "));
@@ -700,7 +693,7 @@ check("keine Referenz verweist auf eine fehlende Datei", function () {
   });
   if (man.action && man.action.default_popup) refs.add(man.action.default_popup);
   if (man.background && man.background.service_worker) refs.add(man.background.service_worker);
-  const missing = [...refs].filter(function (u) { return !exists(u) && !isManualAsset(u); });
+  const missing = [...refs].filter(function (u) { return !exists(u); });
   assert(missing.length === 0, "fehlt: " + missing.join(", "));
 });
 
@@ -971,38 +964,109 @@ check("assembleMarkdown sortiert nach y-Position und formatiert Formeln/Bilder",
   assert(md.indexOf("$$") === 0, "Formel zuerst (top 10)");
 });
 
-/* ---------- 20. OCR-Pipeline: manuell beschaffte Assets ---------- */
+/* ---------- 20. Transcript-Export (ocr-export.js, vm-Sandbox) ---------- */
 
-console.log("\n[20] OCR-Pipeline: MANUAL_ASSETS-Allowlist");
+console.log("\n[20] Transcript-Export: Seitenfinderung, Markdown, Bilder");
 
-check("jede Allowlist-Datei ist in docs/ocr-pipeline.md dokumentiert", function () {
-  const doc = read("docs/ocr-pipeline.md");
-  const undocumented = MANUAL_ASSETS.filter(function (m) {
-    return doc.indexOf(m) < 0 && doc.indexOf(m.replace(/\/$/, "")) < 0;
-  });
-  assert(undocumented.length === 0, "nicht dokumentiert: " + undocumented.join(", "));
+/* Reine Logik von assets/js/ocr-export.js (ohne DOM/Netzwerk) testen;
+   shared/filename.js zuerst, damit RMXShared für outputName greift. */
+const trSandbox = { console: console };
+trSandbox.window = trSandbox;
+vm.createContext(trSandbox);
+vm.runInContext(read("shared/filename.js"), trSandbox, { filename: "shared/filename.js" });
+vm.runInContext(read("assets/js/ocr-export.js"), trSandbox, { filename: "assets/js/ocr-export.js" });
+const TRX = trSandbox.RMX.ocrExport;
+assert(TRX, "R.ocrExport fehlt - assets/js/ocr-export.js nicht geladen?");
+
+check("isPageEntry: nur <uuid>.rm im Wurzelverzeichnis ist eine Seite", function () {
+  assert(TRX.isPageEntry("1a2b3c4d-0000-11aa-bb22-333344445555.rm") === true, "uuid.rm");
+  assert(TRX.isPageEntry("Seite1.RM") === true, "Großschreibung");
+  assert(TRX.isPageEntry("1a2b.rm.metadata") === false, "metadata");
+  assert(TRX.isPageEntry("1a2b.content") === false, "content");
+  assert(TRX.isPageEntry("notebook.rmdoc") === false, "rmdoc");
+  assert(TRX.isPageEntry("sub/1a2b.rm") === false, "Unterordner");
+  assert(TRX.isPageEntry(".rm") === false, "leerer Name");
 });
 
-check("Allowlist enthält keine Datei, die im Repository liegt (sonst veraltet)", function () {
-  const stale = MANUAL_ASSETS.filter(function (m) { return exists(m); });
-  assert(stale.length === 0, "liegt im Repo, ist also nicht mehr manuell: " + stale.join(", "));
+check("discoverPages: Reihenfolge kommt aus cPages der .content-Datei", function () {
+  const a = "aaaa1111-0000-0000-0000-000000000001.rm";
+  const b = "aaaa1111-0000-0000-0000-000000000002.rm";
+  const c = "aaaa1111-0000-0000-0000-000000000003.rm";
+  const entries = ["nb.metadata", a, c, b, "nb.content", "2222/pic.png"];
+  const content = JSON.stringify({ cPages: { pages: [{ id: "aaaa1111-0000-0000-0000-000000000003" }, { id: "AAAA1111-0000-0000-0000-000000000001" }] } });
+  assert(JSON.stringify(TRX.discoverPages(entries, content)) === JSON.stringify([c, a]),
+    "cPages-Reihenfolge, Groß-/Kleinschreibung egal: " + JSON.stringify(TRX.discoverPages(entries, content)));
 });
 
-/* ---------- 21. OCR-Setup-Seite (setup.html) ---------- */
+check("discoverPages: ohne/ungültige content-Datei alphabetischer Fallback", function () {
+  const pages = ["zz.rm", "aa.rm", "mm.rm"];
+  assert(JSON.stringify(TRX.discoverPages(pages, null)) === JSON.stringify(["aa.rm", "mm.rm", "zz.rm"]), "ohne content");
+  assert(JSON.stringify(TRX.discoverPages(pages, "{kein json")) === JSON.stringify(["aa.rm", "mm.rm", "zz.rm"]), "kaputtes json");
+  assert(JSON.stringify(TRX.discoverPages(pages, "{}")) === JSON.stringify(["aa.rm", "mm.rm", "zz.rm"]), "ohne cPages");
+  assert(JSON.stringify(TRX.discoverPages(pages, JSON.stringify({ cPages: { pages: [{ id: "fehlt" }] } }))) === JSON.stringify(["aa.rm", "mm.rm", "zz.rm"]), "keine Treffer -> Fallback");
+});
 
-console.log("\n[21] OCR-Setup-Seite deckt die Allowlist ab");
+check("discoverPages: fehlende .rm-Dateien in cPages werden übersprungen", function () {
+  const a = "aaaa1111-0000-0000-0000-000000000001.rm";
+  const b = "aaaa1111-0000-0000-0000-000000000002.rm";
+  const content = JSON.stringify({ cPages: { pages: [{ id: "x" }, { id: "aaaa1111-0000-0000-0000-000000000002" }, { id: "aaaa1111-0000-0000-0000-000000000001" }, { id: "y" }] } });
+  assert(JSON.stringify(TRX.discoverPages([a, b], content)) === JSON.stringify([b, a]), JSON.stringify(TRX.discoverPages([a, b], content)));
+});
 
-check("jede MANUAL_ASSETS-Gruppe hat einen Eintrag in assets/js/ocr-setup.js", function () {
-  const src = read("assets/js/ocr-setup.js");
-  const paths = [];
-  let m;
-  const re = /path:\s*'([^']+)'/g;
-  while ((m = re.exec(src))) paths.push(m[1]);
-  assert(paths.length > 0, "keine path:-Einträge gefunden");
-  const uncovered = MANUAL_ASSETS.filter(function (a) {
-    return !paths.some(function (p) { return a.indexOf(p) === 0 || p.indexOf(a.replace(/\/$/, "")) === 0; });
-  });
-  assert(uncovered.length === 0, "ohne Setup-Eintrag: " + uncovered.join(", "));
+check("remapImages: k-te blob:-URL erhält die k-te Datei, Pfade unter images/", function () {
+  const f1 = { name: "p1-1.png", blob: {} }, f2 = { name: "p1-2.jpg", blob: {} };
+  const md = "A\n\n![](blob:u1)\n\nB\n\n![](blob:u2)\n\nC";
+  const r = TRX.remapImages(md, [f1, f2]);
+  assert(r.md.indexOf("](images/p1-1.png)") > 0 && r.md.indexOf("](images/p1-2.jpg)") > 0, "Pfade: " + r.md);
+  assert(r.md.indexOf("blob:") < 0, "kein blob: übrig");
+  assert(r.used.length === 2 && r.used[0] === f1 && r.used[1] === f2, "used-Zuordnung");
+  assert(r.urls.length === 2 && r.urls[0] === "blob:u1", "urls");
+});
+
+check("remapImages: ohne Dateien bleiben Verweise erhalten, Zähler läuft weiter", function () {
+  const md = "![](blob:u1) ![](blob:u2) ![](blob:u3)";
+  const r0 = TRX.remapImages(md, null);
+  assert(r0.md === md && r0.urls.length === 3 && r0.used.length === 0, "keine Dateien");
+  const r = TRX.remapImages(md, [{ name: "p1-1.png", blob: {} }]);
+  assert(r.used.length === 1 && r.md.indexOf("](images/p1-1.png)") > 0, "erste ersetzt");
+  assert(r.md.indexOf("blob:u2") > 0 && r.md.indexOf("blob:u3") > 0, "Rest bleibt");
+});
+
+check("assembleDocument: Titel, Seiten in Ordnung, Formeln und leere Seiten", function () {
+  const md = TRX.assembleDocument("Mein Heft", [
+    { heading: "Seite 1", md: "Hallo\n\nWelt" },
+    { heading: "Seite 2", md: "" },
+    { heading: "Seite 3", md: "$$\nx ^ { 2 } + 1\n$$" }
+  ]);
+  const lines = md.split("\n");
+  assert(lines[0] === "# Mein Heft", "Titel: " + lines[0]);
+  const h1 = md.indexOf("## Seite 1"), h3 = md.indexOf("## Seite 3");
+  assert(h1 > 0 && h3 > h1, "Reihenfolge");
+  assert(md.indexOf("## Seite 2") < 0, "leere Seite entfällt");
+  assert(md.indexOf("$$\nx ^ { 2 } + 1\n$$") > 0, "Formel unverändert");
+  assert(md.indexOf("Hallo\n\nWelt") > 0, "Absätze erhalten");
+  assert(md.endsWith("\n"), "schließender Zeilenumbruch");
+  assert(TRX.assembleDocument("X", []).indexOf("# X") === 0, "keine Seiten -> nur Titel");
+});
+
+check("outputName: bereinigt über RMXShared.sanitizeFilename", function () {
+  assert(TRX.outputName("Notiz: Test?", ".md") === "Notiz Test.md", JSON.stringify(TRX.outputName("Notiz: Test?", ".md")));
+  assert(TRX.outputName("", ".md") === "Transcript.md", "leer -> Fallback");
+  assert(TRX.outputName("a/b\\c", ".zip").indexOf("/") < 0 && TRX.outputName("a/b\\c", ".zip").indexOf("\\") < 0, "Pfadzeichen entfernt");
+});
+
+check("veralteter Setup-Workflow ist entfernt (Dateien, HTML, Doku)", function () {
+  assert(!exists("setup.html"), "setup.html liegt noch im Repo");
+  assert(!exists("assets/js/ocr-setup.js"), "assets/js/ocr-setup.js liegt noch im Repo");
+  const fm = read("filemanager.html");
+  assert(fm.indexOf("setup") < 0, "filemanager.html verweist noch auf setup");
+  assert(fm.indexOf("/assets/js/ocr-export.js") >= 0, "ocr-export.js wird nicht geladen");
+  assert(fm.indexOf('id="dlg-transcript"') >= 0, "dlg-transcript fehlt");
+  const appSrc = read("assets/js/app.js");
+  assert(appSrc.indexOf("openTranscript") >= 0, "app.js ruft openTranscript nicht");
+  const doc = read("docs/ocr-pipeline.md") + read("README.md");
+  assert(doc.indexOf("setup.html") < 0 && doc.indexOf("ocr-setup") < 0, "Doku erwähnt noch das Setup-Paket");
+  assert(doc.indexOf("MANUAL_ASSETS") < 0, "Doku erwähnt noch die Allowlist");
 });
 
 /* ---------- Ergebnis ---------- */

@@ -55,18 +55,27 @@
     const formulaBlocks = [];
     if (regions.formula.length && R.ocrFormula) {
       const fb = R.rmlines.bounds(regions.formula);
-      const latex = await R.ocrFormula.recognizeFormula(regions.formula);
-      if (latex) formulaBlocks.push({ top: fb.minY, latex: latex });
+      try {
+        const latex = await R.ocrFormula.recognizeFormula(regions.formula);
+        if (latex) formulaBlocks.push({ top: fb ? fb.minY : 0, latex: latex });
+      } catch (e) {
+        /* Formel-Erkennung fehlgeschlagen (z. B. fehlendes Modell): die
+           Seite wird trotzdem als Text ausgeliefert. */
+      }
     }
     stats.formulas = formulaBlocks.length;
 
     const imageSlots = [];
     if (opts.rmdocFile && opts.pageId) {
-      const markers = R.rmregions.imageMarkers(regions.image);
-      const files = await R.rmimages.extractEmbeddedImages(opts.rmdocFile, opts.pageId);
-      markers.forEach(function (marker, i) {
-        if (files[i]) imageSlots.push({ top: marker.top, file: URL.createObjectURL(files[i].blob) });
-      });
+      try {
+        const markers = R.rmregions.imageMarkers(regions.image);
+        const files = await R.rmimages.extractEmbeddedImages(opts.rmdocFile, opts.pageId);
+        markers.forEach(function (marker, i) {
+          if (files[i]) imageSlots.push({ top: marker.top, file: URL.createObjectURL(files[i].blob) });
+        });
+      } catch (e) {
+        /* Eingebettete Bilder nicht verfügbar: Text/Formeln bleiben erhalten. */
+      }
     }
     stats.images = imageSlots.length;
 
