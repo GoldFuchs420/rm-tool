@@ -24,7 +24,7 @@ Der Code dieser Pipeline liegt im Repository:
 Alle Module hängen am gemeinsamen Namespace `window.RMX` und laden große
 Bibliotheken lazy über `R.load.*` in `assets/js/util.js` (wie `pdf.js`,
 `pdf-lib`, `JSZip` im Rest des Projekts). Eingehängt ist die Pipeline in
-`filemanager.html` (klassische Skripte + Import-Map + ES-Modul für Stufe 6).
+`filemanager.html` (klassische Skripte + ES-Modul für Stufe 6).
 
 ---
 
@@ -94,6 +94,8 @@ xournalpp-htr-simple-htr MIT; ink-on/CoMER Apache-2.0. KaTeX MIT.
 **CSP:** Die ONNX-Inferenz braucht WebAssembly. `manifest.json` trägt
 deshalb `script-src 'self' 'wasm-unsafe-eval'` — die MV3-Standardsicherheit
 (kein `unsafe-eval`, keine Remote-Scripts) bleibt unverändert.
+Inline-Import-Maps wären von dieser CSP blockiert, deshalb importiert das
+ink-on-Chunk den ort-Shim direkt (siehe B.4) statt über eine Import-Map.
 
 ---
 
@@ -112,11 +114,16 @@ deshalb `script-src 'self' 'wasm-unsafe-eval'` — die MV3-Standardsicherheit
    und wird von DE·HTR (`[0,1]`) und SimpleHTR (`[-0.5, 0.5]` danach)
    geteilt.
 4. **`ink-on` als ES-Modul.** `ocr-formula.mjs` wird per
-   `<script type="module">` geladen; eine Import-Map brückt dessen
-   `onnxruntime-web`-Import auf den bereits lazy geladenen UMD-Build
-   (`window.ort`) — siehe `assets/vendor/onnxruntime-web-shim.mjs`. Der
-   Shim löst Zugriffe per Proxy erst bei Gebrauch auf, weil `ort.min.js`
-   später lädt als der Modul-Import.
+   `<script type="module">` geladen. Der `onnxruntime-web`-Import des
+   ink-on-Chunks ist direkt auf `assets/vendor/onnxruntime-web-shim.mjs`
+   gepatcht, der auf den bereits lazy geladenen UMD-Build (`window.ort`)
+   brückt. Eine Import-Map wäre der einfachere Weg, aber die MV3-CSP
+   blockiert Inline-Import-Maps in Extension-Pages (`script-src 'self'`
+   erlaubt kein Inline-Script). Der Shim löst Zugriffe per Proxy erst bei
+   Gebrauch auf, weil `ort.min.js` später lädt als der Modul-Import;
+   Einstellungen an `ort.env.wasm` (Threads, SIMD) puffert er zwischen und
+   wendet sie beim ersten echten ort-Zugriff an. Gegenüber ink-on@0.1.0
+   ist im Chunk nur die Import-Zeile geändert.
 5. **Ebenen als Bereichs-Markierung.** Die Position eingefügter Bilder
    steckt im CRDT-Blockformat, das bewusst nicht dekodiert wird.
    Stattdessen: Ebene „Formel" → Formel-Inhalt, Ebene „Bild" → Bild-

@@ -1,4 +1,8 @@
-import * as ort from "onnxruntime-web";
+/* rm-tool-Patch: Inline-Import-Maps sind unter der MV3-CSP blockiert,
+   deshalb zeigt der Import direkt auf den Shim, der den lazy geladenen
+   UMD-Build (window.ort) brückt. Gegenüber ink-on@0.1.0 ist nur diese
+   Import-Zeile geändert (docs/ocr-pipeline.md, Abschnitt B.4). */
+import * as ort from "/assets/vendor/onnxruntime-web-shim.mjs";
 const MODEL_H = 256;
 const MAX_W = 1024;
 const MIN_W = 128;

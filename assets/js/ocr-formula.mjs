@@ -2,9 +2,11 @@
  * Formel-Erkennung (stroke-basiert) über das npm-Paket "ink-on"
  * (Apache-2.0), das CoMER (ECCV 2022, Coverage-guided Multi-scale
  * Encoder-decoder Transformer) als 7,2-MB-ONNX bereitstellt. Läuft als
- * ES-Modul; "onnxruntime-web" wird über die Import-Map in
- * filemanager.html auf den bereits lazy geladenen UMD-Build (window.ort)
- * gebrückt, siehe assets/vendor/onnxruntime-web-shim.mjs.
+ * ES-Modul; der "onnxruntime-web"-Import von ink-on ist im gepatchten
+ * Chunk (assets/vendor/ink-on/core/chunks/inference-4T2UM6yg.js) direkt
+ * auf den Shim assets/vendor/onnxruntime-web-shim.mjs gerichtet, der auf
+ * den bereits lazy geladenen UMD-Build (window.ort) brückt. Keine
+ * Import-Map: die MV3-CSP blockiert Inline-Import-Maps.
  * Siehe docs/ocr-pipeline.md, Stufe 6.
  */
 import { InferenceEngine, preprocessStrokes, isStrokeMeaningful, loadVocab } from '/assets/vendor/ink-on/core/index.js';
