@@ -46,15 +46,13 @@ Vor dem Start prüft der Transcript-Dialog die für die gewählte Sprache
 nötigen Dateien per HEAD-Request und nennt im Fehlerfall genau, was fehlt
 und woher es stammt (offizielle Quelle: jsDelivr / Hugging Face).
 
-**Aktuell unvollständig** (bricht die Erkennung noch ab, bis ergänzt):
+**Nur optional fehlend**:
 
-- `assets/vendor/onnxruntime-web/ort-wasm-simd-threaded.mjs` — das
-  Emscripten-Glue-Skript, das `ort.min.js` zur Laufzeit dynamisch lädt.
-  Quelle: `https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort-wasm-simd-threaded.mjs`
 - `assets/vendor/katex/fonts/` — nur für `renderFormulas: true` (Formeln
-  als Bilder). Der Transcript-Export belässt Formeln als `$$LaTeX$$` und
+  als Bilder). Der Transcript-Export belässt Formeln als `$LaTeX$` und
   braucht die Fonts deshalb nicht; für den Konsole-Test in Abschnitt C
-  (`renderFormulas: true`) wären sie nötig.
+  (`renderFormulas: true`) wären sie nötig. Quelle (Ordner `fonts/`):
+  `https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/fonts/`
 
 ---
 
@@ -216,6 +214,6 @@ laufen.
 Die ⚠️-Punkte sind Verifikationsschritte gegen echte Dateien (Anleitung
 oben), keine offene Implementierung. Alle Stufen sind architektonisch
 vollständig, modularisiert, dedupliziert und durch die Testsuite
-(`tests/run.js`, Abschnitte 19–20) abgesichert. Bevor die erste
-Transkription läuft, fehlen nur noch die zwei unter Abschnitt A
-markierten Dateien (ONNX-Glue-Skript, optional KaTeX-Fonts).
+(`tests/run.js`, Abschnitte 19–20) abgesichert. Für die erste
+Transkription ist nichts weiter nötig; die KaTeX-Fonts sind nur für
+`renderFormulas: true` optional (Abschnitt A).
