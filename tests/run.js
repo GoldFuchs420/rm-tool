@@ -978,13 +978,13 @@ vm.runInContext(read("assets/js/ocr-export.js"), trSandbox, { filename: "assets/
 const TRX = trSandbox.RMX.ocrExport;
 assert(TRX, "R.ocrExport fehlt - assets/js/ocr-export.js nicht geladen?");
 
-check("isPageEntry: nur <uuid>.rm im Wurzelverzeichnis ist eine Seite", function () {
+check("isPageEntry: letzter Pfadabschnitt endet auf .rm (Wurzel oder Unterordner)", function () {
   assert(TRX.isPageEntry("1a2b3c4d-0000-11aa-bb22-333344445555.rm") === true, "uuid.rm");
   assert(TRX.isPageEntry("Seite1.RM") === true, "Großschreibung");
+  assert(TRX.isPageEntry("doc/1a2b.rm") === true, "Dokument-Unterordner");
   assert(TRX.isPageEntry("1a2b.rm.metadata") === false, "metadata");
   assert(TRX.isPageEntry("1a2b.content") === false, "content");
   assert(TRX.isPageEntry("notebook.rmdoc") === false, "rmdoc");
-  assert(TRX.isPageEntry("sub/1a2b.rm") === false, "Unterordner");
   assert(TRX.isPageEntry(".rm") === false, "leerer Name");
 });
 
@@ -996,6 +996,14 @@ check("discoverPages: Reihenfolge kommt aus cPages der .content-Datei", function
   const content = JSON.stringify({ cPages: { pages: [{ id: "aaaa1111-0000-0000-0000-000000000003" }, { id: "AAAA1111-0000-0000-0000-000000000001" }] } });
   assert(JSON.stringify(TRX.discoverPages(entries, content)) === JSON.stringify([c, a]),
     "cPages-Reihenfolge, Groß-/Kleinschreibung egal: " + JSON.stringify(TRX.discoverPages(entries, content)));
+});
+
+check("discoverPages: Seiten auch im Dokument-Unterordner (<docid>/<pageid>.rm)", function () {
+  const a = "doc/aaaa1111-0000-0000-0000-000000000001.rm";
+  const b = "doc/aaaa1111-0000-0000-0000-000000000002.rm";
+  const entries = ["doc.metadata", "doc.content", a, b, "doc/aaaa1111-0000-0000-0000-000000000001/bild.png"];
+  const content = JSON.stringify({ cPages: { pages: [{ id: "aaaa1111-0000-0000-0000-000000000002" }, { id: "aaaa1111-0000-0000-0000-000000000001" }] } });
+  assert(JSON.stringify(TRX.discoverPages(entries, content)) === JSON.stringify([b, a]), JSON.stringify(TRX.discoverPages(entries, content)));
 });
 
 check("discoverPages: ohne/ungültige content-Datei alphabetischer Fallback", function () {

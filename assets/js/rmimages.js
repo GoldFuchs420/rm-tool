@@ -22,14 +22,16 @@
   async function extractEmbeddedImages(rmdocFile, pageId) {
     await R.load.jszip();
     const zip = await window.JSZip.loadAsync(rmdocFile);
-    const prefix = pageId + '/';
+    /* Bilder liegen neben der .rm-Seite, je nach Archiv-Layout direkt im
+       Ordner <pageid>/ oder im Dokument-Unterordner (<docid>/<pageid>/). */
+    const folderRe = new RegExp('(^|/)' + String(pageId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/[^/]+$');
     const entries = Object.keys(zip.files)
-      .filter(function (path) { return path.startsWith(prefix) && IMG_EXT.test(path) && !zip.files[path].dir; })
+      .filter(function (path) { return folderRe.test(path) && IMG_EXT.test(String(path).split('/').pop()) && !zip.files[path].dir; })
       .sort();
     const out = [];
     for (const path of entries) {
       const blob = await zip.files[path].async('blob');
-      out.push({ name: path.slice(prefix.length), blob: blob });
+      out.push({ name: String(path).split('/').pop(), blob: blob });
     }
     return out;
   }

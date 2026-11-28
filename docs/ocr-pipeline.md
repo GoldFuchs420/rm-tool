@@ -66,7 +66,10 @@ und woher es stammt (offizielle Quelle: jsDelivr / Hugging Face).
    Start bricht nicht die restliche UI.
 3. Ablauf je Lauf: Dateien prüfen (Diagnose) → `.rmdoc` über `R.api.download`
    laden → per JSZip lokal entpacken → Seiten aus `cPages` der
-   `.content`-Datei in Lesereihenfolge bestimmen (Fallback: alphabetisch) →
+   `.content`-Datei in Lesereihenfolge bestimmen (Fallback: alphabetisch;
+   layout-agnostisch, denn je nach Quelle liegen die Seiten im
+   Archiv-Wurzelverzeichnis oder in einem Dokument-Unterordner
+   `<docid>/<pageid>.rm`, so liefern reMarkable-Proxys das Archiv aus) →
    je Seite `R.ocrPipeline.recognizePage()` (bestehende Pipeline, kein
    duplizierter Code) → Markdown zusammenbauen → Datei herunterladen.
 4. Formeln bleiben als `$$LaTeX$$` im Text (`renderFormulas: false`),
