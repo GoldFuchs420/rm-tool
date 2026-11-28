@@ -10,7 +10,11 @@
   'use strict';
   const R = (window.RMX = window.RMX || {});
 
-  const MODEL_URL = '/assets/models/de-htr-v2/model.onnx';
+  /* fp32 statt int8: das int8-Modell nutzt ConvInteger-Knoten, die das
+     WASM-EP von onnxruntime-web nicht implementiert (NOT_IMPLEMENTED bei
+     der Session-Erstellung). fp32 hat identische Schnittstelle und
+     praktisch identische Genauigkeit (8,0 % vs. 8,01 % CER). */
+  const MODEL_URL = '/assets/models/de-htr-v2/model-fp32.onnx';
   const CONFIG_URL = '/assets/models/de-htr-v2/config.json';
   const TARGET_H = 64, MAX_W = 1024;
 
