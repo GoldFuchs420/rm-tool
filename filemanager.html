@@ -46,12 +46,10 @@
     <script defer src="/assets/js/ocrpipeline.js"></script>
     <!-- Transcript: Notizbuch -> Markdown (nutzt die Pipeline oben), -->
     <script defer src="/assets/js/ocr-export.js"></script>
-    <!-- Formel-Erkennung (CoMER via ink-on) als ES-Modul; die Import-Map
-         brückt ink-ons "onnxruntime-web"-Import auf den lazy geladenen
-         UMD-Build (window.ort), siehe assets/vendor/onnxruntime-web-shim.mjs. -->
-    <script type="importmap">
-      { "imports": { "onnxruntime-web": "/assets/vendor/onnxruntime-web-shim.mjs" } }
-    </script>
+    <!-- Formel-Erkennung (CoMER via ink-on) als ES-Modul. Bewusst ohne
+         Import-Map: die MV3-CSP blockiert Inline-Import-Maps, deshalb
+         importiert das gepatchte ink-on-Chunk den Shim direkt (siehe
+         assets/vendor/onnxruntime-web-shim.mjs und docs/ocr-pipeline.md). -->
     <script type="module" src="/assets/js/ocr-formula.mjs"></script>
     <script defer src="/assets/js/app.js"></script>
   </head>
